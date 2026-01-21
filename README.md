@@ -121,6 +121,81 @@ See [Deployment Instructions](#deployment-instructions) below for deploying to a
    php artisan view:cache
    ```
 
+## Testing
+
+### Running Tests
+
+```bash
+# Run all PHP tests
+composer test
+
+# Or directly with artisan
+php artisan test
+
+# Run specific test file
+php artisan test tests/Feature/ExampleTest.php
+
+# Run with coverage (requires Xdebug)
+php artisan test --coverage
+```
+
+### Database Safety
+
+**Important:** Tests are configured to ALWAYS use SQLite in-memory database, never MySQL.
+
+This is enforced at multiple levels:
+1. `phpunit.xml` sets `DB_CONNECTION=sqlite` and `DB_DATABASE=:memory:`
+2. `Tests\SafeTestCase` verifies SQLite is active and throws an error if not
+
+Even if your `.env` file contains MySQL credentials, tests will use SQLite. This prevents accidentally running tests against a production database.
+
+### Writing Tests
+
+**Feature Tests** (tests that need the Laravel application):
+```php
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class MyFeatureTest extends TestCase
+{
+    use RefreshDatabase; // Safe to use - only affects SQLite in-memory
+
+    public function test_something(): void
+    {
+        // Your test code here
+    }
+}
+```
+
+**Unit Tests** (pure PHP tests without Laravel):
+```php
+namespace Tests\Unit;
+
+use PHPUnit\Framework\TestCase;
+
+class MyUnitTest extends TestCase
+{
+    public function test_something(): void
+    {
+        // Your test code here
+    }
+}
+```
+
+### Test Structure
+
+```
+tests/
+├── Feature/           # Tests requiring full Laravel application
+│   └── ExampleTest.php
+├── Unit/              # Pure PHP unit tests
+│   └── ExampleTest.php
+├── SafeTestCase.php   # Base class enforcing SQLite safety
+└── TestCase.php       # Base class for feature tests
+```
+
 ## License
 
 Private - All rights reserved

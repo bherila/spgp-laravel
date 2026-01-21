@@ -14,7 +14,35 @@
 - **Mounting data contract**: Blade views pass IDs via `data-*` (examples in [resources/views/company.blade.php](resources/views/company.blade.php) and [resources/views/ownership-interest.blade.php](resources/views/ownership-interest.blade.php)); ensure new pages keep this pattern so scripts can read integers and hydrate.
 - **UI/formatting conventions**: Money/percent helpers live in [resources/js/lib/currency.ts](resources/js/lib/currency.ts). UI uses shadcn/Radix components under `resources/js/components/ui`. Mermaids use loose security level to allow click-through to company routes.
 - **Build/test workflow**: Install with `composer install && pnpm install`; copy `.env` then `php artisan key:generate` and migrate. Dev: `composer dev` (spawns artisan serve, queue listener, pail logs, Vite via `npx concurrently`) or run `php artisan serve` and `pnpm dev` separately. Tests: `composer test` (PHPUnit) and `pnpm test` (Jest via ts-jest). Build: `pnpm build` (Vite) with inputs from [vite.config.ts](vite.config.ts).
+- **PHP Testing Safety**: Tests ALWAYS use SQLite in-memory database, never MySQL. This is enforced by:
+  1. `phpunit.xml` sets `DB_CONNECTION=sqlite` and `DB_DATABASE=:memory:`
+  2. `Tests\SafeTestCase` (extended by `Tests\TestCase`) verifies SQLite is active at runtime and throws a RuntimeException if MySQL or another database is detected
+  
+  When writing tests:
+  - Feature tests should extend `Tests\TestCase` (which extends `SafeTestCase`)
+  - Use `RefreshDatabase` trait freely - it only affects SQLite in-memory
+  - Unit tests can extend `PHPUnit\Framework\TestCase` directly (no database access)
+  - Run tests with `composer test` or `php artisan test`
+  
+  Example feature test:
+  ```php
+  namespace Tests\Feature;
+  
+  use Illuminate\Foundation\Testing\RefreshDatabase;
+  use Tests\TestCase;
+  
+  class MyTest extends TestCase
+  {
+      use RefreshDatabase;
+      
+      public function test_example(): void
+      {
+          // Safe to use database - always SQLite in-memory
+          $user = User::factory()->create();
+          $this->actingAs($user)->get('/dashboard')->assertOk();
+      }
+  }
+  ```
 - **Storage/infra**: File storage service for S3 in [app/Services/FileStorageService.php](app/Services/FileStorageService.php) and helper trait [app/Traits/HasFileStorage.php](app/Traits/HasFileStorage.php); K-1 PDFs currently use the `private` disk by default.
 - **Path aliases & TS**: Paths configured in [tsconfig.json](tsconfig.json) (`@/*` → `resources/js/*`); TS includes `tests-ts` for frontend unit tests.
 - **When extending**: Keep DECIMAL fields as strings/precise numbers in APIs, preserve `credentials: include` in fetches for session + CSRF, and prefer first-or-create patterns used in controllers for per-year resources.
-<parameter name="filePath">/Users/bwh/proj/bwh/bwh-php/.github/copilot-instructions.md
