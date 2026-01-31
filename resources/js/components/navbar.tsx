@@ -1,6 +1,18 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { Laptop, Moon, Sun, ChevronDown, Settings } from 'lucide-react';
+import { Laptop, Moon, Sun, ChevronDown, Settings, Key } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type NavbarProps = {
   authenticated: boolean;
@@ -18,8 +30,19 @@ function applyTheme(mode: ThemeMode) {
 
 export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const adminMenuRef = useRef<HTMLLIElement | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [theme, setTheme] = useState<ThemeMode>(() => (localStorage.getItem('theme') as ThemeMode) || 'system');
+
+  // Change password form state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
     applyTheme(theme);
@@ -30,6 +53,9 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
     const handler = (e: MouseEvent) => {
       if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
         setAdminMenuOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -45,6 +71,55 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(false);
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const response = await fetch('/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          password: newPassword,
+          password_confirmation: confirmPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to change password');
+      }
+
+      setPasswordSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setChangePasswordOpen(false);
+        setPasswordSuccess(false);
+      }, 2000);
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   return (
     <nav className='mx-auto max-w-7xl px-4 py-3 flex items-center justify-between gap-4'>

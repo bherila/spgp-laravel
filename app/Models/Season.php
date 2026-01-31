@@ -23,6 +23,7 @@ class Season extends Model
         'start_date',
         'early_spring_deadline',
         'final_deadline',
+        'spreadsheet_url',
     ];
 
     /**

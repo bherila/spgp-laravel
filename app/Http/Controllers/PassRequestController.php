@@ -9,6 +9,14 @@ use Illuminate\Http\Request;
 class PassRequestController extends Controller
 {
     /**
+     * Show the pass request form.
+     */
+    public function showRequestForm()
+    {
+        return view('request');
+    }
+
+    /**
      * Get pass requests for the authenticated user, grouped by season.
      * Only returns non-archived seasons.
      */

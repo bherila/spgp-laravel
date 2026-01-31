@@ -27,8 +27,12 @@ Route::middleware('guest')->group(function () {
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::post('/change-password', [AuthController::class, 'changePassword'])->name('change-password');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/pass-requests', [DashboardController::class, 'passRequests'])->name('dashboard.pass-requests');
+    
+    // New pass request page
+    Route::get('/request', [PassRequestController::class, 'showRequestForm'])->name('request');
     
     // Pass request routes (user can manage their own)
     Route::get('/pass-requests', [PassRequestController::class, 'list'])->name('pass-requests.list');
@@ -55,10 +59,19 @@ Route::middleware('auth')->group(function () {
         Route::delete('/seasons/{id}', [SeasonController::class, 'archive'])->name('admin.seasons.archive');
         Route::post('/seasons/{id}/restore', [SeasonController::class, 'restore'])->name('admin.seasons.restore');
         
+        // Season pass requests admin
+        Route::get('/seasons/{id}/pass-requests', [SeasonController::class, 'showPassRequests'])->name('admin.seasons.pass-requests');
+        Route::get('/seasons/{id}/pass-requests/list', [SeasonController::class, 'listPassRequests'])->name('admin.seasons.pass-requests.list');
+        Route::post('/seasons/{id}/pass-requests/assign-codes', [SeasonController::class, 'assignCodes'])->name('admin.seasons.pass-requests.assign-codes');
+        Route::post('/seasons/{id}/pass-requests/clear-codes', [SeasonController::class, 'clearCodes'])->name('admin.seasons.pass-requests.clear-codes');
+        Route::post('/seasons/{id}/pass-requests/send-emails', [SeasonController::class, 'sendEmails'])->name('admin.seasons.pass-requests.send-emails');
+        Route::delete('/pass-requests/{id}/admin', [SeasonController::class, 'deletePassRequest'])->name('admin.pass-requests.destroy');
+        
         // Users
         Route::get('/users', [UserController::class, 'index'])->name('admin.users');
         Route::get('/users/list', [UserController::class, 'list'])->name('admin.users.list');
         Route::put('/users/{id}', [UserController::class, 'update'])->name('admin.users.update');
         Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('admin.users.destroy');
+        Route::post('/users/{id}/impersonate', [AuthController::class, 'impersonate'])->name('admin.users.impersonate');
     });
 });
