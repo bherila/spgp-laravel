@@ -16,6 +16,8 @@ export default defineConfig({
                 'resources/js/auth/login.tsx',
                 'resources/js/auth/register.tsx',
                 'resources/js/admin/invites.tsx',
+                'resources/js/admin/seasons.tsx',
+                'resources/js/admin/users.tsx',
             ],
       refresh: true,
     }),

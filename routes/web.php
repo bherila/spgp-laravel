@@ -28,6 +28,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/pass-requests', [DashboardController::class, 'passRequests'])->name('dashboard.pass-requests');
     
     // Pass request routes (user can manage their own)
     Route::get('/pass-requests', [PassRequestController::class, 'list'])->name('pass-requests.list');
