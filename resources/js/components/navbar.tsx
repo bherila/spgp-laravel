@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { Laptop, Moon, Sun, ChevronDown } from 'lucide-react';
+import { Laptop, Moon, Sun, ChevronDown, Settings } from 'lucide-react';
 
 type NavbarProps = {
   authenticated: boolean;
@@ -17,8 +17,8 @@ function applyTheme(mode: ThemeMode) {
 }
 
 export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
-  const [toolsOpen, setToolsOpen] = useState(false);
-  const toolsRef = useRef<HTMLLIElement | null>(null);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const adminMenuRef = useRef<HTMLLIElement | null>(null);
   const [theme, setTheme] = useState<ThemeMode>(() => (localStorage.getItem('theme') as ThemeMode) || 'system');
 
   useEffect(() => {
@@ -28,8 +28,9 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (!toolsRef.current) return;
-      if (!toolsRef.current.contains(e.target as Node)) setToolsOpen(false);
+      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
+        setAdminMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -50,21 +51,75 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
       {/* Left: Branding + Main nav */}
       <div className='flex items-center gap-6'>
         <a href='/' className='select-none'>
-          <h1 className='text-lg font-semibold tracking-tight'>K1 Flow</h1>
+          <h1 className='text-lg font-semibold tracking-tight'>Pass Group</h1>
         </a>
         <ul className='hidden md:flex items-center gap-4 text-sm'>
-          <li><a className='hover:underline underline-offset-4' href='/'>Companies</a></li>
+          {authenticated && (
+            <li><a className='hover:underline underline-offset-4' href='/dashboard'>Dashboard</a></li>
+          )}
+          {isAdmin && (
+            <li ref={adminMenuRef} className='relative'>
+              <button
+                type='button'
+                onClick={() => setAdminMenuOpen(!adminMenuOpen)}
+                className='flex items-center gap-1 hover:underline underline-offset-4'
+              >
+                <Settings className='w-4 h-4' />
+                Admin
+                <ChevronDown className={`w-3 h-3 transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {adminMenuOpen && (
+                <div className='absolute top-full left-0 mt-1 w-40 bg-background border rounded-md shadow-lg z-50'>
+                  <a
+                    href='/admin/users'
+                    className='block px-4 py-2 text-sm hover:bg-muted'
+                  >
+                    Users
+                  </a>
+                  <a
+                    href='/admin/invites'
+                    className='block px-4 py-2 text-sm hover:bg-muted'
+                  >
+                    Invites
+                  </a>
+                  <a
+                    href='/admin/seasons'
+                    className='block px-4 py-2 text-sm hover:bg-muted'
+                  >
+                    Seasons
+                  </a>
+                </div>
+              )}
+            </li>
+          )}
         </ul>
       </div>
 
-      {/* Right: Theme toggle */}
+      {/* Right: Auth + Theme toggle */}
       <div className='flex items-center gap-3'>
+        {authenticated ? (
+          <form method='POST' action='/logout' className='inline'>
+            <input type='hidden' name='_token' value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''} />
+            <button type='submit' className='text-sm hover:underline underline-offset-4'>
+              Sign Out
+            </button>
+          </form>
+        ) : (
+          <a href='/login' className='text-sm hover:underline underline-offset-4'>
+            Sign In
+          </a>
+        )}
+        
         {/* Tri-state theme toggle */}
         <div className='inline-flex items-center overflow-hidden rounded-md border border-gray-200 dark:border-[#3E3E3A]'>
           <button
             type='button'
             onClick={() => setTheme('system')}
-            className={`px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-[#1f1f1e] ${theme === 'system' ? 'bg-gray-100 dark:bg-[#262625]' : ''}`}
+            className={`px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-[#1f1f1e] ${
+              theme === 'system'
+                ? 'bg-gray-900 text-white dark:bg-[#262625] dark:text-gray-50'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}
             title='System'
             aria-pressed={theme === 'system'}
           >
@@ -73,7 +128,11 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
           <button
             type='button'
             onClick={() => setTheme('dark')}
-            className={`px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-[#1f1f1e] ${theme === 'dark' ? 'bg-gray-100 dark:bg-[#262625]' : ''}`}
+            className={`px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-[#1f1f1e] ${
+              theme === 'dark'
+                ? 'bg-gray-900 text-white dark:bg-[#262625] dark:text-gray-50'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}
             title='Dark'
             aria-pressed={theme === 'dark'}
           >
@@ -82,7 +141,11 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
           <button
             type='button'
             onClick={() => setTheme('light')}
-            className={`px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-[#1f1f1e] ${theme === 'light' ? 'bg-gray-100 dark:bg-[#262625]' : ''}`}
+            className={`px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-[#1f1f1e] ${
+              theme === 'light'
+                ? 'bg-gray-900 text-white dark:bg-[#262625] dark:text-gray-50'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}
             title='Light'
             aria-pressed={theme === 'light'}
           >

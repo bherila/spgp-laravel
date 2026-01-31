@@ -23,7 +23,8 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        // Home page redirects to login for unauthenticated users
+        $response->assertRedirect('/login');
     }
 
     /**
