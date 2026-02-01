@@ -30,8 +30,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { FileEdit, Trash2, X, Plus, Copy, Check } from 'lucide-react';
+import { FileEdit, Trash2, X, Plus, Copy, Check, HelpCircle } from 'lucide-react';
 import currency from 'currency.js';
+import { RenewalInfo } from '@/components/RenewalInfo';
 import {
   Tooltip,
   TooltipContent,
@@ -113,6 +114,7 @@ function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [renewalModalOpen, setRenewalModalOpen] = useState(false);
   const [renewalRequest, setRenewalRequest] = useState<PassRequest | null>(null);
+  const [infoRequest, setInfoRequest] = useState<(PassRequest & { season: Season }) | null>(null);
   const [renewalOrderNumber, setRenewalOrderNumber] = useState('');
   const [renewalSubmitting, setRenewalSubmitting] = useState(false);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
@@ -297,36 +299,6 @@ function Dashboard() {
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-4">Your Pass Requests</h2>
 
-          {!loading && pendingRenewals.length > 0 && (
-            <div className="mb-8 bg-muted/40 border rounded-xl p-5 space-y-4">
-              <div className="flex items-center gap-2 text-foreground/80">
-                <h3 className="font-semibold">Renewal Information</h3>
-              </div>
-              <div className="space-y-4">
-                {pendingRenewals.map((r, i) => {
-                  const pt = r.season_pass_type;
-                  return (
-                    <div key={r.id} className="text-sm leading-relaxed">
-                      <p className="font-medium text-base mb-1">
-                        {r.passholder_first_name}'s {pt?.pass_type_name} — {r.season.pass_name} {r.season.pass_year}
-                      </p>
-                      <p className="text-muted-foreground">
-                        Before <strong>{formatDate(r.season.early_spring_deadline)}</strong>, 
-                        direct renewal is <strong>{formatPrice(pt?.renewal_early_price)}</strong> 
-                        (vs. <strong>{formatPrice(pt?.group_early_price)}</strong> through the group).
-                      </p>
-                      <p className="mt-2">
-                        If you renew directly, please enter your renewal order number below so our group gets credit for the renewal. 
-                        This helps the program and has no cost to you. No promo code will be issued for early renewals.
-                        After the deadline, we will issue promo codes for any remaining pending renewals.
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          
           {loading ? (
             <div className="space-y-4">
               {[...Array(2)].map((_, i) => (
@@ -423,6 +395,20 @@ function Dashboard() {
                                       <p>{copiedId === request.id ? 'Copied!' : 'Copy promo code to clipboard'}</p>
                                     </TooltipContent>
                                   </Tooltip>
+                                </div>
+                              ) : request.is_renewal && !request.renewal_order_number && new Date(season.early_spring_deadline) > now ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-muted-foreground text-xs">
+                                    Not needed until {new Date(season.early_spring_deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                  </span>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-5 w-5 p-0 text-muted-foreground hover:text-foreground"
+                                    onClick={() => setInfoRequest({ ...request, season })}
+                                  >
+                                    <HelpCircle className="h-3.5 w-3.5" />
+                                  </Button>
                                 </div>
                               ) : (
                                 <span className="text-muted-foreground text-xs">TBA</span>
@@ -527,6 +513,27 @@ function Dashboard() {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Renewal Information Modal */}
+        <Dialog open={!!infoRequest} onOpenChange={(open) => !open && setInfoRequest(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Renewal Information</DialogTitle>
+            </DialogHeader>
+            {infoRequest && (
+              <RenewalInfo 
+                request={infoRequest} 
+                season={infoRequest.season} 
+                formatDate={formatDate} 
+              />
+            )}
+            <DialogFooter>
+              <Button type="button" onClick={() => setInfoRequest(null)}>
+                Got it
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
