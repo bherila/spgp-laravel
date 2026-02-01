@@ -407,7 +407,7 @@ function Dashboard() {
                                 <FileEdit className="w-4 h-4 mr-1" />
                                 {request.renewal_order_number ? 'Edit renewal order #' : 'Enter renewal order #'}
                               </Button>
-                              {!request.promo_code && (
+                              {!request.promo_code && !request.renewal_order_number && (
                                 cancelConfirmId === request.id ? (
                                   <div className="flex items-center gap-1">
                                     <Button
