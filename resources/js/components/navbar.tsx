@@ -173,12 +173,37 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
       {/* Right: Auth + Theme toggle */}
       <div className='flex items-center gap-3'>
         {authenticated ? (
-          <form method='POST' action='/logout' className='inline'>
-            <input type='hidden' name='_token' value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''} />
-            <button type='submit' className='text-sm hover:underline underline-offset-4'>
-              Sign Out
+          <div ref={userMenuRef} className='relative'>
+            <button
+              type='button'
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              className='flex items-center gap-1 text-sm hover:underline underline-offset-4'
+            >
+              Account
+              <ChevronDown className={`w-3 h-3 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
             </button>
-          </form>
+            {userMenuOpen && (
+              <div className='absolute top-full right-0 mt-1 w-40 bg-background border rounded-md shadow-lg z-50'>
+                <button
+                  type='button'
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    setChangePasswordOpen(true);
+                  }}
+                  className='block w-full text-left px-4 py-2 text-sm hover:bg-muted'
+                >
+                  <Key className='w-4 h-4 inline mr-2' />
+                  Change Password
+                </button>
+                <form method='POST' action='/logout' className='block'>
+                  <input type='hidden' name='_token' value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''} />
+                  <button type='submit' className='block w-full text-left px-4 py-2 text-sm hover:bg-muted'>
+                    Sign Out
+                  </button>
+                </form>
+              </div>
+            )}
+          </div>
         ) : (
           <a href='/login' className='text-sm hover:underline underline-offset-4'>
             Sign In
@@ -228,6 +253,74 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
           </button>
         </div>
       </div>
+
+      {/* Change Password Dialog */}
+      <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Password</DialogTitle>
+            <DialogDescription>
+              Enter your current password and choose a new password.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleChangePassword}>
+            <div className="space-y-4 py-4">
+              {passwordError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{passwordError}</AlertDescription>
+                </Alert>
+              )}
+              {passwordSuccess && (
+                <Alert>
+                  <AlertDescription className="text-green-600">
+                    Password changed successfully!
+                  </AlertDescription>
+                </Alert>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="current-password">Current Password</Label>
+                <Input
+                  id="current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-password">New Password</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  minLength={8}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-password">Confirm New Password</Label>
+                <Input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  minLength={8}
+                  required
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setChangePasswordOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={passwordLoading}>
+                {passwordLoading ? 'Changing...' : 'Change Password'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </nav>
   );
 }

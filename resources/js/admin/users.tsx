@@ -22,7 +22,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Pencil, Trash2, Key } from 'lucide-react';
 
 interface User {
   id: number;
@@ -176,6 +177,32 @@ function AdminUsers() {
     setDeleteModalOpen(true);
   };
 
+  const handleImpersonate = async (user: User) => {
+    if (!confirm(`Login as ${user.name}? You will need to log out and back in to return to your admin account.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/admin/users/${user.id}/impersonate`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to impersonate user');
+      }
+
+      // Redirect to dashboard as the impersonated user
+      window.location.href = data.redirect || '/dashboard';
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -194,7 +221,10 @@ function AdminUsers() {
       )}
 
       {loading ? (
-        <div className="text-center py-8">Loading...</div>
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
       ) : (
         <div className="border rounded-lg">
           <Table>
@@ -251,13 +281,23 @@ function AdminUsers() {
                           <Pencil className="w-4 h-4" />
                         </Button>
                         {user.id !== currentUserId && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openDeleteModal(user)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleImpersonate(user)}
+                              title="Login as this user"
+                            >
+                              <Key className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openDeleteModal(user)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>

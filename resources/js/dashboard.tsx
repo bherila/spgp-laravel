@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import React, { useEffect, useState } from 'react';
 import MainTitle from '@/components/MainTitle';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -100,17 +101,29 @@ function Dashboard() {
       <div className="grid gap-6 md:grid-cols-3 mb-8">
         <div className="rounded-lg border p-6">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Total Pass Requests</h3>
-          <p className="text-3xl font-bold mt-2">{totalRequests}</p>
+          {loading ? (
+            <Skeleton className="h-9 w-16 mt-2" />
+          ) : (
+            <p className="text-3xl font-bold mt-2">{totalRequests}</p>
+          )}
         </div>
         <div className="rounded-lg border p-6">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Active Seasons</h3>
-          <p className="text-3xl font-bold mt-2">{seasons.length}</p>
+          {loading ? (
+            <Skeleton className="h-9 w-16 mt-2" />
+          ) : (
+            <p className="text-3xl font-bold mt-2">{seasons.length}</p>
+          )}
         </div>
         <div className="rounded-lg border p-6">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Pending</h3>
-          <p className="text-3xl font-bold mt-2">
-            {seasons.reduce((sum, s) => sum + (s.pass_requests?.filter(r => !r.redemption_date)?.length || 0), 0)}
-          </p>
+          {loading ? (
+            <Skeleton className="h-9 w-16 mt-2" />
+          ) : (
+            <p className="text-3xl font-bold mt-2">
+              {seasons.reduce((sum, s) => sum + (s.pass_requests?.filter(r => !r.redemption_date)?.length || 0), 0)}
+            </p>
+          )}
         </div>
       </div>
 
@@ -124,7 +137,16 @@ function Dashboard() {
         <h2 className="text-xl font-semibold mb-4">Your Pass Requests</h2>
         
         {loading ? (
-          <div className="text-center py-8">Loading...</div>
+          <div className="space-y-4">
+            <div className="border rounded-lg p-4">
+              <Skeleton className="h-6 w-48 mb-4" />
+              <div className="space-y-3">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          </div>
         ) : seasonsWithRequests.length === 0 ? (
           <div className="rounded-lg border p-8 text-center text-muted-foreground">
             <p>You don't have any pass requests yet.</p>

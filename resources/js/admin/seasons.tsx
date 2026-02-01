@@ -22,7 +22,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Archive, RotateCcw, Plus } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Pencil, Archive, RotateCcw, Plus, Users } from 'lucide-react';
 
 interface Season {
   id: number;
@@ -31,6 +32,7 @@ interface Season {
   start_date: string;
   early_spring_deadline: string;
   final_deadline: string;
+  spreadsheet_url: string | null;
   pass_request_count: number;
   deleted_at: string | null;
   created_at: string;
@@ -67,6 +69,7 @@ function AdminSeasons() {
   const [formStartDate, setFormStartDate] = useState('');
   const [formEarlySpringDeadline, setFormEarlySpringDeadline] = useState('');
   const [formFinalDeadline, setFormFinalDeadline] = useState('');
+  const [formSpreadsheetUrl, setFormSpreadsheetUrl] = useState('');
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -110,6 +113,7 @@ function AdminSeasons() {
           start_date: formStartDate,
           early_spring_deadline: formEarlySpringDeadline,
           final_deadline: formFinalDeadline,
+          spreadsheet_url: formSpreadsheetUrl || null,
         }),
       });
       
@@ -149,6 +153,7 @@ function AdminSeasons() {
           start_date: formStartDate,
           early_spring_deadline: formEarlySpringDeadline,
           final_deadline: formFinalDeadline,
+          spreadsheet_url: formSpreadsheetUrl || null,
         }),
       });
       
@@ -224,6 +229,7 @@ function AdminSeasons() {
     setFormStartDate('');
     setFormEarlySpringDeadline('');
     setFormFinalDeadline('');
+    setFormSpreadsheetUrl('');
     setFormError(null);
   };
 
@@ -234,6 +240,7 @@ function AdminSeasons() {
     setFormStartDate(formatDateTimeLocal(season.start_date));
     setFormEarlySpringDeadline(formatDateTimeLocal(season.early_spring_deadline));
     setFormFinalDeadline(formatDateTimeLocal(season.final_deadline));
+    setFormSpreadsheetUrl(season.spreadsheet_url || '');
     setFormError(null);
     setEditModalOpen(true);
   };
@@ -284,7 +291,10 @@ function AdminSeasons() {
       )}
 
       {loading ? (
-        <div className="text-center py-8">Loading...</div>
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
       ) : (
         <div className="border rounded-lg">
           <Table>
@@ -315,7 +325,14 @@ function AdminSeasons() {
                     <TableCell>{formatDate(season.start_date)}</TableCell>
                     <TableCell>{formatDate(season.early_spring_deadline)}</TableCell>
                     <TableCell>{formatDate(season.final_deadline)}</TableCell>
-                    <TableCell>{season.pass_request_count}</TableCell>
+                    <TableCell>
+                      <a 
+                        href={`/admin/seasons/${season.id}/pass-requests`}
+                        className="text-primary hover:underline"
+                      >
+                        {season.pass_request_count}
+                      </a>
+                    </TableCell>
                     <TableCell>
                       {season.deleted_at ? (
                         <Badge variant="secondary">Archived</Badge>
@@ -338,6 +355,15 @@ function AdminSeasons() {
                           </Button>
                         ) : (
                           <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                            >
+                              <a href={`/admin/seasons/${season.id}/pass-requests`}>
+                                <Users className="w-4 h-4" />
+                              </a>
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
@@ -433,6 +459,17 @@ function AdminSeasons() {
                   required
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-spreadsheet">Alterra Spreadsheet URL (Optional)</Label>
+                <Input
+                  id="create-spreadsheet"
+                  type="url"
+                  value={formSpreadsheetUrl}
+                  onChange={(e) => setFormSpreadsheetUrl(e.target.value)}
+                  placeholder="https://..."
+                  maxLength={500}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateModalOpen(false)}>
@@ -512,6 +549,17 @@ function AdminSeasons() {
                   value={formFinalDeadline}
                   onChange={(e) => setFormFinalDeadline(e.target.value)}
                   required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-spreadsheet">Alterra Spreadsheet URL (Optional)</Label>
+                <Input
+                  id="edit-spreadsheet"
+                  type="url"
+                  value={formSpreadsheetUrl}
+                  onChange={(e) => setFormSpreadsheetUrl(e.target.value)}
+                  placeholder="https://..."
+                  maxLength={500}
                 />
               </div>
             </div>
