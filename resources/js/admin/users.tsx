@@ -141,6 +141,8 @@ function AdminUsers() {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
       });
       
       if (!response.ok) {
