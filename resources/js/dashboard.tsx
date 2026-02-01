@@ -97,7 +97,7 @@ function getPassTypeName(request: PassRequest): string {
   return request.season_pass_type?.pass_type_name ?? request.pass_type ?? 'Unknown';
 }
 
-const formatPrice = (value: number | string | null): string => {
+const formatPrice = (value: number | string | null | undefined): string => {
   if (value === null || value === undefined) return '$ TBA';
   return currency(value).format();
 };

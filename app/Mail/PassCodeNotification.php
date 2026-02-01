@@ -58,6 +58,3 @@ class PassCodeNotification extends Mailable
         return [];
     }
 }
-        return [];
-    }
-}
