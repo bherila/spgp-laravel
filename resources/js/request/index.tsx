@@ -161,14 +161,18 @@ function PassRequestForm() {
 
   if (success) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <Card>
-          <CardContent className="pt-6">
-            <Alert>
-              <AlertDescription className="text-green-600">
-                Pass request submitted successfully! Redirecting to dashboard...
-              </AlertDescription>
-            </Alert>
+          <CardHeader>
+            <CardTitle className="text-2xl text-green-600">Request Submitted!</CardTitle>
+            <CardDescription className="text-lg mt-2">
+              Your pass request has been submitted successfully.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Redirecting you back to your dashboard...
+            </p>
           </CardContent>
         </Card>
       </div>
