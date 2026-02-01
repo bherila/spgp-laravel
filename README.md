@@ -1,14 +1,21 @@
-# Ben Herila's Skeleton Project
+# Season Pass Group Purchase (SPGP)
 
-A web application.
+A specialized Laravel application for coordinating group purchases of ski passes (e.g., Ikon Pass). This system manages seasons, pass types, and pass requests from users, ensuring everyone gets the group discount.
 
 ## Features
 
-- None yet
+- **User Authentication**: Secure login and registration with invite code enforcement.
+- **Season Management**: Admin control over pass seasons, deadlines, and pricing.
+- **Pass Request Workflow**: 
+  - Users request passes for specific seasons.
+  - Support for new requests and renewals.
+  - Admin tracking of redemption codes and email notifications.
+- **Admin Dashboard**: Comprehensive overview of all requests, with tools for bulk operations.
+- **Email Logging**: Detailed history of all system-generated emails.
 
 ## Tech Stack
 
-- **Backend**: Laravel 12 (PHP 8.1+)
+- **Backend**: Laravel 12 (PHP 8.2+)
 - **Frontend**: React 19 with TypeScript
 - **UI Components**: shadcn/ui + Radix UI primitives
 - **Styling**: Tailwind CSS v4
@@ -19,7 +26,7 @@ A web application.
 
 ### Prerequisites
 
-- PHP 8.1 or higher
+- PHP 8.2 or higher
 - Composer
 - Node.js 18+ and pnpm
 - MySQL or SQLite
@@ -29,7 +36,7 @@ A web application.
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd k1flow
+   cd spgp/laravel
    ```
 
 2. **Install dependencies**
@@ -73,7 +80,7 @@ Or use multiple terminals:
 
 ### Create User
 
-Create a new user with a confirmed email address and optional admin status.
+Create a new user with a confirmed email address and optional admin status. This bypasses the invite code requirement.
 
 ```bash
 php artisan user:create "Name" "email@example.com" "password" [--admin]
@@ -81,27 +88,26 @@ php artisan user:create "Name" "email@example.com" "password" [--admin]
 
 ## Database Schema
 
-### Core Tables
-
-- None yet
-
-## API Endpoints
-
-- None yet
+The system uses several core tables:
+- `users`: User accounts with `is_admin` and `invite_code_id`.
+- `seasons`: Definitions for different ski seasons and their deadlines.
+- `season_pass_types`: Pricing and name definitions for passes within a season.
+- `pass_requests`: Individual requests for passes, tracking passholder details and status.
+- `invite_codes`: Codes required for public registration.
+- `email_logs`: History of emails sent to users.
+- `user_logins`: Audit log of user login activity.
 
 ## Deployment
-
-See [Deployment Instructions](#deployment-instructions) below for deploying to a cPanel-hosted Apache server.
 
 ### Deployment Instructions
 
 1. **Upload Project Files**
    - Upload all project files to your server, excluding `node_modules/`, `vendor/`, and `.env`
-   - Place files in a directory outside of `public_html`, e.g., `~/bwh-php/`
+   - Place files in a directory outside of `public_html`, e.g., `~/spgp/`
 
 2. **Install Dependencies**
    ```bash
-   cd ~/bwh-php
+   cd ~/spgp
    composer install --no-dev --optimize-autoloader
    pnpm install
    pnpm run build
@@ -111,7 +117,7 @@ See [Deployment Instructions](#deployment-instructions) below for deploying to a
    - Create `.env` and configure database, `APP_KEY`, and `APP_URL`
 
 4. **Set Up Public Directory**
-   - Copy `~/bwh-php/public/` contents to `~/public_html/`
+   - Copy `~/spgp/public/` contents to `~/public_html/`
    - Update `index.php` paths as needed
 
 5. **Database Setup**
@@ -141,12 +147,6 @@ composer test
 
 # Or directly with artisan
 php artisan test
-
-# Run specific test file
-php artisan test tests/Feature/ExampleTest.php
-
-# Run with coverage (requires Xdebug)
-php artisan test --coverage
 ```
 
 ### Database Safety
@@ -155,56 +155,7 @@ php artisan test --coverage
 
 This is enforced at multiple levels:
 1. `phpunit.xml` sets `DB_CONNECTION=sqlite` and `DB_DATABASE=:memory:`
-2. `Tests\SafeTestCase` verifies SQLite is active and throws an error if not
-
-Even if your `.env` file contains MySQL credentials, tests will use SQLite. This prevents accidentally running tests against a production database.
-
-### Writing Tests
-
-**Feature Tests** (tests that need the Laravel application):
-```php
-namespace Tests\Feature;
-
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-
-class MyFeatureTest extends TestCase
-{
-    use RefreshDatabase; // Safe to use - only affects SQLite in-memory
-
-    public function test_something(): void
-    {
-        // Your test code here
-    }
-}
-```
-
-**Unit Tests** (pure PHP tests without Laravel):
-```php
-namespace Tests\Unit;
-
-use PHPUnit\Framework\TestCase;
-
-class MyUnitTest extends TestCase
-{
-    public function test_something(): void
-    {
-        // Your test code here
-    }
-}
-```
-
-### Test Structure
-
-```
-tests/
-├── Feature/           # Tests requiring full Laravel application
-│   └── ExampleTest.php
-├── Unit/              # Pure PHP unit tests
-│   └── ExampleTest.php
-├── SafeTestCase.php   # Base class enforcing SQLite safety
-└── TestCase.php       # Base class for feature tests
-```
+2. `Tests\SafeTestCase` verifies SQLite is active and throws an error if not.
 
 ## License
 

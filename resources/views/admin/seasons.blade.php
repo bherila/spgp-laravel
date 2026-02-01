@@ -5,5 +5,5 @@
 @endsection
 
 @push('scripts')
-  @vite(['resources/js/admin/seasons.tsx'])
+  @vite(['resources/js/admin/seasons/index.tsx'])
 @endpush

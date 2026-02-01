@@ -34,7 +34,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard/pass-requests', [DashboardController::class, 'passRequests'])->name('dashboard.pass-requests');
     
     // New pass request page
-    Route::get('/request', [PassRequestController::class, 'showRequestForm'])->name('request');
+    Route::get('/request/{season_id}', [PassRequestController::class, 'showRequestForm'])->name('request');
     
     // Pass request routes (user can manage their own)
     Route::get('/pass-requests', [PassRequestController::class, 'list'])->name('pass-requests.list');

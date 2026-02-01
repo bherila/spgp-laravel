@@ -12,9 +12,10 @@ class PassRequestController extends Controller
     /**
      * Show the pass request form.
      */
-    public function showRequestForm()
+    public function showRequestForm(int $seasonId)
     {
-        return view('request');
+        $season = Season::findOrFail($seasonId);
+        return view('request', compact('season'));
     }
 
     /**

@@ -35,6 +35,7 @@ type Step = 'type' | 'details';
 function PassRequestForm() {
   const mount = document.getElementById('request');
   const csrfToken = mount?.getAttribute('data-csrf-token') || '';
+  const initialSeasonId = mount?.getAttribute('data-season-id') ? Number(mount.getAttribute('data-season-id')) : null;
 
   const [step, setStep] = useState<Step>('type');
   const [seasons, setSeasons] = useState<Season[]>([]);
@@ -44,7 +45,7 @@ function PassRequestForm() {
   const [success, setSuccess] = useState(false);
 
   // Form state
-  const [seasonId, setSeasonId] = useState<number | null>(null);
+  const [seasonId, setSeasonId] = useState<number | null>(initialSeasonId);
   const [passTypeId, setPassTypeId] = useState<number | null>(null);
   const [isRenewal, setIsRenewal] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -57,13 +58,15 @@ function PassRequestForm() {
     const fetchSeasons = async () => {
       try {
         setLoading(true);
+        // If we have an initialSeasonId, we might still want to fetch it to get its details
         const response = await fetch('/pass-requests/seasons', {
           headers: { 'Accept': 'application/json' },
         });
         if (!response.ok) throw new Error('Failed to fetch seasons');
         const data = await response.json();
         setSeasons(data);
-        if (data.length > 0) {
+        
+        if (!seasonId && data.length > 0) {
           setSeasonId(data[0].id);
         }
       } catch (err) {
@@ -197,21 +200,11 @@ function PassRequestForm() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="season">Season</Label>
-                <select
-                  id="season"
-                  value={seasonId || ''}
-                  onChange={(e) => setSeasonId(Number(e.target.value))}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  required
-                >
-                  {seasons.map((season) => (
-                    <option key={season.id} value={season.id}>
-                      {season.pass_name} {season.pass_year}
-                    </option>
-                  ))}
-                </select>
+              <div className="space-y-1">
+                <Label>Season</Label>
+                <p className="text-lg font-semibold">
+                  {selectedSeason?.pass_name} {selectedSeason?.pass_year}
+                </p>
               </div>
 
               <div className="space-y-2">

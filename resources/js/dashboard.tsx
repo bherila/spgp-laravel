@@ -80,6 +80,7 @@ function getPassTypeName(request: PassRequest): string {
 function Dashboard() {
   const mount = document.getElementById('dashboard');
   const userName = mount?.getAttribute('data-user-name') || 'User';
+  const isAdmin = mount?.getAttribute('data-is-admin') === '1';
 
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,8 +186,12 @@ function Dashboard() {
     }
   };
 
-  // Calculate total pass requests
-  const totalRequests = seasons.reduce((sum, season) => sum + (season.pass_requests?.length || 0), 0);
+  // Filter to seasons that are current or upcoming
+  const now = new Date();
+  const availableSeasons = seasons.filter(s => {
+    const finalDeadline = new Date(s.final_deadline);
+    return finalDeadline >= now && s.deleted_at === null;
+  });
   
   // Filter to seasons with pass requests
   const seasonsWithRequests = seasons.filter(s => s.pass_requests && s.pass_requests.length > 0);
@@ -199,35 +204,37 @@ function Dashboard() {
           Welcome back, {userName}!
         </p>
       </div>
-      
-      <div className="grid gap-6 md:grid-cols-3 mb-8">
-        <div className="rounded-lg border p-6">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Total Pass Requests</h3>
-          {loading ? (
-            <Skeleton className="h-9 w-16 mt-2" />
-          ) : (
-            <p className="text-3xl font-bold mt-2">{totalRequests}</p>
-          )}
+
+      {availableSeasons.length > 0 && (
+        <div className="grid gap-6 mb-12">
+          {availableSeasons.map(season => {
+            const startDate = new Date(season.start_date);
+            const isStarted = startDate <= now;
+            const canRequest = isStarted || isAdmin;
+            const openDateStr = startDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+
+            return (
+              <div key={season.id} className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold">{season.pass_name} {season.pass_year}</h2>
+                    <p className="text-muted-foreground mt-1">
+                      Final deadline: {formatDate(season.final_deadline)}
+                    </p>
+                  </div>
+                  <Button asChild size="lg" disabled={!canRequest} className={!canRequest ? 'opacity-50 pointer-events-none' : ''}>
+                    {canRequest ? (
+                      <a href={`/request/${season.id}`}>Request New Pass</a>
+                    ) : (
+                      <span>Opens on {openDateStr}</span>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <div className="rounded-lg border p-6">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Active Seasons</h3>
-          {loading ? (
-            <Skeleton className="h-9 w-16 mt-2" />
-          ) : (
-            <p className="text-3xl font-bold mt-2">{seasons.length}</p>
-          )}
-        </div>
-        <div className="rounded-lg border p-6">
-          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Pending</h3>
-          {loading ? (
-            <Skeleton className="h-9 w-16 mt-2" />
-          ) : (
-            <p className="text-3xl font-bold mt-2">
-              {seasons.reduce((sum, s) => sum + (s.pass_requests?.filter(r => !r.redemption_date)?.length || 0), 0)}
-            </p>
-          )}
-        </div>
-      </div>
+      )}
 
       {error && (
         <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-lg text-destructive">
@@ -240,14 +247,23 @@ function Dashboard() {
         
         {loading ? (
           <div className="space-y-4">
-            <div className="border rounded-lg p-4">
-              <Skeleton className="h-6 w-48 mb-4" />
-              <div className="space-y-3">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="border rounded-lg p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+                <div className="space-y-3">
+                  <div className="border rounded overflow-hidden">
+                    <div className="bg-muted h-10 w-full" />
+                    <div className="p-3 space-y-3">
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-8 w-full" />
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         ) : seasonsWithRequests.length === 0 ? (
           <div className="rounded-lg border p-8 text-center text-muted-foreground">
