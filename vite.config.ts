@@ -19,6 +19,7 @@ export default defineConfig({
                 'resources/js/admin/seasons.tsx',
                 'resources/js/admin/users.tsx',
                 'resources/js/admin/season-pass-requests.tsx',
+                'resources/js/admin/email-log.tsx',
                 'resources/js/request/index.tsx',
             ],
       refresh: true,

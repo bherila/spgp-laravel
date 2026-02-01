@@ -50,6 +50,14 @@ class Season extends Model
     }
 
     /**
+     * Get the pass types available for this season.
+     */
+    public function passTypes(): HasMany
+    {
+        return $this->hasMany(SeasonPassType::class)->orderBy('sort_order');
+    }
+
+    /**
      * Get a display name for this season.
      */
     public function getDisplayNameAttribute(): string

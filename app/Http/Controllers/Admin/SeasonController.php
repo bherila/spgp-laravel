@@ -121,7 +121,7 @@ class SeasonController extends Controller
         $season = Season::findOrFail($id);
         
         $query = PassRequest::where('season_id', $id)
-            ->with('user:id,name,email');
+            ->with(['user:id,name,email', 'seasonPassType']);
 
         // Filter by is_renewal if specified
         if ($request->has('is_renewal')) {

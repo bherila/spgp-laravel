@@ -35,6 +35,7 @@ class PassRequest extends Model
         'id',
         'user_id',
         'season_id',
+        'season_pass_type_id',
         'passholder_email',
         'pass_type',
         'passholder_first_name',
@@ -93,5 +94,21 @@ class PassRequest extends Model
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
+    }
+
+    /**
+     * Get the pass type for this request.
+     */
+    public function seasonPassType(): BelongsTo
+    {
+        return $this->belongsTo(SeasonPassType::class);
+    }
+
+    /**
+     * Get the display name for the pass type.
+     */
+    public function getPassTypeNameAttribute(): string
+    {
+        return $this->seasonPassType?->pass_type_name ?? $this->pass_type ?? 'Unknown';
     }
 }

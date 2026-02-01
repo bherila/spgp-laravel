@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PassRequest;
 use App\Models\Season;
+use App\Models\SeasonPassType;
 use Illuminate\Http\Request;
 
 class PassRequestController extends Controller
@@ -31,6 +32,7 @@ class PassRequestController extends Controller
             })
             ->with(['passRequests' => function ($query) use ($user) {
                 $query->where('user_id', $user->id)
+                    ->with('seasonPassType')
                     ->orderBy('created_at', 'desc');
             }])
             ->orderBy('pass_year', 'desc')
@@ -49,10 +51,25 @@ class PassRequestController extends Controller
         
         $seasons = Season::query()
             ->where('final_deadline', '>=', $now)
+            ->with(['passTypes' => function ($query) {
+                $query->orderBy('sort_order');
+            }])
             ->orderBy('pass_year', 'desc')
             ->get();
 
         return response()->json($seasons);
+    }
+
+    /**
+     * Get pass types for a specific season.
+     */
+    public function getPassTypes(int $seasonId)
+    {
+        $passTypes = SeasonPassType::where('season_id', $seasonId)
+            ->orderBy('sort_order')
+            ->get();
+
+        return response()->json($passTypes);
     }
 
     /**
@@ -64,8 +81,8 @@ class PassRequestController extends Controller
         
         $validated = $request->validate([
             'season_id' => ['required', 'exists:seasons,id'],
+            'season_pass_type_id' => ['required', 'exists:season_pass_types,id'],
             'passholder_email' => ['required', 'email', 'max:255'],
-            'pass_type' => ['required', 'string', 'max:255'],
             'passholder_first_name' => ['required', 'string', 'max:255'],
             'passholder_last_name' => ['required', 'string', 'max:255'],
             'passholder_birth_date' => ['required', 'date'],
@@ -73,6 +90,9 @@ class PassRequestController extends Controller
             'renewal_pass_id' => ['nullable', 'string', 'max:255'],
         ]);
 
+        // Get the pass type name for legacy compatibility
+        $passType = SeasonPassType::find($validated['season_pass_type_id']);
+        $validated['pass_type'] = $passType?->pass_type_name ?? '';
         $validated['user_id'] = $user->id;
 
         $passRequest = PassRequest::create($validated);
@@ -107,6 +127,52 @@ class PassRequestController extends Controller
     }
 
     /**
+     * Update the renewal order number for a pass request (self-reported).
+     */
+    public function updateRenewalOrder(Request $request, string $id)
+    {
+        $user = $request->user();
+        $passRequest = PassRequest::findOrFail($id);
+
+        // Check ownership
+        if ($passRequest->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'renewal_order_number' => ['required', 'string', 'max:30'],
+        ]);
+
+        $passRequest->update([
+            'renewal_order_number' => $validated['renewal_order_number'],
+            'assign_code_date' => now(),
+        ]);
+
+        return response()->json($passRequest);
+    }
+
+    /**
+     * Remove the renewal order number from a pass request.
+     */
+    public function removeRenewalOrder(Request $request, string $id)
+    {
+        $user = $request->user();
+        $passRequest = PassRequest::findOrFail($id);
+
+        // Check ownership
+        if ($passRequest->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $passRequest->update([
+            'renewal_order_number' => null,
+            'assign_code_date' => null,
+        ]);
+
+        return response()->json($passRequest);
+    }
+
+    /**
      * Delete a pass request (only by owner or admin).
      */
     public function destroy(Request $request, string $id)
@@ -119,9 +185,9 @@ class PassRequestController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Only allow deletion if no promo code or renewal order number assigned
-        if ($passRequest->promo_code || $passRequest->renewal_order_number) {
-            return response()->json(['message' => 'Cannot delete a pass request with a code assigned'], 400);
+        // Only allow deletion if no promo code assigned (renewal order can still be deleted)
+        if ($passRequest->promo_code) {
+            return response()->json(['message' => 'Cannot delete a pass request with a promo code assigned'], 400);
         }
 
         $passRequest->delete();

@@ -163,6 +163,12 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
                   >
                     Seasons
                   </a>
+                  <a
+                    href='/admin/email-log'
+                    className='block px-4 py-2 text-sm hover:bg-muted'
+                  >
+                    Email Log
+                  </a>
                 </div>
               )}
             </li>

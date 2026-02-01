@@ -28,6 +28,7 @@ class DashboardController extends Controller
         }])
         ->with(['passRequests' => function ($query) use ($user) {
             $query->where('user_id', $user->id)
+                  ->with('seasonPassType')
                   ->orderBy('created_at', 'desc');
         }])
         ->orderBy('pass_year', 'desc')

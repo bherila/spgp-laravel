@@ -3,8 +3,10 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PassRequestController;
+use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\InviteCodeController;
 use App\Http\Controllers\Admin\SeasonController;
+use App\Http\Controllers\Admin\SeasonPassTypeController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,9 +39,12 @@ Route::middleware('auth')->group(function () {
     // Pass request routes (user can manage their own)
     Route::get('/pass-requests', [PassRequestController::class, 'list'])->name('pass-requests.list');
     Route::get('/pass-requests/seasons', [PassRequestController::class, 'getActiveSeasons'])->name('pass-requests.seasons');
+    Route::get('/pass-requests/seasons/{id}/pass-types', [PassRequestController::class, 'getPassTypes'])->name('pass-requests.pass-types');
     Route::post('/pass-requests', [PassRequestController::class, 'store'])->name('pass-requests.store');
     Route::put('/pass-requests/{id}', [PassRequestController::class, 'update'])->name('pass-requests.update');
     Route::delete('/pass-requests/{id}', [PassRequestController::class, 'destroy'])->name('pass-requests.destroy');
+    Route::post('/pass-requests/{id}/renewal-order', [PassRequestController::class, 'updateRenewalOrder'])->name('pass-requests.renewal-order');
+    Route::delete('/pass-requests/{id}/renewal-order', [PassRequestController::class, 'removeRenewalOrder'])->name('pass-requests.renewal-order.remove');
     
     // Admin routes - protected by 'can:admin' gate
     Route::prefix('admin')->middleware('can:admin')->group(function () {
@@ -59,6 +64,12 @@ Route::middleware('auth')->group(function () {
         Route::delete('/seasons/{id}', [SeasonController::class, 'archive'])->name('admin.seasons.archive');
         Route::post('/seasons/{id}/restore', [SeasonController::class, 'restore'])->name('admin.seasons.restore');
         
+        // Season pass types
+        Route::get('/seasons/{id}/pass-types', [SeasonPassTypeController::class, 'list'])->name('admin.seasons.pass-types.list');
+        Route::post('/seasons/{id}/pass-types', [SeasonPassTypeController::class, 'store'])->name('admin.seasons.pass-types.store');
+        Route::put('/pass-types/{id}', [SeasonPassTypeController::class, 'update'])->name('admin.pass-types.update');
+        Route::delete('/pass-types/{id}', [SeasonPassTypeController::class, 'destroy'])->name('admin.pass-types.destroy');
+        
         // Season pass requests admin
         Route::get('/seasons/{id}/pass-requests', [SeasonController::class, 'showPassRequests'])->name('admin.seasons.pass-requests');
         Route::get('/seasons/{id}/pass-requests/list', [SeasonController::class, 'listPassRequests'])->name('admin.seasons.pass-requests.list');
@@ -66,6 +77,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/seasons/{id}/pass-requests/clear-codes', [SeasonController::class, 'clearCodes'])->name('admin.seasons.pass-requests.clear-codes');
         Route::post('/seasons/{id}/pass-requests/send-emails', [SeasonController::class, 'sendEmails'])->name('admin.seasons.pass-requests.send-emails');
         Route::delete('/pass-requests/{id}/admin', [SeasonController::class, 'deletePassRequest'])->name('admin.pass-requests.destroy');
+        
+        // Email logs
+        Route::get('/email-log', [EmailLogController::class, 'index'])->name('admin.email-log');
+        Route::get('/email-log/list', [EmailLogController::class, 'list'])->name('admin.email-log.list');
         
         // Users
         Route::get('/users', [UserController::class, 'index'])->name('admin.users');
