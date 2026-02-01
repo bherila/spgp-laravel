@@ -4,6 +4,8 @@ export interface SeasonPassType {
   pass_type_name: string;
   regular_early_price: number;
   regular_regular_price: number;
+  renewal_early_price: number;
+  renewal_regular_price: number;
   group_early_price: number;
   group_regular_price: number;
   sort_order: number;

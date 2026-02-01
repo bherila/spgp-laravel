@@ -22,6 +22,8 @@ class SeasonPassType extends Model
         'pass_type_name',
         'regular_early_price',
         'regular_regular_price',
+        'renewal_early_price',
+        'renewal_regular_price',
         'group_early_price',
         'group_regular_price',
         'sort_order',
@@ -37,6 +39,8 @@ class SeasonPassType extends Model
         return [
             'regular_early_price' => 'decimal:2',
             'regular_regular_price' => 'decimal:2',
+            'renewal_early_price' => 'decimal:2',
+            'renewal_regular_price' => 'decimal:2',
             'group_early_price' => 'decimal:2',
             'group_regular_price' => 'decimal:2',
             'sort_order' => 'integer',

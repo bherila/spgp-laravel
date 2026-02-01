@@ -16,6 +16,8 @@ interface SeasonPassType {
   pass_type_name: string;
   regular_early_price: string;
   regular_regular_price: string;
+  renewal_early_price: string;
+  renewal_regular_price: string;
   group_early_price: string;
   group_regular_price: string;
   sort_order: number;
@@ -232,7 +234,15 @@ function PassRequestForm() {
                   <div className="grid gap-2">
                     {availablePassTypes.map((type) => {
                       const groupPrice = isEarlyBird ? type.group_early_price : type.group_regular_price;
-                      const regularPrice = isEarlyBird ? type.regular_early_price : type.regular_regular_price;
+                      
+                      // Determine regular price based on renewal status and early bird
+                      let regularPrice;
+                      if (isRenewal) {
+                        regularPrice = isEarlyBird ? type.renewal_early_price : type.renewal_regular_price;
+                      } else {
+                        regularPrice = isEarlyBird ? type.regular_early_price : type.regular_regular_price;
+                      }
+                      
                       const savings = parseFloat(regularPrice) - parseFloat(groupPrice);
                       return (
                         <label

@@ -41,6 +41,8 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
   const [formTypeName, setFormTypeName] = useState('');
   const [formRegularEarlyPrice, setFormRegularEarlyPrice] = useState('');
   const [formRegularRegularPrice, setFormRegularRegularPrice] = useState('');
+  const [formRenewalEarlyPrice, setFormRenewalEarlyPrice] = useState('');
+  const [formRenewalRegularPrice, setFormRenewalRegularPrice] = useState('');
   const [formGroupEarlyPrice, setFormGroupEarlyPrice] = useState('');
   const [formGroupRegularPrice, setFormGroupRegularPrice] = useState('');
   const [formSortOrder, setFormSortOrder] = useState('0');
@@ -72,6 +74,8 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
     setFormTypeName('');
     setFormRegularEarlyPrice('');
     setFormRegularRegularPrice('');
+    setFormRenewalEarlyPrice('');
+    setFormRenewalRegularPrice('');
     setFormGroupEarlyPrice('');
     setFormGroupRegularPrice('');
     setFormSortOrder('0');
@@ -103,6 +107,8 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
           pass_type_name: formTypeName,
           regular_early_price: parseFloat(formRegularEarlyPrice),
           regular_regular_price: parseFloat(formRegularRegularPrice),
+          renewal_early_price: parseFloat(formRenewalEarlyPrice),
+          renewal_regular_price: parseFloat(formRenewalRegularPrice),
           group_early_price: parseFloat(formGroupEarlyPrice),
           group_regular_price: parseFloat(formGroupRegularPrice),
           sort_order: parseInt(formSortOrder, 10),
@@ -152,6 +158,8 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
     setFormTypeName(pt.pass_type_name);
     setFormRegularEarlyPrice(pt.regular_early_price.toString());
     setFormRegularRegularPrice(pt.regular_regular_price.toString());
+    setFormRenewalEarlyPrice(pt.renewal_early_price.toString());
+    setFormRenewalRegularPrice(pt.renewal_regular_price.toString());
     setFormGroupEarlyPrice(pt.group_early_price.toString());
     setFormGroupRegularPrice(pt.group_regular_price.toString());
     setFormSortOrder(pt.sort_order.toString());
@@ -160,7 +168,7 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] md:max-w-6xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Manage Pass Types: {season?.pass_name} {season?.pass_year}</DialogTitle>
           <DialogDescription>
@@ -188,7 +196,8 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
                     {error}
                   </div>
                 )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   <div className="space-y-2">
                     <Label htmlFor="pt-name">Type Name</Label>
                     <Input id="pt-name" value={formTypeName} onChange={e => setFormTypeName(e.target.value)} placeholder="e.g. Adult (23-64)" required />
@@ -197,9 +206,11 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
                     <Label htmlFor="pt-sort">Sort Order</Label>
                     <Input id="pt-sort" type="number" value={formSortOrder} onChange={e => setFormSortOrder(e.target.value)} required />
                   </div>
-                  
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                   <div className="border p-3 rounded-md space-y-3 bg-background">
-                    <h5 className="text-sm font-semibold border-b pb-1">Non-Group Pricing</h5>
+                    <h5 className="text-sm font-semibold border-b pb-1">Non-Group (New)</h5>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label htmlFor="pt-reg-early" className="text-xs">Early Spring</Label>
@@ -213,7 +224,21 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
                   </div>
 
                   <div className="border p-3 rounded-md space-y-3 bg-background">
-                    <h5 className="text-sm font-semibold border-b pb-1 text-primary">Group Pricing</h5>
+                    <h5 className="text-sm font-semibold border-b pb-1">Non-Group (Renewal)</h5>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="pt-renew-early" className="text-xs">Early Spring</Label>
+                        <Input id="pt-renew-early" type="number" step="0.01" value={formRenewalEarlyPrice} onChange={e => setFormRenewalEarlyPrice(e.target.value)} required />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="pt-renew-reg" className="text-xs">Late Spring / Summer</Label>
+                        <Input id="pt-renew-reg" type="number" step="0.01" value={formRenewalRegularPrice} onChange={e => setFormRenewalRegularPrice(e.target.value)} required />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border p-3 rounded-md space-y-3 bg-background">
+                    <h5 className="text-sm font-semibold border-b pb-1 text-primary">Group Pricing (Flat)</h5>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label htmlFor="pt-grp-early" className="text-xs">Early Spring</Label>
@@ -226,6 +251,7 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
                     </div>
                   </div>
                 </div>
+
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="ghost" onClick={() => setFormOpen(false)}>Cancel</Button>
                   <Button type="submit" disabled={submitting}>
@@ -236,24 +262,26 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
             </div>
           )}
 
-          <div className="border rounded-lg overflow-hidden">
+          <div className="border rounded-lg overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-16">Sort</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="text-center bg-muted/20">Non-Group Early</TableHead>
-                  <TableHead className="text-center bg-muted/20">Non-Group Reg</TableHead>
-                  <TableHead className="text-center bg-primary/5">Group Early</TableHead>
-                  <TableHead className="text-center bg-primary/5">Group Reg</TableHead>
+                  <TableHead className="w-12">Sort</TableHead>
+                  <TableHead className="min-w-[150px]">Name</TableHead>
+                  <TableHead className="text-center bg-muted/20">New Early</TableHead>
+                  <TableHead className="text-center bg-muted/20">New Reg</TableHead>
+                  <TableHead className="text-center bg-muted/40">Renew Early</TableHead>
+                  <TableHead className="text-center bg-muted/40">Renew Reg</TableHead>
+                  <TableHead className="text-center bg-primary/5">Grp Early</TableHead>
+                  <TableHead className="text-center bg-primary/5">Grp Reg</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-4"><Skeleton className="h-8 w-full" /></TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-4"><Skeleton className="h-8 w-full" /></TableCell></TableRow>
                 ) : passTypes.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center py-4 text-muted-foreground">No pass types defined yet.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center py-4 text-muted-foreground">No pass types defined yet.</TableCell></TableRow>
                 ) : (
                   passTypes.map(pt => (
                     <TableRow key={pt.id}>
@@ -261,6 +289,8 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
                       <TableCell className="font-medium">{pt.pass_type_name}</TableCell>
                       <TableCell className="text-center">${pt.regular_early_price}</TableCell>
                       <TableCell className="text-center">${pt.regular_regular_price}</TableCell>
+                      <TableCell className="text-center italic">${pt.renewal_early_price}</TableCell>
+                      <TableCell className="text-center italic">${pt.renewal_regular_price}</TableCell>
                       <TableCell className="text-center font-semibold text-primary">${pt.group_early_price}</TableCell>
                       <TableCell className="text-center font-semibold text-primary">${pt.group_regular_price}</TableCell>
                       <TableCell className="text-right">
