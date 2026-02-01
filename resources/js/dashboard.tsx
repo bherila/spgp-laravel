@@ -30,7 +30,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { FileEdit, Trash2, X } from 'lucide-react';
+import { FileEdit, Trash2, X, Plus } from 'lucide-react';
 
 interface SeasonPassType {
   id: number;
@@ -239,7 +239,10 @@ function Dashboard() {
                   </div>
                   <Button asChild size="lg" disabled={!canRequest} className={!canRequest ? 'opacity-50 pointer-events-none' : ''}>
                     {canRequest ? (
-                      <a href={`/request/${season.id}`}>Request New Pass</a>
+                      <a href={`/request/${season.id}`}>
+                        <Plus className="w-5 h-5 mr-2" />
+                        Request New Pass
+                      </a>
                     ) : (
                       <span>Opens on {openDateStr}</span>
                     )}
@@ -347,7 +350,7 @@ function Dashboard() {
                                 onClick={() => handleOpenRenewalModal(request)}
                               >
                                 <FileEdit className="w-4 h-4 mr-1" />
-                                {request.renewal_order_number ? 'Edit' : 'Report'} Renewal
+                                {request.renewal_order_number ? 'Edit renewal order #' : 'Enter renewal order #'}
                               </Button>
                               {!request.promo_code && (
                                 cancelConfirmId === request.id ? (
