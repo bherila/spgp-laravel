@@ -48,10 +48,14 @@ class PassRequestController extends Controller
      */
     public function getActiveSeasons()
     {
-        $now = now();
+        // Get current time in server's local timezone
+        $now = now(date_default_timezone_get());
+        
+        // We still query in UTC because that's how it's stored
+        $nowUtc = $now->copy()->setTimezone('UTC');
         
         $seasons = Season::query()
-            ->where('final_deadline', '>=', $now)
+            ->where('final_deadline', '>=', $nowUtc)
             ->with(['passTypes' => function ($query) {
                 $query->orderBy('sort_order');
             }])

@@ -33,6 +33,18 @@ interface Season {
 
 type Step = 'type' | 'details';
 
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString(undefined, { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
 function PassRequestForm() {
   const mount = document.getElementById('request');
   const csrfToken = mount?.getAttribute('data-csrf-token') || '';
@@ -256,7 +268,7 @@ function PassRequestForm() {
                 )}
                 {isEarlyBird && selectedSeason && (
                   <p className="text-sm text-green-600">
-                    🎉 Early bird pricing! Valid until {new Date(selectedSeason.early_spring_deadline).toLocaleDateString()}
+                    🎉 Early bird pricing! Valid until {formatDate(selectedSeason.early_spring_deadline)}
                   </p>
                 )}
               </div>

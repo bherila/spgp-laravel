@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Season } from './types';
-import { formatDateTimeLocal } from './utils';
+import { formatDateTimeLocal, toIsoString } from './utils';
 
 interface SeasonFormProps {
   open: boolean;
@@ -69,9 +69,9 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
         body: JSON.stringify({
           pass_name: passName,
           pass_year: parseInt(passYear, 10),
-          start_date: startDate,
-          early_spring_deadline: earlySpringDeadline,
-          final_deadline: finalDeadline,
+          start_date: toIsoString(startDate),
+          early_spring_deadline: toIsoString(earlySpringDeadline),
+          final_deadline: toIsoString(finalDeadline),
           spreadsheet_url: spreadsheetUrl || null,
         }),
       });
