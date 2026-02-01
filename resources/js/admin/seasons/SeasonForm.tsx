@@ -112,7 +112,7 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
                 id="pass-name"
                 value={passName}
                 onChange={(e) => setPassName(e.target.value)}
-                placeholder="Ikon Pass"
+                placeholder="TBD Pass"
                 required
                 maxLength={100}
               />
@@ -160,7 +160,7 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="spreadsheet">Alterra Spreadsheet URL (Optional)</Label>
+              <Label htmlFor="spreadsheet">Spreadsheet URL (Optional)</Label>
               <Input
                 id="spreadsheet"
                 type="url"

@@ -3,7 +3,7 @@
 - **Architecture**: Laravel 12 API + Blade shell + React 19/TypeScript via Vite. Blade routes in `routes/web.php` return minimal views that mount React roots with `data-*` props for hydration (e.g., `data-user-name`, `data-is-admin`).
 - **Core Models**:
   - `User`: Standard user with `is_admin` boolean and `invite_code_id`.
-  - `Season`: Represents a ski season (e.g., Ikon 2025-26) with deadlines (`start_date`, `early_spring_deadline`, `final_deadline`).
+  - `Season`: Represents a ski season (e.g., 2025-26) with deadlines (`start_date`, `early_spring_deadline`, `final_deadline`).
   - `SeasonPassType`: Pricing tiers for a season (Adult, Young Adult, etc.) with `regular_price`, `group_early_price`, and `group_price`.
   - `PassRequest`: A user's request for a pass. Tracks passholder details (name, DOB, email) and status (promo code, redemption date).
   - `InviteCode`: Required for public registration, tracks usage limits.

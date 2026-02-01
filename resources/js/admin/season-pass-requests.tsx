@@ -379,7 +379,7 @@ function SeasonPassRequestsAdmin() {
           <Button variant="outline" asChild>
             <a href={season.spreadsheet_url} target="_blank" rel="noopener noreferrer">
               <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Alterra Spreadsheet
+              Spreadsheet
             </a>
           </Button>
         )}

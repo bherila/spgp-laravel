@@ -1,6 +1,6 @@
 # Season Pass Group Purchase (SPGP)
 
-A specialized Laravel application for coordinating group purchases of ski passes (e.g., Ikon Pass). This system manages seasons, pass types, and pass requests from users, ensuring everyone gets the group discount.
+A specialized Laravel application for coordinating group purchases of ski passes. This system manages seasons, pass types, and pass requests from users, ensuring everyone gets the group discount.
 
 ## Features
 
