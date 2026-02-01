@@ -91,7 +91,7 @@ php artisan user:create "Name" "email@example.com" "password" [--admin]
 The system uses several core tables:
 - `users`: User accounts with `is_admin` and `invite_code_id`.
 - `seasons`: Definitions for different ski seasons and their deadlines.
-- `season_pass_types`: Pricing and name definitions for passes within a season.
+- `season_pass_types`: Pricing and name definitions for passes within a season. Includes 4-tier pricing: (Group, Non-Group) x (Early Spring, Late Spring/Summer).
 - `pass_requests`: Individual requests for passes, tracking passholder details and status.
 - `invite_codes`: Codes required for public registration.
 - `email_logs`: History of emails sent to users.

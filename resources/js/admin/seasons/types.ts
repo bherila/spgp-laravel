@@ -2,9 +2,10 @@ export interface SeasonPassType {
   id: number;
   season_id: number;
   pass_type_name: string;
-  regular_price: number;
+  regular_early_price: number;
+  regular_regular_price: number;
   group_early_price: number;
-  group_price: number;
+  group_regular_price: number;
   sort_order: number;
 }
 

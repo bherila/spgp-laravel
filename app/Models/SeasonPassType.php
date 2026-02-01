@@ -20,9 +20,10 @@ class SeasonPassType extends Model
     protected $fillable = [
         'season_id',
         'pass_type_name',
-        'regular_price',
+        'regular_early_price',
+        'regular_regular_price',
         'group_early_price',
-        'group_price',
+        'group_regular_price',
         'sort_order',
     ];
 
@@ -34,9 +35,10 @@ class SeasonPassType extends Model
     protected function casts(): array
     {
         return [
-            'regular_price' => 'decimal:2',
+            'regular_early_price' => 'decimal:2',
+            'regular_regular_price' => 'decimal:2',
             'group_early_price' => 'decimal:2',
-            'group_price' => 'decimal:2',
+            'group_regular_price' => 'decimal:2',
             'sort_order' => 'integer',
         ];
     }

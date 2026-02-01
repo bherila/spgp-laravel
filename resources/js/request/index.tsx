@@ -14,9 +14,10 @@ interface SeasonPassType {
   id: number;
   season_id: number;
   pass_type_name: string;
-  regular_price: string;
+  regular_early_price: string;
+  regular_regular_price: string;
   group_early_price: string;
-  group_price: string;
+  group_regular_price: string;
   sort_order: number;
 }
 
@@ -218,8 +219,9 @@ function PassRequestForm() {
                 ) : (
                   <div className="grid gap-2">
                     {availablePassTypes.map((type) => {
-                      const groupPrice = isEarlyBird ? type.group_early_price : type.group_price;
-                      const savings = parseFloat(type.regular_price) - parseFloat(groupPrice);
+                      const groupPrice = isEarlyBird ? type.group_early_price : type.group_regular_price;
+                      const regularPrice = isEarlyBird ? type.regular_early_price : type.regular_regular_price;
+                      const savings = parseFloat(regularPrice) - parseFloat(groupPrice);
                       return (
                         <label
                           key={type.id}
@@ -242,7 +244,7 @@ function PassRequestForm() {
                           </div>
                           <div className="text-right text-sm">
                             <span className="font-medium">{formatPrice(groupPrice)}</span>
-                            <span className="text-muted-foreground line-through ml-2">{formatPrice(type.regular_price)}</span>
+                            <span className="text-muted-foreground line-through ml-2">{formatPrice(regularPrice)}</span>
                             {savings > 0 && (
                               <span className="text-green-600 ml-2">(Save {formatPrice(savings.toString())})</span>
                             )}
