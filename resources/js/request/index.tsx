@@ -428,7 +428,7 @@ function PassRequestForm() {
 
                 <div className="space-y-2">
                   <Label htmlFor="email">
-                    Email associated with Ikon Pass Account *
+                    Email associated with passholder account *
                   </Label>
                   <Input
                     id="email"
@@ -438,7 +438,7 @@ function PassRequestForm() {
                     required
                   />
                   <p className="text-sm text-muted-foreground">
-                    This may be your own email or the individual's email. It does not need to be a Meta email.
+                    This may be your own email or the individual's email. It might not be - and does not need to be - your work email.
                   </p>
                 </div>
 

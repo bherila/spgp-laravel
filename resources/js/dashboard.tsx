@@ -88,6 +88,7 @@ function Dashboard() {
   const mount = document.getElementById('dashboard');
   const userName = mount?.getAttribute('data-user-name') || 'User';
   const isAdmin = mount?.getAttribute('data-is-admin') === '1';
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,6 +137,7 @@ function Dashboard() {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
         },
         body: JSON.stringify({ renewal_order_number: renewalOrderNumber }),
       });
@@ -160,7 +162,10 @@ function Dashboard() {
     try {
       const response = await fetch(`/api/pass-requests/${requestId}/renewal-order`, {
         method: 'DELETE',
-        headers: { 'Accept': 'application/json' },
+        headers: { 
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
       });
 
       if (!response.ok) {
@@ -178,7 +183,10 @@ function Dashboard() {
     try {
       const response = await fetch(`/api/pass-requests/${requestId}`, {
         method: 'DELETE',
-        headers: { 'Accept': 'application/json' },
+        headers: { 
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
       });
 
       if (!response.ok) {
