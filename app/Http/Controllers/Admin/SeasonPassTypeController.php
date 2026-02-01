@@ -30,12 +30,12 @@ class SeasonPassTypeController extends Controller
 
         $validated = $request->validate([
             'pass_type_name' => ['required', 'string', 'max:255'],
-            'regular_early_price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
-            'regular_regular_price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
-            'renewal_early_price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
-            'renewal_regular_price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
-            'group_early_price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
-            'group_regular_price' => ['required', 'numeric', 'min:0', 'max:999999.99'],
+            'regular_early_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'regular_regular_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'renewal_early_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'renewal_regular_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'group_early_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'group_regular_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
         ]);
 
@@ -61,12 +61,12 @@ class SeasonPassTypeController extends Controller
 
         $validated = $request->validate([
             'pass_type_name' => ['sometimes', 'string', 'max:255'],
-            'regular_early_price' => ['sometimes', 'numeric', 'min:0', 'max:999999.99'],
-            'regular_regular_price' => ['sometimes', 'numeric', 'min:0', 'max:999999.99'],
-            'renewal_early_price' => ['sometimes', 'numeric', 'min:0', 'max:999999.99'],
-            'renewal_regular_price' => ['sometimes', 'numeric', 'min:0', 'max:999999.99'],
-            'group_early_price' => ['sometimes', 'numeric', 'min:0', 'max:999999.99'],
-            'group_regular_price' => ['sometimes', 'numeric', 'min:0', 'max:999999.99'],
+            'regular_early_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'regular_regular_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'renewal_early_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'renewal_regular_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'group_early_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'group_regular_price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
         ]);
 

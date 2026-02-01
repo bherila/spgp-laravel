@@ -150,7 +150,8 @@ function PassRequestForm() {
   const canProceedToDetails = seasonId && passTypeId;
 
   // Format price for display
-  const formatPrice = (price: string) => {
+  const formatPrice = (price: string | null) => {
+    if (price === null) return 'TBA';
     const num = parseFloat(price);
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
   };
@@ -235,44 +236,95 @@ function PassRequestForm() {
                     {availablePassTypes.map((type) => {
                       const groupPrice = isEarlyBird ? type.group_early_price : type.group_regular_price;
                       
-                      // Determine regular price based on renewal status and early bird
-                      let regularPrice;
-                      if (isRenewal) {
-                        regularPrice = isEarlyBird ? type.renewal_early_price : type.renewal_regular_price;
-                      } else {
-                        regularPrice = isEarlyBird ? type.regular_early_price : type.regular_regular_price;
-                      }
+                                            // Determine regular price based on renewal status and early bird
                       
-                      const savings = parseFloat(regularPrice) - parseFloat(groupPrice);
-                      return (
-                        <label
-                          key={type.id}
-                          className={`flex items-center justify-between p-3 rounded-md border cursor-pointer transition-colors ${
-                            passTypeId === type.id
-                              ? 'border-primary bg-primary/5'
-                              : 'border-input hover:bg-muted'
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <input
-                              type="radio"
-                              name="passType"
-                              value={type.id}
-                              checked={passTypeId === type.id}
-                              onChange={() => setPassTypeId(type.id)}
-                              className="mr-3"
-                            />
-                            <span>{type.pass_type_name}</span>
-                          </div>
-                          <div className="text-right text-sm">
-                            <span className="font-medium">{formatPrice(groupPrice)}</span>
-                            <span className="text-muted-foreground line-through ml-2">{formatPrice(regularPrice)}</span>
-                            {savings > 0 && (
-                              <span className="text-green-600 ml-2">(Save {formatPrice(savings.toString())})</span>
-                            )}
-                          </div>
-                        </label>
-                      );
+                                            let regularPrice;
+                      
+                                            if (isRenewal) {
+                      
+                                              regularPrice = isEarlyBird ? type.renewal_early_price : type.renewal_regular_price;
+                      
+                                            } else {
+                      
+                                              regularPrice = isEarlyBird ? type.regular_early_price : type.regular_regular_price;
+                      
+                                            }
+                      
+                                            
+                      
+                                            const savings = (regularPrice !== null && groupPrice !== null) 
+                      
+                                              ? parseFloat(regularPrice) - parseFloat(groupPrice) 
+                      
+                                              : 0;
+                      
+                                            
+                      
+                                            return (
+                      
+                                              <label
+                      
+                                                key={type.id}
+                      
+                                                className={`flex items-center justify-between p-3 rounded-md border cursor-pointer transition-colors ${
+                      
+                                                  passTypeId === type.id
+                      
+                                                    ? 'border-primary bg-primary/5'
+                      
+                                                    : 'border-input hover:bg-muted'
+                      
+                                                }`}
+                      
+                                              >
+                      
+                                                <div className="flex items-center">
+                      
+                                                  <input
+                      
+                                                    type="radio"
+                      
+                                                    name="passType"
+                      
+                                                    value={type.id}
+                      
+                                                    checked={passTypeId === type.id}
+                      
+                                                    onChange={() => setPassTypeId(type.id)}
+                      
+                                                    className="mr-3"
+                      
+                                                  />
+                      
+                                                  <span>{type.pass_type_name}</span>
+                      
+                                                </div>
+                      
+                                                <div className="text-right text-sm">
+                      
+                                                  <span className="font-medium">{formatPrice(groupPrice)}</span>
+                      
+                                                  {regularPrice !== null && (
+                      
+                                                    <>
+                      
+                                                      <span className="text-muted-foreground line-through ml-2">{formatPrice(regularPrice)}</span>
+                      
+                                                      {savings > 0 && (
+                      
+                                                        <span className="text-green-600 ml-2">(Save {formatPrice(savings.toString())})</span>
+                      
+                                                      )}
+                      
+                                                    </>
+                      
+                                                  )}
+                      
+                                                </div>
+                      
+                                              </label>
+                      
+                                            );
                     })}
                   </div>
                 )}

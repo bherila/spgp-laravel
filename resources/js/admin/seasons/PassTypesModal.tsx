@@ -29,6 +29,11 @@ interface PassTypesModalProps {
   csrfToken: string;
 }
 
+function formatPriceDisplay(price: number | null): string {
+  if (price === null) return 'TBA';
+  return `$${price}`;
+}
+
 export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTypesModalProps) {
   const [passTypes, setPassTypes] = useState<SeasonPassType[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,6 +94,9 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
 
     setSubmitting(true);
     setError(null);
+    
+    const parsePrice = (val: string) => val === '' ? null : parseFloat(val);
+
     try {
       const url = editingType 
         ? `/api/admin/pass-types/${editingType.id}`
@@ -105,12 +113,12 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
         },
         body: JSON.stringify({
           pass_type_name: formTypeName,
-          regular_early_price: parseFloat(formRegularEarlyPrice),
-          regular_regular_price: parseFloat(formRegularRegularPrice),
-          renewal_early_price: parseFloat(formRenewalEarlyPrice),
-          renewal_regular_price: parseFloat(formRenewalRegularPrice),
-          group_early_price: parseFloat(formGroupEarlyPrice),
-          group_regular_price: parseFloat(formGroupRegularPrice),
+          regular_early_price: parsePrice(formRegularEarlyPrice),
+          regular_regular_price: parsePrice(formRegularRegularPrice),
+          renewal_early_price: parsePrice(formRenewalEarlyPrice),
+          renewal_regular_price: parsePrice(formRenewalRegularPrice),
+          group_early_price: parsePrice(formGroupEarlyPrice),
+          group_regular_price: parsePrice(formGroupRegularPrice),
           sort_order: parseInt(formSortOrder, 10),
         }),
       });
@@ -156,12 +164,12 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
   const openEdit = (pt: SeasonPassType) => {
     setEditingType(pt);
     setFormTypeName(pt.pass_type_name);
-    setFormRegularEarlyPrice(pt.regular_early_price.toString());
-    setFormRegularRegularPrice(pt.regular_regular_price.toString());
-    setFormRenewalEarlyPrice(pt.renewal_early_price.toString());
-    setFormRenewalRegularPrice(pt.renewal_regular_price.toString());
-    setFormGroupEarlyPrice(pt.group_early_price.toString());
-    setFormGroupRegularPrice(pt.group_regular_price.toString());
+    setFormRegularEarlyPrice(pt.regular_early_price?.toString() ?? '');
+    setFormRegularRegularPrice(pt.regular_regular_price?.toString() ?? '');
+    setFormRenewalEarlyPrice(pt.renewal_early_price?.toString() ?? '');
+    setFormRenewalRegularPrice(pt.renewal_regular_price?.toString() ?? '');
+    setFormGroupEarlyPrice(pt.group_early_price?.toString() ?? '');
+    setFormGroupRegularPrice(pt.group_regular_price?.toString() ?? '');
     setFormSortOrder(pt.sort_order.toString());
     setFormOpen(true);
   };
@@ -172,7 +180,7 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
         <DialogHeader>
           <DialogTitle>Manage Pass Types: {season?.pass_name} {season?.pass_year}</DialogTitle>
           <DialogDescription>
-            Add or edit the available pass types for this season.
+            Add or edit the available pass types for this season. Leave prices blank for "TBA".
           </DialogDescription>
         </DialogHeader>
 
@@ -214,11 +222,11 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label htmlFor="pt-reg-early" className="text-xs">Early Spring</Label>
-                        <Input id="pt-reg-early" type="number" step="0.01" value={formRegularEarlyPrice} onChange={e => setFormRegularEarlyPrice(e.target.value)} required />
+                        <Input id="pt-reg-early" type="number" step="0.01" value={formRegularEarlyPrice} onChange={e => setFormRegularEarlyPrice(e.target.value)} />
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor="pt-reg-reg" className="text-xs">Late Spring / Summer</Label>
-                        <Input id="pt-reg-reg" type="number" step="0.01" value={formRegularRegularPrice} onChange={e => setFormRegularRegularPrice(e.target.value)} required />
+                        <Input id="pt-reg-reg" type="number" step="0.01" value={formRegularRegularPrice} onChange={e => setFormRegularRegularPrice(e.target.value)} />
                       </div>
                     </div>
                   </div>
@@ -228,11 +236,11 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label htmlFor="pt-renew-early" className="text-xs">Early Spring</Label>
-                        <Input id="pt-renew-early" type="number" step="0.01" value={formRenewalEarlyPrice} onChange={e => setFormRenewalEarlyPrice(e.target.value)} required />
+                        <Input id="pt-renew-early" type="number" step="0.01" value={formRenewalEarlyPrice} onChange={e => setFormRenewalEarlyPrice(e.target.value)} />
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor="pt-renew-reg" className="text-xs">Late Spring / Summer</Label>
-                        <Input id="pt-renew-reg" type="number" step="0.01" value={formRenewalRegularPrice} onChange={e => setFormRenewalRegularPrice(e.target.value)} required />
+                        <Input id="pt-renew-reg" type="number" step="0.01" value={formRenewalRegularPrice} onChange={e => setFormRenewalRegularPrice(e.target.value)} />
                       </div>
                     </div>
                   </div>
@@ -242,11 +250,11 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <Label htmlFor="pt-grp-early" className="text-xs">Early Spring</Label>
-                        <Input id="pt-grp-early" type="number" step="0.01" value={formGroupEarlyPrice} onChange={e => setFormGroupEarlyPrice(e.target.value)} required />
+                        <Input id="pt-grp-early" type="number" step="0.01" value={formGroupEarlyPrice} onChange={e => setFormGroupEarlyPrice(e.target.value)} />
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor="pt-grp-reg" className="text-xs">Late Spring / Summer</Label>
-                        <Input id="pt-grp-reg" type="number" step="0.01" value={formGroupRegularPrice} onChange={e => setFormGroupRegularPrice(e.target.value)} required />
+                        <Input id="pt-grp-reg" type="number" step="0.01" value={formGroupRegularPrice} onChange={e => setFormGroupRegularPrice(e.target.value)} />
                       </div>
                     </div>
                   </div>
@@ -287,12 +295,12 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
                     <TableRow key={pt.id}>
                       <TableCell>{pt.sort_order}</TableCell>
                       <TableCell className="font-medium">{pt.pass_type_name}</TableCell>
-                      <TableCell className="text-center">${pt.regular_early_price}</TableCell>
-                      <TableCell className="text-center">${pt.regular_regular_price}</TableCell>
-                      <TableCell className="text-center italic">${pt.renewal_early_price}</TableCell>
-                      <TableCell className="text-center italic">${pt.renewal_regular_price}</TableCell>
-                      <TableCell className="text-center font-semibold text-primary">${pt.group_early_price}</TableCell>
-                      <TableCell className="text-center font-semibold text-primary">${pt.group_regular_price}</TableCell>
+                      <TableCell className="text-center">{formatPriceDisplay(pt.regular_early_price)}</TableCell>
+                      <TableCell className="text-center">{formatPriceDisplay(pt.regular_regular_price)}</TableCell>
+                      <TableCell className="text-center italic">{formatPriceDisplay(pt.renewal_early_price)}</TableCell>
+                      <TableCell className="text-center italic">{formatPriceDisplay(pt.renewal_regular_price)}</TableCell>
+                      <TableCell className="text-center font-semibold text-primary">{formatPriceDisplay(pt.group_early_price)}</TableCell>
+                      <TableCell className="text-center font-semibold text-primary">{formatPriceDisplay(pt.group_regular_price)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="sm" onClick={() => openEdit(pt)}><Pencil className="w-3 h-3" /></Button>
