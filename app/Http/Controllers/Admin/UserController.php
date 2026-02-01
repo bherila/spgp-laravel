@@ -32,6 +32,30 @@ class UserController extends Controller
     }
 
     /**
+     * Store a new user (admin only).
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:8'],
+            'is_admin' => ['sometimes', 'boolean'],
+        ]);
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'is_admin' => $validated['is_admin'] ?? false,
+            'email_verified_at' => now(), // Assume admin created users are verified
+            'invite_code_id' => null, // Admins don't need an invite code
+        ]);
+
+        return response()->json($user, 201);
+    }
+
+    /**
      * Update a user.
      */
     public function update(Request $request, int $id)

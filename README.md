@@ -69,6 +69,16 @@ Or use multiple terminals:
 - Terminal 1: `php artisan serve`
 - Terminal 2: `pnpm run dev`
 
+## CLI Commands
+
+### Create User
+
+Create a new user with a confirmed email address and optional admin status.
+
+```bash
+php artisan user:create "Name" "email@example.com" "password" [--admin]
+```
+
 ## Database Schema
 
 ### Core Tables

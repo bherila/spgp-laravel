@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function () {
         // Users
         Route::get('/users', [UserController::class, 'index'])->name('admin.users');
         Route::get('/users/list', [UserController::class, 'list'])->name('admin.users.list');
+        Route::post('/users', [UserController::class, 'store'])->name('admin.users.store');
         Route::put('/users/{id}', [UserController::class, 'update'])->name('admin.users.update');
         Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('admin.users.destroy');
         Route::post('/users/{id}/impersonate', [AuthController::class, 'impersonate'])->name('admin.users.impersonate');
