@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import currency from 'currency.js';
 
 interface SeasonPassType {
   id: number;
@@ -150,10 +151,9 @@ function PassRequestForm() {
   const canProceedToDetails = seasonId && passTypeId;
 
   // Format price for display
-  const formatPrice = (price: string | null) => {
-    if (price === null) return 'TBA';
-    const num = parseFloat(price);
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
+  const formatPrice = (price: string | number | null) => {
+    if (price === null || price === undefined) return '$ TBA';
+    return currency(price).format();
   };
 
   // Check if we're in early bird period

@@ -31,10 +31,17 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { FileEdit, Trash2, X, Plus } from 'lucide-react';
+import currency from 'currency.js';
 
 interface SeasonPassType {
   id: number;
   pass_type_name: string;
+  regular_early_price: number | null;
+  regular_regular_price: number | null;
+  renewal_early_price: number | null;
+  renewal_regular_price: number | null;
+  group_early_price: number | null;
+  group_regular_price: number | null;
 }
 
 interface PassRequest {
@@ -83,6 +90,11 @@ function formatDate(dateStr: string | null): string {
 function getPassTypeName(request: PassRequest): string {
   return request.season_pass_type?.pass_type_name ?? request.pass_type ?? 'Unknown';
 }
+
+const formatPrice = (value: number | string | null): string => {
+  if (value === null || value === undefined) return '$ TBA';
+  return currency(value).format();
+};
 
 function Dashboard() {
   const mount = document.getElementById('dashboard');
@@ -211,6 +223,14 @@ function Dashboard() {
   // Filter to seasons with pass requests
   const seasonsWithRequests = seasons.filter(s => s.pass_requests && s.pass_requests.length > 0);
 
+  // Find pending renewal requests for instruction display
+  const pendingRenewals = seasonsWithRequests.flatMap(s => 
+    (s.pass_requests || []).filter(r => 
+      r.is_renewal && !r.redemption_date && !r.promo_code && !r.renewal_order_number &&
+      new Date(s.early_spring_deadline) > now
+    ).map(r => ({ ...r, season: s }))
+  );
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
@@ -262,6 +282,41 @@ function Dashboard() {
 
       <div className="mb-6">
         <h2 className="text-xl font-semibold mb-4">Your Pass Requests</h2>
+
+        {!loading && pendingRenewals.length > 0 && (
+          <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 space-y-4">
+            <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
+              Renewal Instructions
+            </h3>
+            <div className="space-y-3 text-blue-800 dark:text-blue-200">
+              {pendingRenewals.map((r, i) => {
+                const season = r.season;
+                const pt = r.season_pass_type;
+                const earlyDeadline = new Date(season.early_spring_deadline);
+                const isStillEarly = now < earlyDeadline;
+                
+                return (
+                  <div key={r.id} className={i > 0 ? 'pt-4 border-t border-blue-200 dark:border-blue-800' : ''}>
+                    <p className="font-semibold">{r.passholder_first_name}'s {pt?.pass_type_name} ({season.pass_name} {season.pass_year})</p>
+                    <p className="mt-1">
+                      Until <strong>{formatDate(season.early_spring_deadline)}</strong>, it will actually cost 
+                      <strong className="mx-1">{formatPrice(pt?.renewal_early_price)}</strong> 
+                      compared to the group renewal cost of 
+                      <strong className="mx-1">{formatPrice(pt?.group_early_price)}</strong>.
+                    </p>
+                    <p className="mt-2 text-sm italic">
+                      If you renew before the date to get the lower price, you won't get a promo code. 
+                      Instead, please enter your renewal number in the table below so the group can get credit for the renewal.
+                    </p>
+                    <p className="mt-2 text-sm">
+                      After the early date, a promo code can be issued if you haven't renewed the pass yet.
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
         
         {loading ? (
           <div className="space-y-4">

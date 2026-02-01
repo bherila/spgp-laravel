@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Pencil, Archive, Plus } from 'lucide-react';
+import currency from 'currency.js';
 import type { Season, SeasonPassType } from './types';
 
 interface PassTypesModalProps {
@@ -29,9 +30,9 @@ interface PassTypesModalProps {
   csrfToken: string;
 }
 
-function formatPriceDisplay(price: number | null): string {
-  if (price === null) return 'TBA';
-  return `$${price}`;
+function formatPrice(price: number | null): string {
+  if (price === null) return '$ TBA';
+  return currency(price).format();
 }
 
 export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTypesModalProps) {
@@ -295,12 +296,12 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
                     <TableRow key={pt.id}>
                       <TableCell>{pt.sort_order}</TableCell>
                       <TableCell className="font-medium">{pt.pass_type_name}</TableCell>
-                      <TableCell className="text-center">{formatPriceDisplay(pt.regular_early_price)}</TableCell>
-                      <TableCell className="text-center">{formatPriceDisplay(pt.regular_regular_price)}</TableCell>
-                      <TableCell className="text-center italic">{formatPriceDisplay(pt.renewal_early_price)}</TableCell>
-                      <TableCell className="text-center italic">{formatPriceDisplay(pt.renewal_regular_price)}</TableCell>
-                      <TableCell className="text-center font-semibold text-primary">{formatPriceDisplay(pt.group_early_price)}</TableCell>
-                      <TableCell className="text-center font-semibold text-primary">{formatPriceDisplay(pt.group_regular_price)}</TableCell>
+                      <TableCell className="text-center">{formatPrice(pt.regular_early_price)}</TableCell>
+                      <TableCell className="text-center">{formatPrice(pt.regular_regular_price)}</TableCell>
+                      <TableCell className="text-center italic">{formatPrice(pt.renewal_early_price)}</TableCell>
+                      <TableCell className="text-center italic">{formatPrice(pt.renewal_regular_price)}</TableCell>
+                      <TableCell className="text-center font-semibold text-primary">{formatPrice(pt.group_early_price)}</TableCell>
+                      <TableCell className="text-center font-semibold text-primary">{formatPrice(pt.group_regular_price)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button variant="ghost" size="sm" onClick={() => openEdit(pt)}><Pencil className="w-3 h-3" /></Button>
