@@ -37,7 +37,7 @@ function AdminSeasons() {
   const fetchSeasons = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/admin/seasons/list?include_archived=${includeArchived}`, {
+      const response = await fetch(`/api/admin/seasons/list?include_archived=${includeArchived}`, {
         headers: { 'Accept': 'application/json' },
       });
       if (!response.ok) throw new Error('Failed to fetch seasons');
@@ -60,7 +60,7 @@ function AdminSeasons() {
     
     setSubmitting(true);
     try {
-      const response = await fetch(`/admin/seasons/${selectedSeason.id}`, {
+      const response = await fetch(`/api/admin/seasons/${selectedSeason.id}`, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',
@@ -85,7 +85,7 @@ function AdminSeasons() {
 
   const handleRestore = async (season: Season) => {
     try {
-      const response = await fetch(`/admin/seasons/${season.id}/restore`, {
+      const response = await fetch(`/api/admin/seasons/${season.id}/restore`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

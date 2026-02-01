@@ -54,7 +54,7 @@ function EmailLogAdmin() {
       if (toFilter) params.append('to', toFilter);
       if (bodyFilter) params.append('body', bodyFilter);
 
-      const response = await fetch(`/admin/email-log/list?${params.toString()}`, {
+      const response = await fetch(`/api/admin/email-log/list?${params.toString()}`, {
         headers: { 'Accept': 'application/json' },
       });
       if (!response.ok) {

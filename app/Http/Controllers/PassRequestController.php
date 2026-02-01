@@ -50,12 +50,20 @@ class PassRequestController extends Controller
     {
         // Get current time in server's local timezone
         $now = now(date_default_timezone_get());
+        $threeMonthsFromNow = $now->copy()->addMonths(3);
         
         // We still query in UTC because that's how it's stored
         $nowUtc = $now->copy()->setTimezone('UTC');
+        $threeMonthsFromNowUtc = $threeMonthsFromNow->copy()->setTimezone('UTC');
         
         $seasons = Season::query()
             ->where('final_deadline', '>=', $nowUtc)
+            ->where(function ($query) use ($nowUtc, $threeMonthsFromNowUtc) {
+                // Currently active
+                $query->where('start_date', '<=', $nowUtc)
+                    // Upcoming but within 3 months
+                    ->orWhere('start_date', '<=', $threeMonthsFromNowUtc);
+            })
             ->with(['passTypes' => function ($query) {
                 $query->orderBy('sort_order');
             }])

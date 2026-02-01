@@ -58,7 +58,7 @@ function AdminInvites() {
   const fetchInviteCodes = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/admin/invites/list?include_archived=${includeArchived}`, {
+      const response = await fetch(`/api/admin/invites/list?include_archived=${includeArchived}`, {
         headers: {
           'Accept': 'application/json',
         },
@@ -84,7 +84,7 @@ function AdminInvites() {
     setFormError(null);
     
     try {
-      const response = await fetch('/admin/invites', {
+      const response = await fetch('/api/admin/invites', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ function AdminInvites() {
     setFormError(null);
     
     try {
-      const response = await fetch(`/admin/invites/${selectedCode.id}`, {
+      const response = await fetch(`/api/admin/invites/${selectedCode.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -156,7 +156,7 @@ function AdminInvites() {
     setFormError(null);
     
     try {
-      const response = await fetch(`/admin/invites/${selectedCode.id}`, {
+      const response = await fetch(`/api/admin/invites/${selectedCode.id}`, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',
@@ -181,7 +181,7 @@ function AdminInvites() {
 
   const handleRestore = async (code: InviteCode) => {
     try {
-      const response = await fetch(`/admin/invites/${code.id}/restore`, {
+      const response = await fetch(`/api/admin/invites/${code.id}/restore`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

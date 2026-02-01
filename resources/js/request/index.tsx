@@ -72,7 +72,7 @@ function PassRequestForm() {
       try {
         setLoading(true);
         // If we have an initialSeasonId, we might still want to fetch it to get its details
-        const response = await fetch('/pass-requests/seasons', {
+        const response = await fetch('/api/pass-requests/seasons', {
           headers: { 'Accept': 'application/json' },
         });
         if (!response.ok) throw new Error('Failed to fetch seasons');
@@ -109,7 +109,7 @@ function PassRequestForm() {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/pass-requests', {
+      const response = await fetch('/api/pass-requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

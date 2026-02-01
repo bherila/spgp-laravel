@@ -86,7 +86,7 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
 
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-      const response = await fetch('/change-password', {
+      const response = await fetch('/api/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -101,7 +101,7 @@ function Dashboard() {
   const fetchPassRequests = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/dashboard/pass-requests', {
+      const response = await fetch('/api/dashboard/pass-requests', {
         headers: { 'Accept': 'application/json' },
       });
       if (!response.ok) throw new Error('Failed to fetch pass requests');
@@ -131,7 +131,7 @@ function Dashboard() {
 
     setRenewalSubmitting(true);
     try {
-      const response = await fetch(`/pass-requests/${renewalRequest.id}/renewal-order`, {
+      const response = await fetch(`/api/pass-requests/${renewalRequest.id}/renewal-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -158,7 +158,7 @@ function Dashboard() {
 
   const handleRemoveRenewal = async (requestId: string) => {
     try {
-      const response = await fetch(`/pass-requests/${requestId}/renewal-order`, {
+      const response = await fetch(`/api/pass-requests/${requestId}/renewal-order`, {
         method: 'DELETE',
         headers: { 'Accept': 'application/json' },
       });
@@ -176,7 +176,7 @@ function Dashboard() {
 
   const handleCancelRequest = async (requestId: string) => {
     try {
-      const response = await fetch(`/pass-requests/${requestId}`, {
+      const response = await fetch(`/api/pass-requests/${requestId}`, {
         method: 'DELETE',
         headers: { 'Accept': 'application/json' },
       });

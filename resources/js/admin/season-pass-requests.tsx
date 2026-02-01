@@ -105,7 +105,7 @@ function SeasonPassRequestsAdmin() {
       const params = new URLSearchParams();
       if (showRecentOnly) params.set('recent_only', 'true');
 
-      const response = await fetch(`/admin/seasons/${seasonId}/pass-requests/list?${params}`, {
+      const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/list?${params}`, {
         headers: { 'Accept': 'application/json' },
       });
       if (!response.ok) throw new Error('Failed to fetch data');
@@ -148,7 +148,7 @@ function SeasonPassRequestsAdmin() {
     setActionMessage(null);
 
     try {
-      const response = await fetch(`/admin/seasons/${seasonId}/pass-requests/assign-codes`, {
+      const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/assign-codes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ function SeasonPassRequestsAdmin() {
     setActionMessage(null);
 
     try {
-      const response = await fetch(`/admin/seasons/${seasonId}/pass-requests/clear-codes`, {
+      const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/clear-codes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -210,7 +210,7 @@ function SeasonPassRequestsAdmin() {
     setActionMessage(null);
 
     try {
-      const response = await fetch(`/admin/seasons/${seasonId}/pass-requests/send-emails`, {
+      const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/send-emails`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -239,7 +239,7 @@ function SeasonPassRequestsAdmin() {
     if (!confirm('Are you sure you want to delete this pass request?')) return;
 
     try {
-      const response = await fetch(`/admin/pass-requests/${id}/admin`, {
+      const response = await fetch(`/api/admin/pass-requests/${id}/admin`, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',

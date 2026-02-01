@@ -49,7 +49,7 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
     if (!season) return;
     try {
       setLoading(true);
-      const response = await fetch(`/admin/seasons/${season.id}/pass-types`, {
+      const response = await fetch(`/api/admin/seasons/${season.id}/pass-types`, {
         headers: { 'Accept': 'application/json' },
       });
       if (!response.ok) throw new Error('Failed to fetch pass types');
@@ -87,8 +87,8 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
     setError(null);
     try {
       const url = editingType 
-        ? `/admin/pass-types/${editingType.id}`
-        : `/admin/seasons/${season.id}/pass-types`;
+        ? `/api/admin/pass-types/${editingType.id}`
+        : `/api/admin/seasons/${season.id}/pass-types`;
       
       const method = editingType ? 'PUT' : 'POST';
 
@@ -128,7 +128,7 @@ export function PassTypesModal({ open, onOpenChange, season, csrfToken }: PassTy
     if (!confirm('Are you sure you want to delete this pass type?')) return;
 
     try {
-      const response = await fetch(`/admin/pass-types/${id}`, {
+      const response = await fetch(`/api/admin/pass-types/${id}`, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',

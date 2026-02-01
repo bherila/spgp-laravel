@@ -56,7 +56,7 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
     setError(null);
     
     try {
-      const url = season ? `/admin/seasons/${season.id}` : '/admin/seasons';
+      const url = season ? `/api/admin/seasons/${season.id}` : '/api/admin/seasons';
       const method = season ? 'PUT' : 'POST';
       
       const response = await fetch(url, {

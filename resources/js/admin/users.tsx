@@ -70,7 +70,7 @@ function AdminUsers() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/admin/users/list', {
+      const response = await fetch('/api/admin/users/list', {
         headers: { 'Accept': 'application/json' },
       });
       if (!response.ok) throw new Error('Failed to fetch users');
@@ -106,7 +106,7 @@ function AdminUsers() {
         body.password = formPassword;
       }
       
-      const response = await fetch(`/admin/users/${selectedUser.id}`, {
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -135,15 +135,12 @@ function AdminUsers() {
     if (!selectedUser) return;
     
     setFormSubmitting(true);
-    setFormError(null);
     
     try {
-      const response = await fetch(`/admin/users/${selectedUser.id}`, {
+      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
       });
       
       if (!response.ok) {
@@ -183,7 +180,7 @@ function AdminUsers() {
     }
 
     try {
-      const response = await fetch(`/admin/users/${user.id}/impersonate`, {
+      const response = await fetch(`/api/admin/users/${user.id}/impersonate`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
