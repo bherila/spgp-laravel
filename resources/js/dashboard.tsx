@@ -30,8 +30,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { FileEdit, Trash2, X, Plus } from 'lucide-react';
+import { FileEdit, Trash2, X, Plus, Copy, Check } from 'lucide-react';
 import currency from 'currency.js';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface SeasonPassType {
   id: number;
@@ -110,6 +116,7 @@ function Dashboard() {
   const [renewalOrderNumber, setRenewalOrderNumber] = useState('');
   const [renewalSubmitting, setRenewalSubmitting] = useState(false);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const fetchPassRequests = async () => {
     try {
@@ -213,6 +220,12 @@ function Dashboard() {
     }
   };
 
+  const handleCopyPromoCode = (code: string, requestId: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(requestId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   // Filter to seasons that are current or upcoming
   const now = new Date();
   const availableSeasons = seasons.filter(s => {
@@ -232,263 +245,294 @@ function Dashboard() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <MainTitle>Dashboard</MainTitle>
-        <p className="text-muted-foreground mt-2">
-          Welcome back, {userName}!
-        </p>
-      </div>
+    <TooltipProvider>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <MainTitle>Dashboard</MainTitle>
+          <p className="text-muted-foreground mt-2">
+            Welcome back, {userName}!
+          </p>
+        </div>
 
-      {availableSeasons.length > 0 && (
-        <div className="grid gap-6 mb-12">
-          {availableSeasons.map(season => {
-            const startDate = new Date(season.start_date);
-            const isStarted = startDate <= now;
-            const canRequest = isStarted || isAdmin;
-            const openDateStr = startDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+        {availableSeasons.length > 0 && (
+          <div className="grid gap-6 mb-12">
+            {availableSeasons.map(season => {
+              const startDate = new Date(season.start_date);
+              const isStarted = startDate <= now;
+              const canRequest = isStarted || isAdmin;
+              const openDateStr = startDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
 
-            return (
-              <div key={season.id} className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div>
-                    <h2 className="text-2xl font-bold">{season.pass_name} {season.pass_year}</h2>
-                    <p className="text-muted-foreground mt-1">
-                      Final deadline: {formatDate(season.final_deadline)}
-                    </p>
+              return (
+                <div key={season.id} className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                      <h2 className="text-2xl font-bold">{season.pass_name} {season.pass_year}</h2>
+                      <p className="text-muted-foreground mt-1">
+                        Final deadline: {formatDate(season.final_deadline)}
+                      </p>
+                    </div>
+                    <Button asChild size="lg" disabled={!canRequest} className={!canRequest ? 'opacity-50 pointer-events-none' : ''}>
+                      {canRequest ? (
+                        <a href={`/request/${season.id}`}>
+                          <Plus className="w-5 h-5 mr-2" />
+                          Request New Pass
+                        </a>
+                      ) : (
+                        <span>Opens on {openDateStr}</span>
+                      )}
+                    </Button>
                   </div>
-                  <Button asChild size="lg" disabled={!canRequest} className={!canRequest ? 'opacity-50 pointer-events-none' : ''}>
-                    {canRequest ? (
-                      <a href={`/request/${season.id}`}>
-                        <Plus className="w-5 h-5 mr-2" />
-                        Request New Pass
-                      </a>
-                    ) : (
-                      <span>Opens on {openDateStr}</span>
-                    )}
-                  </Button>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {error && (
-        <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-lg text-destructive">
-          {error}
-        </div>
-      )}
-
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-4">Your Pass Requests</h2>
-
-        {!loading && pendingRenewals.length > 0 && (
-          <div className="mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 space-y-4">
-            <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 flex items-center gap-2">
-              Renewal Instructions
-            </h3>
-            <div className="space-y-3 text-blue-800 dark:text-blue-200">
-              {pendingRenewals.map((r, i) => {
-                const season = r.season;
-                const pt = r.season_pass_type;
-                const earlyDeadline = new Date(season.early_spring_deadline);
-                const isStillEarly = now < earlyDeadline;
-                
-                return (
-                  <div key={r.id} className={i > 0 ? 'pt-4 border-t border-blue-200 dark:border-blue-800' : ''}>
-                    <p className="font-semibold">{r.passholder_first_name}'s {pt?.pass_type_name} ({season.pass_name} {season.pass_year})</p>
-                    <p className="mt-1">
-                      Until <strong>{formatDate(season.early_spring_deadline)}</strong>, it will actually cost 
-                      <strong className="mx-1">{formatPrice(pt?.renewal_early_price)}</strong> 
-                      compared to the group renewal cost of 
-                      <strong className="mx-1">{formatPrice(pt?.group_early_price)}</strong>.
-                    </p>
-                    <p className="mt-2 text-sm italic">
-                      If you renew before the date to get the lower price, you won't get a promo code. 
-                      Instead, please enter your renewal number in the table below so the group can get credit for the renewal.
-                    </p>
-                    <p className="mt-2 text-sm">
-                      After the early date, a promo code can be issued if you haven't renewed the pass yet.
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+              );
+            })}
           </div>
         )}
-        
-        {loading ? (
-          <div className="space-y-4">
-            {[...Array(2)].map((_, i) => (
-              <div key={i} className="border rounded-lg p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <Skeleton className="h-6 w-48" />
-                  <Skeleton className="h-6 w-20" />
-                </div>
-                <div className="space-y-3">
-                  <div className="border rounded overflow-hidden">
-                    <div className="bg-muted h-10 w-full" />
-                    <div className="p-3 space-y-3">
-                      <Skeleton className="h-8 w-full" />
-                      <Skeleton className="h-8 w-full" />
+
+        {error && (
+          <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-lg text-destructive">
+            {error}
+          </div>
+        )}
+
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold mb-4">Your Pass Requests</h2>
+
+          {!loading && pendingRenewals.length > 0 && (
+            <div className="mb-8 bg-muted/40 border rounded-xl p-5 space-y-4">
+              <div className="flex items-center gap-2 text-foreground/80">
+                <h3 className="font-semibold">Renewal Information</h3>
+              </div>
+              <div className="space-y-4">
+                {pendingRenewals.map((r, i) => {
+                  const pt = r.season_pass_type;
+                  return (
+                    <div key={r.id} className="text-sm leading-relaxed">
+                      <p className="font-medium text-base mb-1">
+                        {r.passholder_first_name}'s {pt?.pass_type_name} — {r.season.pass_name} {r.season.pass_year}
+                      </p>
+                      <p className="text-muted-foreground">
+                        Before <strong>{formatDate(r.season.early_spring_deadline)}</strong>, 
+                        direct renewal is <strong>{formatPrice(pt?.renewal_early_price)}</strong> 
+                        (vs. <strong>{formatPrice(pt?.group_early_price)}</strong> through the group).
+                      </p>
+                      <p className="mt-2">
+                        If you renew directly, please enter your renewal order number below so our group gets credit for the renewal. 
+                        This helps the program and has no cost to you. No promo code will be issued for early renewals.
+                        After the deadline, we will issue promo codes for any remaining pending renewals.
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          
+          {loading ? (
+            <div className="space-y-4">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-4">
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="border rounded overflow-hidden">
+                      <div className="bg-muted h-10 w-full" />
+                      <div className="p-3 space-y-3">
+                        <Skeleton className="h-8 w-full" />
+                        <Skeleton className="h-8 w-full" />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : seasonsWithRequests.length === 0 ? (
-          <div className="rounded-lg border p-8 text-center text-muted-foreground">
-            <p>You don't have any pass requests yet.</p>
-          </div>
-        ) : (
-          <Accordion type="multiple" className="space-y-4" defaultValue={seasonsWithRequests.map(s => s.id.toString())}>
-            {seasonsWithRequests.map((season) => (
-              <AccordionItem key={season.id} value={season.id.toString()} className="border rounded-lg">
-                <AccordionTrigger className="px-4 hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold">{season.pass_name} {season.pass_year}</span>
-                    <Badge variant="secondary">{season.pass_requests.length} request(s)</Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-0 pb-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Passholder</TableHead>
-                        <TableHead>Pass Type</TableHead>
-                        <TableHead>Renewal Order</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {season.pass_requests.map((request) => (
-                        <TableRow key={request.id}>
-                          <TableCell className="font-medium">
-                            {request.passholder_first_name} {request.passholder_last_name}
-                          </TableCell>
-                          <TableCell>{getPassTypeName(request)}</TableCell>
-                          <TableCell>
-                            {request.renewal_order_number ? (
+              ))}
+            </div>
+          ) : seasonsWithRequests.length === 0 ? (
+            <div className="rounded-lg border p-8 text-center text-muted-foreground">
+              <p>You don't have any pass requests yet.</p>
+            </div>
+          ) : (
+            <Accordion type="multiple" className="space-y-4" defaultValue={seasonsWithRequests.map(s => s.id.toString())}>
+              {seasonsWithRequests.map((season) => (
+                <AccordionItem key={season.id} value={season.id.toString()} className="border rounded-lg">
+                  <AccordionTrigger className="px-4 hover:no-underline">
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold">{season.pass_name} {season.pass_year}</span>
+                      <Badge variant="secondary">{season.pass_requests.length} request(s)</Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-0 pb-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Passholder</TableHead>
+                          <TableHead>Pass Type</TableHead>
+                          <TableHead>Renewal Order</TableHead>
+                          <TableHead>Promo Code</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {season.pass_requests.map((request) => (
+                          <TableRow key={request.id}>
+                            <TableCell className="font-medium">
+                              {request.passholder_first_name} {request.passholder_last_name}
+                            </TableCell>
+                            <TableCell>{getPassTypeName(request)}</TableCell>
+                            <TableCell>
+                              {request.renewal_order_number ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-sm">{request.renewal_order_number}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => handleRemoveRenewal(request.id)}
+                                    title="Remove renewal order"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {request.promo_code ? (
+                                <div className="flex items-center gap-2">
+                                  <code className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
+                                    {request.promo_code}
+                                  </code>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={() => handleCopyPromoCode(request.promo_code!, request.id)}
+                                      >
+                                        {copiedId === request.id ? (
+                                          <Check className="h-3.5 w-3.5 text-green-600" />
+                                        ) : (
+                                          <Copy className="h-3.5 w-3.5" />
+                                        )}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{copiedId === request.id ? 'Copied!' : 'Copy promo code to clipboard'}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">TBA</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {request.redemption_date ? (
+                                <Badge variant="default">Redeemed</Badge>
+                              ) : request.promo_code ? (
+                                <Badge variant="secondary">Code Assigned</Badge>
+                              ) : (
+                                <Badge variant="outline">Pending</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <div className="flex items-center gap-2">
-                                <span className="font-mono text-sm">{request.renewal_order_number}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => handleRemoveRenewal(request.id)}
-                                  title="Remove renewal order"
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {request.redemption_date ? (
-                              <Badge variant="default">Redeemed</Badge>
-                            ) : request.promo_code ? (
-                              <Badge variant="secondary">Code Assigned</Badge>
-                            ) : (
-                              <Badge variant="outline">Pending</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenRenewalModal(request)}
-                              >
-                                <FileEdit className="w-4 h-4 mr-1" />
-                                {request.renewal_order_number ? 'Edit renewal order #' : 'Enter renewal order #'}
-                              </Button>
-                              {!request.promo_code && !request.renewal_order_number && (
-                                cancelConfirmId === request.id ? (
-                                  <div className="flex items-center gap-1">
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() => handleCancelRequest(request.id)}
-                                    >
-                                      Confirm
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => setCancelConfirmId(null)}
-                                    >
-                                      No
-                                    </Button>
-                                  </div>
-                                ) : (
+                                {request.is_renewal && (
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setCancelConfirmId(request.id)}
-                                    className="text-destructive hover:text-destructive"
+                                    onClick={() => handleOpenRenewalModal(request)}
                                   >
-                                    <Trash2 className="w-4 h-4 mr-1" />
-                                    Cancel
+                                    <FileEdit className="w-4 h-4 mr-1" />
+                                    {request.renewal_order_number ? 'Edit' : 'Report'} Renewal
                                   </Button>
-                                )
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        )}
-      </div>
+                                )}
+                                {!request.promo_code && !request.renewal_order_number && (
+                                  cancelConfirmId === request.id ? (
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => handleCancelRequest(request.id)}
+                                      >
+                                        Confirm
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCancelConfirmId(null)}
+                                      >
+                                        No
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setCancelConfirmId(request.id)}
+                                      className="text-destructive hover:text-destructive"
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-1" />
+                                      Cancel
+                                    </Button>
+                                  )
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
+        </div>
 
-      {/* Renewal Order Modal */}
-      <Dialog open={renewalModalOpen} onOpenChange={setRenewalModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Enter Renewal Order Number</DialogTitle>
-            <DialogDescription>
-              If you renewed your pass, please enter the order number from your
-              receipt so that our group can get credit for the renewal. This will
-              benefit the program in the future and has no cost to you. ❤️ Please
-              update for EACH pass renewed, even if the order number is the same.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmitRenewal}>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="renewal-order">Order Number</Label>
-                <Input
-                  id="renewal-order"
-                  placeholder="Enter your renewal order number for this pass"
-                  value={renewalOrderNumber}
-                  onChange={(e) => setRenewalOrderNumber(e.target.value)}
-                  maxLength={30}
-                  required
-                />
+        {/* Renewal Order Modal */}
+        <Dialog open={renewalModalOpen} onOpenChange={setRenewalModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Enter Renewal Order Number</DialogTitle>
+              <DialogDescription>
+                If you renewed your pass, please enter the order number from your
+                receipt so that our group can get credit for the renewal. This will
+                benefit the program in the future and has no cost to you. ❤️ Please
+                update for EACH pass renewed, even if the order number is the same.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmitRenewal}>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="renewal-order">Order Number</Label>
+                  <Input
+                    id="renewal-order"
+                    placeholder="Enter your renewal order number for this pass"
+                    value={renewalOrderNumber}
+                    onChange={(e) => setRenewalOrderNumber(e.target.value)}
+                    maxLength={30}
+                    required
+                  />
+                </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setRenewalModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={renewalSubmitting}>
-                {renewalSubmitting ? 'Saving...' : 'Save Order Number'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setRenewalModalOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={renewalSubmitting}>
+                  {renewalSubmitting ? 'Saving...' : 'Save Order Number'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </TooltipProvider>
   );
+}
 }
 
 const dashboardElement = document.getElementById('dashboard');
