@@ -533,7 +533,6 @@ function Dashboard() {
     </TooltipProvider>
   );
 }
-}
 
 const dashboardElement = document.getElementById('dashboard');
 if (dashboardElement) {
