@@ -4,15 +4,37 @@ namespace App\Http\Controllers;
 
 use App\Models\Season;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     /**
-     * Display the dashboard.
+     * Display the dashboard or specific season view.
      */
-    public function index(Request $request)
+    public function index(Request $request, $seasonId = null)
     {
-        return view('dashboard');
+        if ($seasonId) {
+            $season = Season::findOrFail($seasonId);
+            $user = $request->user();
+
+            if (!$user->isAdmin()) {
+                $now = now();
+                $threeMonthsFromNow = $now->copy()->addMonths(3);
+                
+                $isActive = ($season->start_date <= $now && $season->final_deadline >= $now) ||
+                            ($season->start_date > $now && $season->start_date <= $threeMonthsFromNow) ||
+                            $season->passRequests()->where('user_id', $user->id)->exists();
+
+                if (!$isActive) {
+                    abort(403, 'You do not have access to this season.');
+                }
+            }
+        }
+
+        return view('dashboard', [
+            'seasonId' => $seasonId,
+            'isQuestionsView' => $request->routeIs('questions.index'),
+        ]);
     }
 
     /**
@@ -28,6 +50,7 @@ class DashboardController extends Controller
         $seasons = Season::withCount(['passRequests' => function ($query) use ($user) {
             $query->where('user_id', $user->id);
         }])
+        ->withCount('questions')
         ->with(['passRequests' => function ($query) use ($user) {
             $query->where('user_id', $user->id)
                   ->with('seasonPassType')

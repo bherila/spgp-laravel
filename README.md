@@ -6,6 +6,7 @@ A specialized Laravel application for coordinating group purchases of ski passes
 
 - **User Authentication**: Secure login and registration with invite code enforcement.
 - **Season Management**: Admin control over pass seasons, deadlines, and pricing.
+- **Season Q&A**: Users can ask questions about seasons in Markdown format. Admins can provide answers, and users can upvote helpful questions.
 - **Pass Request Workflow**: 
   - Users request passes for specific seasons.
   - Support for new requests and renewals.
@@ -92,6 +93,8 @@ The system uses several core tables:
 - `users`: User accounts with `is_admin` and `invite_code_id`.
 - `seasons`: Definitions for different ski seasons and their deadlines.
 - `season_pass_types`: Pricing and name definitions for passes within a season. Includes 6-tier pricing: (Group, Non-Group New, Non-Group Renewal) x (Early Spring, Late Spring/Summer).
+- `questions`: User questions for seasons, with optional admin answers.
+- `question_upvotes`: Tracks user upvotes on questions.
 - `pass_requests`: Individual requests for passes, tracking passholder details and status.
 - `invite_codes`: Codes required for public registration.
 - `email_logs`: History of emails sent to users.

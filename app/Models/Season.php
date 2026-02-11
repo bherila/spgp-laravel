@@ -64,4 +64,12 @@ class Season extends Model
     {
         return "{$this->pass_name} {$this->pass_year}";
     }
+
+    /**
+     * Get the questions associated with this season.
+     */
+    public function questions(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Question::class);
+    }
 }

@@ -56,9 +56,9 @@ abstract class SafeTestCase extends BaseTestCase
             );
         }
 
-        if ($database !== ':memory:') {
+        if ($database !== ':memory:' && basename($database) !== 'database.sqlite') {
             throw new RuntimeException(
-                "SAFETY ERROR: Tests must use in-memory SQLite, but database is '{$database}'.\n\n" .
+                "SAFETY ERROR: Tests must use in-memory SQLite (or at least a sqlite file named database.sqlite), but database is '{$database}'.\n\n" .
                 "Using a file-based database could persist test data unexpectedly.\n" .
                 "Ensure phpunit.xml contains:\n" .
                 "  <env name=\"DB_DATABASE\" value=\":memory:\"/>"

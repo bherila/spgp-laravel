@@ -73,4 +73,20 @@ class User extends Authenticatable
     {
         return $this->belongsTo(InviteCode::class);
     }
+
+    /**
+     * Get the questions asked by the user.
+     */
+    public function questions(): HasMany
+    {
+        return $this->hasMany(Question::class);
+    }
+
+    /**
+     * Get the upvotes by the user.
+     */
+    public function upvotes(): HasMany
+    {
+        return $this->hasMany(QuestionUpvote::class);
+    }
 }

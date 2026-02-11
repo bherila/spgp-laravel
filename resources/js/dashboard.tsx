@@ -39,6 +39,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import Questions from './components/Questions';
 
 interface SeasonPassType {
   id: number;
@@ -79,6 +80,7 @@ interface Season {
   final_deadline: string;
   pass_requests: PassRequest[];
   pass_requests_count: number;
+  questions_count: number;
   deleted_at: string | null;
 }
 
@@ -107,6 +109,8 @@ function Dashboard() {
   const mount = document.getElementById('dashboard');
   const userName = mount?.getAttribute('data-user-name') || 'User';
   const isAdmin = mount?.getAttribute('data-is-admin') === '1';
+  const seasonId = mount?.getAttribute('data-season-id');
+  const isQuestionsView = mount?.getAttribute('data-is-questions-view') === '1';
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
   const [seasons, setSeasons] = useState<Season[]>([]);
@@ -138,8 +142,14 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    fetchPassRequests();
-  }, []);
+    if (!isQuestionsView) {
+      fetchPassRequests();
+    }
+  }, [isQuestionsView]);
+
+  if (isQuestionsView && seasonId) {
+    return <Questions seasonId={parseInt(seasonId)} isAdmin={isAdmin} csrfToken={csrfToken} />;
+  }
 
   const handleOpenRenewalModal = (request: PassRequest) => {
     setRenewalRequest(request);
@@ -272,6 +282,14 @@ function Dashboard() {
                       <p className="text-muted-foreground mt-1">
                         Final deadline: {formatDate(season.final_deadline)}
                       </p>
+                      <div className="mt-2">
+                        <Button asChild variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground">
+                          <a href={`/season/${season.id}/questions`}>
+                            <HelpCircle className="w-4 h-4 mr-1.5" />
+                            View {season.questions_count} questions
+                          </a>
+                        </Button>
+                      </div>
                     </div>
                     <Button asChild size="lg" disabled={!canRequest} className={!canRequest ? 'opacity-50 pointer-events-none' : ''}>
                       {canRequest ? (

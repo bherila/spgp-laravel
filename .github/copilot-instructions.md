@@ -7,6 +7,8 @@
   - `SeasonPassType`: Pricing tiers for a season (Adult, Young Adult, etc.) with `regular_price`, `group_early_price`, and `group_price`.
   - `PassRequest`: A user's request for a pass. Tracks passholder details (name, DOB, email) and status (promo code, redemption date).
   - `InviteCode`: Required for public registration, tracks usage limits.
+  - `Question`: Q&A for seasons. Supports Markdown content/answer and many-to-many with `Season`.
+  - `QuestionUpvote`: Tracks user upvotes on questions.
   - `EmailLog`: Audit trail of all system emails.
   - `UserLogin`: Audit trail of login attempts.
 - **Frontend Patterns**:

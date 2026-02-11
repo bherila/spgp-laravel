@@ -32,6 +32,15 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/pass-requests/{id}/renewal-order', [PassRequestController::class, 'updateRenewalOrder']);
     Route::delete('/pass-requests/{id}/renewal-order', [PassRequestController::class, 'removeRenewalOrder']);
     
+    // Question (Q&A) routes
+    Route::get('/season/{season}/questions', [\App\Http\Controllers\QuestionController::class, 'getQuestions']);
+    Route::post('/season/{season}/questions', [\App\Http\Controllers\QuestionController::class, 'store']);
+    Route::patch('/questions/{question}', [\App\Http\Controllers\QuestionController::class, 'update']);
+    Route::delete('/questions/{question}', [\App\Http\Controllers\QuestionController::class, 'destroy']);
+    Route::post('/questions/{question}/answer', [\App\Http\Controllers\QuestionController::class, 'answer']);
+    Route::post('/questions/{question}/upvote', [\App\Http\Controllers\QuestionController::class, 'upvote']);
+    Route::post('/questions/{question}/unvote', [\App\Http\Controllers\QuestionController::class, 'unvote']);
+
     // Admin API routes
     Route::prefix('admin')->middleware('can:admin')->group(function () {
         // Invite codes

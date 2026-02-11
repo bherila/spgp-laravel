@@ -32,6 +32,9 @@ Route::middleware('auth')->group(function () {
     
     // New pass request page
     Route::get('/request/{season_id}', [PassRequestController::class, 'showRequestForm'])->name('request');
+
+    // Questions (Q&A)
+    Route::get('/season/{season_id}/questions', [DashboardController::class, 'index'])->name('questions.index');
     
     // Admin View routes - protected by 'can:admin' gate
     Route::prefix('admin')->middleware('can:admin')->group(function () {
