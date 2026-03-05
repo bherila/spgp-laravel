@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class CreateUser extends Command
 {
@@ -14,7 +15,7 @@ class CreateUser extends Command
      *
      * @var string
      */
-    protected $signature = 'user:create {name} {email} {password} {--admin}';
+    protected $signature = 'user:create {email} {--name=} {--password=} {--is-admin}';
 
     /**
      * The console command description.
@@ -28,10 +29,20 @@ class CreateUser extends Command
      */
     public function handle()
     {
-        $name = $this->argument('name');
         $email = $this->argument('email');
-        $password = $this->argument('password');
-        $isAdmin = $this->option('admin');
+        $name = $this->option('name') ?: $this->ask('Name');
+        $password = $this->option('password');
+        $isAdmin = $this->option('is-admin');
+
+        if (empty($password)) {
+            $password = $this->secret('Password (leave blank to generate)');
+        }
+        if (empty($password)) {
+            $password = Str::random(12);
+            $generated = true;
+        } else {
+            $generated = false;
+        }
 
         $validator = Validator::make([
             'email' => $email,
@@ -52,11 +63,14 @@ class CreateUser extends Command
             'password' => Hash::make($password),
             'email_verified_at' => now(),
             'invite_code_id' => null,
-            'is_admin' => $isAdmin,
+            'is_admin' => $isAdmin ? true : false,
         ]);
 
         $adminText = $user->is_admin ? ' (Admin)' : '';
         $this->info("User {$user->name} ({$user->email}){$adminText} created successfully.");
+        if (!empty($generated)) {
+            $this->info("Generated password: {$password}");
+        }
         return 0;
     }
 }
