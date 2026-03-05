@@ -15,6 +15,8 @@ export default defineConfig({
                 'resources/js/dashboard.tsx',
                 'resources/js/auth/login.tsx',
                 'resources/js/auth/register.tsx',
+                'resources/js/auth/forgot-password.tsx',
+                'resources/js/auth/reset-password.tsx',
                 'resources/js/admin/invites.tsx',
                 'resources/js/admin/seasons/index.tsx',
                 'resources/js/admin/users.tsx',

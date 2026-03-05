@@ -8,7 +8,9 @@ use App\Models\UserLogin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
@@ -21,6 +23,69 @@ class AuthController extends Controller
             return redirect('/dashboard');
         }
         return view('auth.login');
+    }
+
+    /**
+     * Show the forgot password form.
+     */
+    public function showForgotPassword()
+    {
+        return view('auth.forgot-password');
+    }
+
+    /**
+     * Handle forgot password request.
+     */
+    public function sendResetLinkEmail(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        return $status === Password::RESET_LINK_SENT
+            ? back()->with(['status' => __($status)])
+            : back()->withErrors(['email' => __($status)]);
+    }
+
+    /**
+     * Show the reset password form.
+     */
+    public function showResetPassword($token, Request $request)
+    {
+        return view('auth.reset-password', [
+            'token' => $token,
+            'email' => $request->email,
+        ]);
+    }
+
+    /**
+     * Handle reset password request.
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+
+                Auth::login($user);
+            }
+        );
+
+        return $status === Password::RESET_PASSWORD_RESET
+            ? redirect('/dashboard')->with('status', __($status))
+            : back()->withErrors(['email' => [__($status)]]);
     }
 
     /**
@@ -78,7 +143,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
             'invite_code' => ['required', 'string'],
         ]);
 
@@ -128,7 +193,7 @@ class AuthController extends Controller
     {
         $validated = $request->validate([
             'current_password' => ['required', 'string'],
-            'password' => ['required', 'confirmed', Password::defaults()],
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
         ]);
 
         $user = $request->user();
