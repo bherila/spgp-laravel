@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.2",
         "erusev/parsedown": "^1.7",
+        "hofmannsven/laravel-brevo": "^2.1",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.0",
