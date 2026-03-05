@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fc150b3dfdc0f56105ffb723802bc4c8",
+    "content-hash": "1b6e30fc872f131054bf74541f8baae8",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -6315,6 +6315,70 @@
             "time": "2025-12-02T11:56:42+00:00"
         },
         {
+            "name": "vemcogroup/laravel-sparkpost-driver",
+            "version": "5.1.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/vemcogroup/laravel-sparkpost-driver.git",
+                "reference": "eca863ff6d9735bdba6539a5074ee7b2b0a2e1de"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/vemcogroup/laravel-sparkpost-driver/zipball/eca863ff6d9735bdba6539a5074ee7b2b0a2e1de",
+                "reference": "eca863ff6d9735bdba6539a5074ee7b2b0a2e1de",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "guzzlehttp/guzzle": "^7.2",
+                "laravel/framework": "^9.0|^10.0|^11.0|^12.0",
+                "php": "^8.0.2",
+                "symfony/mailer": "^6.0|^7.0"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^10.0",
+                "pestphp/pest-plugin-laravel": "^3.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Vemcogroup\\SparkPostDriver\\SparkPostDriverServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Vemcogroup\\SparkPostDriver\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "vemDevs",
+                    "homepage": "https://vemcogroup.com"
+                }
+            ],
+            "description": "SparkPost driver to use with Laravel 6.x|7.x|8.x|9.x|10.x",
+            "homepage": "https://github.com/vemcogroup/laravel-sparkpost-driver",
+            "keywords": [
+                "laravel",
+                "mail",
+                "sparkpost"
+            ],
+            "support": {
+                "issues": "https://github.com/vemcogroup/laravel-sparkpost-driver/issues",
+                "source": "https://github.com/vemcogroup/laravel-sparkpost-driver/tree/5.1.3"
+            },
+            "time": "2026-02-18T08:50:40+00:00"
+        },
+        {
             "name": "vlucas/phpdotenv",
             "version": "v5.6.3",
             "source": {
@@ -8773,5 +8837,5 @@
     "platform-overrides": {
         "php": "8.3.0"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
