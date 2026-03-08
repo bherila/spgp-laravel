@@ -21,6 +21,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::get('/dashboard/pass-requests', [DashboardController::class, 'passRequests']);
+    Route::post('/dashboard/redeem-invite', [DashboardController::class, 'redeemInviteCode']);
     
     // Pass request routes
     Route::get('/pass-requests', [PassRequestController::class, 'list']);

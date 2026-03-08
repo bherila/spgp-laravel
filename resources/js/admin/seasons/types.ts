@@ -20,6 +20,7 @@ export interface Season {
   final_deadline: string;
   spreadsheet_url: string | null;
   pass_request_count: number;
+  invite_codes?: any[];
   deleted_at: string | null;
   created_at: string;
   updated_at: string;

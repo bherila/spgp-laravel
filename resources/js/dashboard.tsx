@@ -123,6 +123,9 @@ function Dashboard() {
   const [renewalSubmitting, setRenewalSubmitting] = useState(false);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState('');
+  const [redeeming, setRedeeming] = useState(false);
+  const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
 
   const fetchPassRequests = async () => {
     try {
@@ -238,6 +241,41 @@ function Dashboard() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handleRedeemInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteCode.trim()) return;
+
+    setRedeeming(true);
+    setError(null);
+    setRedeemSuccess(null);
+
+    try {
+      const response = await fetch('/api/dashboard/redeem-invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({ invite_code: inviteCode }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to redeem invite code');
+      }
+
+      setRedeemSuccess(data.message);
+      setInviteCode('');
+      fetchPassRequests();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setRedeeming(false);
+    }
+  };
+
   // Filter to seasons that are current or upcoming
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -322,7 +360,26 @@ function Dashboard() {
               </div>
             </div>
             <h3 className="text-lg font-medium text-foreground mb-1">No Active Seasons</h3>
-            <p className="max-w-xs mx-auto">There are currently no seasons available for new pass requests.</p>
+            <p className="max-w-xs mx-auto mb-6">There are currently no seasons available for new pass requests.</p>
+            
+            <div className="max-w-sm mx-auto border-t pt-6">
+              <p className="text-sm mb-4 text-foreground">Have an invite code? Enter it to get access to next season.</p>
+              <form onSubmit={handleRedeemInvite} className="flex gap-2">
+                <Input 
+                  placeholder="Season Invite Code" 
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  className="bg-background"
+                  disabled={redeeming}
+                />
+                <Button type="submit" disabled={redeeming || !inviteCode.trim()}>
+                  {redeeming ? '...' : 'Redeem'}
+                </Button>
+              </form>
+              {redeemSuccess && (
+                <p className="text-xs text-green-600 mt-2 font-medium">{redeemSuccess}</p>
+              )}
+            </div>
           </div>
         )}
 

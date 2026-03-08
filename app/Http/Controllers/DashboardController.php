@@ -75,6 +75,12 @@ class DashboardController extends Controller
                 // OR if the user has a pass request in it (even if it's old or too far)
                 ->orWhereHas('passRequests', function ($q) use ($user) {
                     $q->where('user_id', $user->id);
+                })
+                // OR if the user has an invite code for this season
+                ->orWhereHas('inviteCodes', function ($q) use ($user) {
+                    $q->whereHas('users', function ($uq) use ($user) {
+                        $uq->where('users.id', $user->id);
+                    });
                 });
             });
         }
@@ -84,5 +90,47 @@ class DashboardController extends Controller
             ->get();
         
         return response()->json($seasons);
+    }
+
+    /**
+     * Redeem an invite code to gain access to a season.
+     */
+    public function redeemInviteCode(Request $request)
+    {
+        $validated = $request->validate([
+            'invite_code' => ['required', 'string'],
+        ]);
+
+        $inviteCode = \App\Models\InviteCode::where('invite_code', $validated['invite_code'])->first();
+
+        if (!$inviteCode) {
+            return response()->json(['message' => 'Invalid invite code.'], 422);
+        }
+
+        if ($inviteCode->trashed()) {
+            return response()->json(['message' => 'This invite code is no longer active.'], 422);
+        }
+
+        if (!$inviteCode->canBeUsed()) {
+            return response()->json(['message' => 'This invite code has reached its maximum number of uses.'], 422);
+        }
+
+        $user = $request->user();
+
+        // Check if user already has access via this invite code or other invite codes for the same season
+        $alreadyHasAccess = $user->inviteCodes()
+            ->where('season_id', $inviteCode->season_id)
+            ->exists();
+
+        if ($alreadyHasAccess) {
+            return response()->json(['message' => 'You already have access to this season.'], 422);
+        }
+
+        $user->inviteCodes()->attach($inviteCode->id);
+
+        return response()->json([
+            'message' => 'Invite code redeemed successfully! You now have access to ' . $inviteCode->season->display_name,
+            'season' => $inviteCode->season
+        ]);
     }
 }

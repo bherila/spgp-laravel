@@ -35,7 +35,7 @@ function RegisterForm() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create an Account</CardTitle>
-          <CardDescription>Enter your details and invite code to create your account.</CardDescription>
+          <CardDescription>Enter your details and season invite code to create your account.</CardDescription>
         </CardHeader>
         <CardContent>
           <form method="POST" action="/register" onSubmit={handleSubmit} noValidate={false}>
@@ -115,12 +115,12 @@ function RegisterForm() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="invite_code">Invite Code</Label>
+                <Label htmlFor="invite_code">Season Invite Code</Label>
                 <Input
                   id="invite_code"
                   name="invite_code"
                   type="text"
-                  placeholder="Enter your invite code"
+                  placeholder="Enter your season invite code"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value)}
                   required

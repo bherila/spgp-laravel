@@ -166,8 +166,10 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'invite_code_id' => $inviteCode->id,
         ]);
+
+        // Attach invite code to user
+        $user->inviteCodes()->attach($inviteCode->id);
 
         Auth::login($user);
 

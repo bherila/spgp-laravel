@@ -21,11 +21,26 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Pencil, Archive, RotateCcw, Plus } from 'lucide-react';
 
+interface Season {
+  id: number;
+  pass_name: string;
+  pass_year: number;
+}
+
 interface InviteCode {
   id: number;
+  season_id: number;
+  season?: Season;
   invite_code: string;
   max_number_of_uses: number;
   usage_count: number;
@@ -39,6 +54,7 @@ function AdminInvites() {
   const csrfToken = mount?.getAttribute('data-csrf-token') || '';
   
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [includeArchived, setIncludeArchived] = useState(false);
@@ -50,6 +66,7 @@ function AdminInvites() {
   const [selectedCode, setSelectedCode] = useState<InviteCode | null>(null);
   
   // Form states
+  const [formSeasonId, setFormSeasonId] = useState<string>('');
   const [formInviteCode, setFormInviteCode] = useState('');
   const [formMaxUses, setFormMaxUses] = useState('1');
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -74,12 +91,30 @@ function AdminInvites() {
     }
   };
 
+  const fetchSeasons = async () => {
+    try {
+      const response = await fetch('/api/admin/seasons/list', {
+        headers: { 'Accept': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to fetch seasons');
+      const data = await response.json();
+      setSeasons(data);
+    } catch (err) {
+      console.error('Error fetching seasons:', err);
+    }
+  };
+
   useEffect(() => {
     fetchInviteCodes();
+    fetchSeasons();
   }, [includeArchived]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formSeasonId) {
+      setFormError('Please select a season.');
+      return;
+    }
     setFormSubmitting(true);
     setFormError(null);
     
@@ -92,6 +127,7 @@ function AdminInvites() {
           'X-CSRF-TOKEN': csrfToken,
         },
         body: JSON.stringify({
+          season_id: parseInt(formSeasonId, 10),
           invite_code: formInviteCode,
           max_number_of_uses: parseInt(formMaxUses, 10),
         }),
@@ -103,6 +139,7 @@ function AdminInvites() {
       }
       
       setCreateModalOpen(false);
+      setFormSeasonId('');
       setFormInviteCode('');
       setFormMaxUses('1');
       fetchInviteCodes();
@@ -116,6 +153,10 @@ function AdminInvites() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCode) return;
+    if (!formSeasonId) {
+      setFormError('Please select a season.');
+      return;
+    }
     
     setFormSubmitting(true);
     setFormError(null);
@@ -129,6 +170,7 @@ function AdminInvites() {
           'X-CSRF-TOKEN': csrfToken,
         },
         body: JSON.stringify({
+          season_id: parseInt(formSeasonId, 10),
           invite_code: formInviteCode,
           max_number_of_uses: parseInt(formMaxUses, 10),
         }),
@@ -202,6 +244,7 @@ function AdminInvites() {
 
   const openEditModal = (code: InviteCode) => {
     setSelectedCode(code);
+    setFormSeasonId(code.season_id.toString());
     setFormInviteCode(code.invite_code);
     setFormMaxUses(code.max_number_of_uses.toString());
     setFormError(null);
@@ -215,6 +258,7 @@ function AdminInvites() {
   };
 
   const openCreateModal = () => {
+    setFormSeasonId('');
     setFormInviteCode('');
     setFormMaxUses('1');
     setFormError(null);
@@ -225,9 +269,9 @@ function AdminInvites() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <MainTitle>Invite Codes</MainTitle>
+          <MainTitle>Season Invite Codes</MainTitle>
           <p className="text-muted-foreground mt-2">
-            Manage invite codes for user registration.
+            Manage invite codes that grant access to specific seasons.
           </p>
         </div>
         <Button onClick={openCreateModal}>
@@ -262,6 +306,7 @@ function AdminInvites() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Season</TableHead>
                 <TableHead>Code</TableHead>
                 <TableHead>Max Uses</TableHead>
                 <TableHead>Current Uses</TableHead>
@@ -273,13 +318,16 @@ function AdminInvites() {
             <TableBody>
               {inviteCodes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No invite codes found.
                   </TableCell>
                 </TableRow>
               ) : (
                 inviteCodes.map((code) => (
                   <TableRow key={code.id} className={code.deleted_at ? 'opacity-60' : ''}>
+                    <TableCell>
+                      {code.season ? `${code.season.pass_name} ${code.season.pass_year}` : 'Unknown'}
+                    </TableCell>
                     <TableCell className="font-mono">{code.invite_code}</TableCell>
                     <TableCell>{code.max_number_of_uses}</TableCell>
                     <TableCell>{code.usage_count}</TableCell>
@@ -338,9 +386,9 @@ function AdminInvites() {
       <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Invite Code</DialogTitle>
+            <DialogTitle>Create Season Invite Code</DialogTitle>
             <DialogDescription>
-              Create a new invite code for user registration.
+              Create a new invite code for user registration and season access.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleCreate}>
@@ -350,6 +398,21 @@ function AdminInvites() {
                   {formError}
                 </div>
               )}
+              <div className="space-y-2">
+                <Label>Target Season</Label>
+                <Select value={formSeasonId} onValueChange={setFormSeasonId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a season" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seasons.map((season) => (
+                      <SelectItem key={season.id} value={season.id.toString()}>
+                        {season.pass_name} {season.pass_year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="create-invite-code">Invite Code</Label>
                 <Input
@@ -401,6 +464,21 @@ function AdminInvites() {
                   {formError}
                 </div>
               )}
+              <div className="space-y-2">
+                <Label>Target Season</Label>
+                <Select value={formSeasonId} onValueChange={setFormSeasonId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a season" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {seasons.map((season) => (
+                      <SelectItem key={season.id} value={season.id.toString()}>
+                        {season.pass_name} {season.pass_year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-invite-code">Invite Code</Label>
                 <Input

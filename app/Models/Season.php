@@ -72,4 +72,12 @@ class Season extends Model
     {
         return $this->belongsToMany(Question::class);
     }
+
+    /**
+     * Get the invite codes for this season.
+     */
+    public function inviteCodes(): HasMany
+    {
+        return $this->hasMany(InviteCode::class);
+    }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InviteCode;
+use App\Models\Season;
 use Illuminate\Http\Request;
 
 class InviteCodeController extends Controller
@@ -17,7 +18,7 @@ class InviteCodeController extends Controller
     }
 
     /**
-     * Get all invite codes as JSON (including soft deleted for display).
+     * Get all invite codes as JSON.
      */
     public function list(Request $request)
     {
@@ -29,7 +30,8 @@ class InviteCodeController extends Controller
             $query->withTrashed();
         }
         
-        $inviteCodes = $query->withCount('users as usage_count')
+        $inviteCodes = $query->with(['season'])
+            ->withCount('users as usage_count')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -42,13 +44,14 @@ class InviteCodeController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
+            'season_id' => ['required', 'exists:seasons,id'],
             'invite_code' => ['required', 'string', 'max:255', 'unique:invite_codes'],
             'max_number_of_uses' => ['required', 'integer', 'min:1'],
         ]);
 
         $inviteCode = InviteCode::create($validated);
 
-        return response()->json($inviteCode, 201);
+        return response()->json($inviteCode->load('season'), 201);
     }
 
     /**
@@ -59,13 +62,14 @@ class InviteCodeController extends Controller
         $inviteCode = InviteCode::withTrashed()->findOrFail($id);
 
         $validated = $request->validate([
+            'season_id' => ['sometimes', 'exists:seasons,id'],
             'invite_code' => ['sometimes', 'string', 'max:255', 'unique:invite_codes,invite_code,' . $id],
             'max_number_of_uses' => ['sometimes', 'integer', 'min:1'],
         ]);
 
         $inviteCode->update($validated);
 
-        return response()->json($inviteCode);
+        return response()->json($inviteCode->load('season'));
     }
 
     /**
@@ -87,6 +91,6 @@ class InviteCodeController extends Controller
         $inviteCode = InviteCode::withTrashed()->findOrFail($id);
         $inviteCode->restore();
 
-        return response()->json($inviteCode);
+        return response()->json($inviteCode->load('season'));
     }
 }

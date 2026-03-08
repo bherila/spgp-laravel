@@ -5,7 +5,8 @@ namespace App\Models;
 use App\Traits\SerializesDatesAsLocal;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InviteCode extends Model
@@ -18,6 +19,7 @@ class InviteCode extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'season_id',
         'invite_code',
         'max_number_of_uses',
     ];
@@ -30,16 +32,25 @@ class InviteCode extends Model
     protected function casts(): array
     {
         return [
+            'season_id' => 'integer',
             'max_number_of_uses' => 'integer',
         ];
     }
 
     /**
+     * Get the season that this invite code belongs to.
+     */
+    public function season(): BelongsTo
+    {
+        return $this->belongsTo(Season::class);
+    }
+
+    /**
      * Get the users that used this invite code.
      */
-    public function users(): HasMany
+    public function users(): BelongsToMany
     {
-        return $this->hasMany(User::class);
+        return $this->belongsToMany(User::class)->withTimestamps();
     }
 
     /**

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Traits\SerializesDatesAsLocal;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -22,7 +22,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'invite_code_id',
         'is_admin',
     ];
 
@@ -67,11 +66,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the invite code that was used by this user.
+     * Get the invite codes that were used by this user.
      */
-    public function inviteCode(): BelongsTo
+    public function inviteCodes(): BelongsToMany
     {
-        return $this->belongsTo(InviteCode::class);
+        return $this->belongsToMany(InviteCode::class)->withTimestamps();
     }
 
     /**
