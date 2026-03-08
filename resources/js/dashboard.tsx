@@ -240,9 +240,13 @@ function Dashboard() {
 
   // Filter to seasons that are current or upcoming
   const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
   const availableSeasons = seasons.filter(s => {
+    // A season is available if its final deadline is today or in the future
     const finalDeadline = new Date(s.final_deadline);
-    return finalDeadline >= now && s.deleted_at === null;
+    const deadlineDay = new Date(finalDeadline.getFullYear(), finalDeadline.getMonth(), finalDeadline.getDate());
+    return deadlineDay >= today && s.deleted_at === null;
   });
   
   // Filter to seasons with pass requests
@@ -266,7 +270,11 @@ function Dashboard() {
           </p>
         </div>
 
-        {availableSeasons.length > 0 && (
+        {loading ? (
+          <div className="grid gap-6 mb-12">
+            <Skeleton className="h-[120px] w-full rounded-xl" />
+          </div>
+        ) : availableSeasons.length > 0 ? (
           <div className="grid gap-6 mb-12">
             {availableSeasons.map(season => {
               const startDate = new Date(season.start_date);
@@ -305,6 +313,11 @@ function Dashboard() {
                 </div>
               );
             })}
+          </div>
+        ) : (
+          <div className="rounded-xl border bg-card/50 text-card-foreground p-8 mb-12 text-center">
+            <h3 className="text-lg font-medium">No Active Seasons</h3>
+            <p className="text-muted-foreground mt-1">There are currently no seasons available for new pass requests.</p>
           </div>
         )}
 

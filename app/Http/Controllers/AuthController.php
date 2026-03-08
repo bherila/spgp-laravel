@@ -83,7 +83,7 @@ class AuthController extends Controller
             }
         );
 
-        return $status === Password::RESET_PASSWORD_RESET
+        return $status === Password::PASSWORD_RESET
             ? redirect('/dashboard')->with('status', __($status))
             : back()->withErrors(['email' => [__($status)]]);
     }

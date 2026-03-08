@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { Laptop, Moon, Sun, ChevronDown, Settings, Key } from 'lucide-react';
+import { Laptop, Moon, Sun, ChevronDown, Settings, Key, LogOut } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -189,21 +189,22 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
               <ChevronDown className={`w-3 h-3 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
             </button>
             {userMenuOpen && (
-              <div className='absolute top-full right-0 mt-1 w-40 bg-background border rounded-md shadow-lg z-50'>
+              <div className='absolute top-full right-0 mt-1 w-auto min-w-[10rem] bg-background border rounded-md shadow-lg z-50'>
                 <button
                   type='button'
                   onClick={() => {
                     setUserMenuOpen(false);
                     setChangePasswordOpen(true);
                   }}
-                  className='block w-full text-left px-4 py-2 text-sm hover:bg-muted'
+                  className='block w-full text-left px-4 py-2 text-sm hover:bg-muted whitespace-nowrap'
                 >
                   <Key className='w-4 h-4 inline mr-2' />
                   Change Password
                 </button>
                 <form method='POST' action='/logout' className='block'>
                   <input type='hidden' name='_token' value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''} />
-                  <button type='submit' className='block w-full text-left px-4 py-2 text-sm hover:bg-muted'>
+                  <button type='submit' className='block w-full text-left px-4 py-2 text-sm hover:bg-muted whitespace-nowrap'>
+                    <LogOut className='w-4 h-4 inline mr-2' />
                     Sign Out
                   </button>
                 </form>

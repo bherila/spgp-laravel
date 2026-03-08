@@ -33,6 +33,7 @@ Route::middleware('guest')->group(function () {
 
 // Authenticated View routes
 Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/pass-requests-view', [DashboardController::class, 'index'])->name('dashboard.pass-requests'); // Alias for consistent naming if needed
     
