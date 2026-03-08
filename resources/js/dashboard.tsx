@@ -315,9 +315,14 @@ function Dashboard() {
             })}
           </div>
         ) : (
-          <div className="rounded-xl border bg-card/50 text-card-foreground p-8 mb-12 text-center">
-            <h3 className="text-lg font-medium">No Active Seasons</h3>
-            <p className="text-muted-foreground mt-1">There are currently no seasons available for new pass requests.</p>
+          <div className="rounded-xl border bg-card/50 text-card-foreground p-12 mb-12 text-center text-muted-foreground">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-full bg-muted">
+                <Plus className="w-8 h-8 opacity-20" />
+              </div>
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-1">No Active Seasons</h3>
+            <p className="max-w-xs mx-auto">There are currently no seasons available for new pass requests.</p>
           </div>
         )}
 
@@ -351,8 +356,16 @@ function Dashboard() {
               ))}
             </div>
           ) : seasonsWithRequests.length === 0 ? (
-            <div className="rounded-lg border p-8 text-center text-muted-foreground">
-              <p>You don't have any pass requests yet.</p>
+            <div className="rounded-xl border bg-card/50 p-12 text-center text-muted-foreground">
+              <div className="flex justify-center mb-4">
+                <div className="p-3 rounded-full bg-muted">
+                  <FileEdit className="w-8 h-8 opacity-20" />
+                </div>
+              </div>
+              <h3 className="text-lg font-medium text-foreground mb-1">No Pass Requests</h3>
+              <p className="max-w-xs mx-auto">
+                You haven't submitted any pass requests yet. When you do, they will appear here.
+              </p>
             </div>
           ) : (
             <Accordion type="multiple" className="space-y-4" defaultValue={seasonsWithRequests.map(s => s.id.toString())}>

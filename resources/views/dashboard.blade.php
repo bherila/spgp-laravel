@@ -7,7 +7,7 @@
     data-user-id="{{ auth()->id() }}"
     data-is-admin="{{ auth()->user()->isAdmin() ? '1' : '0' }}"
     data-season-id="{{ $seasonId ?? '' }}"
-    data-is-questions-view="{{ isset($isQuestionsView) ? '1' : '0' }}"
+    data-is-questions-view="{{ ($isQuestionsView ?? false) ? '1' : '0' }}"
   ></div>
 @endsection
 
