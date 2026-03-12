@@ -16,10 +16,14 @@ Tests are configured to use an **in-memory SQLite database** to prevent accident
 #### 1. "SAFETY ERROR: Tests must use SQLite, but 'mysql' connection is active"
 If you see this error, it's likely because your shell has `DB_CONNECTION` exported as `mysql`, which overrides the settings in `phpunit.xml`.
 
-**Solution:** Explicitly set the environment variables when running tests:
+**Solution:** Explicitly set the environment variables when running tests. If your shell variables are still overriding the configuration, use `env -i` to run the test in a clean environment:
 
 ```bash
+# Basic override
 DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test
+
+# Robust clean-environment override (recommended if above fails)
+env -i PATH="$PATH" DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test
 ```
 
 #### 2. CSRF Failures (419 Status Code)
