@@ -46,8 +46,10 @@ class PassRequestController extends Controller
     /**
      * Get all active seasons for the request form.
      */
-    public function getActiveSeasons()
+    public function getActiveSeasons(Request $request)
     {
+        $user = $request->user();
+
         // Get current time in server's local timezone
         $now = now(date_default_timezone_get());
         $threeMonthsFromNow = $now->copy()->addMonths(3);
@@ -69,6 +71,27 @@ class PassRequestController extends Controller
             }])
             ->orderBy('pass_year', 'desc')
             ->get();
+
+        // Attach the user's most recently requested pass type ID for each season.
+        // Uses a subquery to find the latest created_at per season, then joins to
+        // retrieve the corresponding season_pass_type_id — all at the DB level.
+        if ($user) {
+            $latestPerSeason = PassRequest::selectRaw('MAX(created_at) as latest_at, season_id')
+                ->where('user_id', $user->id)
+                ->whereIn('season_id', $seasons->pluck('id'))
+                ->groupBy('season_id');
+
+            $previousPassTypes = PassRequest::joinSub($latestPerSeason, 'latest', function ($join) {
+                $join->on('pass_requests.season_id', '=', 'latest.season_id')
+                     ->on('pass_requests.created_at', '=', 'latest.latest_at');
+            })
+                ->where('pass_requests.user_id', $user->id)
+                ->pluck('pass_requests.season_pass_type_id', 'pass_requests.season_id');
+
+            $seasons->each(function ($season) use ($previousPassTypes) {
+                $season->user_previous_pass_type_id = $previousPassTypes->get($season->id);
+            });
+        }
 
         return response()->json($seasons);
     }

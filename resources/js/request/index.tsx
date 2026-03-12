@@ -41,6 +41,7 @@ interface Season {
   final_deadline: string;
   allow_renewals: boolean;
   pass_types: SeasonPassType[];
+  user_previous_pass_type_id: number | null;
 }
 
 type Step = 'type' | 'details';
@@ -62,13 +63,13 @@ function PassRequestForm() {
   const mount = document.getElementById('request');
   const csrfToken = mount?.getAttribute('data-csrf-token') || '';
   const initialSeasonId = mount?.getAttribute('data-season-id') ? Number(mount.getAttribute('data-season-id')) : null;
+  const userEmail = mount?.getAttribute('data-user-email') || '';
 
   const [step, setStep] = useState<Step>('type');
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   // Form state
   const [seasonId, setSeasonId] = useState<number | null>(initialSeasonId);
@@ -76,7 +77,7 @@ function PassRequestForm() {
   const [isRenewal, setIsRenewal] = useState(false);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(userEmail);
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [renewalPassId, setRenewalPassId] = useState('');
 
@@ -105,10 +106,11 @@ function PassRequestForm() {
     fetchSeasons();
   }, []);
 
-  // Reset pass type when season changes
+  // Pre-select the user's last requested pass type when season or seasons data changes
   useEffect(() => {
-    setPassTypeId(null);
-  }, [seasonId]);
+    const season = seasons.find(s => s.id === seasonId);
+    setPassTypeId(season?.user_previous_pass_type_id ?? null);
+  }, [seasonId, seasons]);
 
   const selectedSeason = seasons.find(s => s.id === seasonId);
   const selectedPassType = selectedSeason?.pass_types.find(pt => pt.id === passTypeId);
@@ -146,11 +148,8 @@ function PassRequestForm() {
         throw new Error(data.message || 'Failed to submit pass request');
       }
 
-      setSuccess(true);
-      // Redirect to dashboard after success
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 2000);
+      setSubmitting(false);
+      window.location.href = '/dashboard';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -168,26 +167,6 @@ function PassRequestForm() {
 
   // Check if we're in early bird period
   const isEarlyBird = selectedSeason && new Date() < new Date(selectedSeason.early_spring_deadline);
-
-  if (success) {
-    return (
-      <div className="max-w-2xl mx-auto px-4 py-16 text-center">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl text-green-600">Request Submitted!</CardTitle>
-            <CardDescription className="text-lg mt-2">
-              Your pass request has been submitted successfully.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              Redirecting you back to your dashboard...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
