@@ -18,8 +18,11 @@
       })();
     </script>
     @vite(['resources/css/app.css', 'resources/js/navbar.tsx'])
+    @if(config('sentry.dsn'))
+    <script>window.SENTRY_DSN = "{{ config('sentry.dsn') }}";</script>
+    @vite(['resources/js/sentry.ts'])
+    @endif
     @stack('head')
-    <script>(_=>{let a})()</script>
   </head>
   <body class="min-h-screen flex flex-col">
     <header class="site-header border-b border-gray-200 dark:border-[#3E3E3A] h-14">

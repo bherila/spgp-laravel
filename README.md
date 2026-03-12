@@ -22,6 +22,7 @@ A specialized Laravel application for coordinating group purchases of ski passes
 - **Styling**: Tailwind CSS v4
 - **Build**: Vite
 - **Database**: MySQL/SQLite
+- **Error Tracking**: Sentry (PHP + browser, enabled when `SENTRY_DSN` is set)
 
 ## Getting Started
 
@@ -53,6 +54,9 @@ A specialized Laravel application for coordinating group purchases of ski passes
    ```
    
    Update `.env` with your database credentials.
+
+   To enable Sentry error tracking, set `SENTRY_DSN` in your `.env` file.
+   When `SENTRY_DSN` is blank or not set, Sentry is disabled (PHP + JS).
 
 4. **Run migrations**
    ```bash
@@ -90,7 +94,7 @@ php artisan user:create "Name" "email@example.com" "password" [--admin]
 ## Database Schema
 
 The system uses several core tables:
-- `users`: User accounts with `is_admin` and `invite_code_id`.
+- `users`: User accounts with `is_admin`; linked to invite codes via `invite_code_user` pivot table.
 - `seasons`: Definitions for different ski seasons and their deadlines.
 - `season_pass_types`: Pricing and name definitions for passes within a season. Includes 6-tier pricing: (Group, Non-Group New, Non-Group Renewal) x (Early Spring, Late Spring/Summer).
 - `questions`: User questions for seasons, with optional admin answers.

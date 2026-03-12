@@ -22,6 +22,16 @@ use RuntimeException;
 abstract class SafeTestCase extends BaseTestCase
 {
     /**
+     * Set up the test environment.
+     * Disables Vite manifest loading so tests don't depend on a frontend build.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutVite();
+    }
+
+    /**
      * Boot the testing helper traits and verify database safety.
      */
     protected function setUpTraits(): array
