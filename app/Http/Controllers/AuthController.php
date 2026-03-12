@@ -145,6 +145,8 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', PasswordRule::defaults()],
             'invite_code' => ['required', 'string'],
+            // user must agree to confidentially keep program details
+            'agreement' => ['accepted'],
         ]);
 
         // Validate invite code
@@ -157,6 +159,7 @@ class AuthController extends Controller
         }
 
         if (!$inviteCode->canBeUsed()) {
+            \Illuminate\Support\Facades\Log::info("Invite code {$inviteCode->invite_code} is exhausted. Usage: {$inviteCode->users()->count()}, Max: {$inviteCode->max_number_of_uses}");
             return back()->withErrors([
                 'invite_code' => 'This invite code has reached its maximum number of uses.',
             ])->withInput();

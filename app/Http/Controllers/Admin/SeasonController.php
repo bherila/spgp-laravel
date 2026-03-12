@@ -54,6 +54,7 @@ class SeasonController extends Controller
             'early_spring_deadline' => ['required', 'date'],
             'final_deadline' => ['required', 'date'],
             'spreadsheet_url' => ['nullable', 'string', 'max:500'],
+            'allow_renewals' => ['nullable', 'boolean'],
         ]);
 
         $season = Season::create($validated);
@@ -75,6 +76,7 @@ class SeasonController extends Controller
             'early_spring_deadline' => ['sometimes', 'date'],
             'final_deadline' => ['sometimes', 'date'],
             'spreadsheet_url' => ['nullable', 'string', 'max:500'],
+            'allow_renewals' => ['nullable', 'boolean'],
         ]);
 
         $season->update($validated);

@@ -66,6 +66,6 @@ class InviteCode extends Model
      */
     public function canBeUsed(): bool
     {
-        return $this->usage_count < $this->max_number_of_uses;
+        return $this->users()->count() < $this->max_number_of_uses;
     }
 }

@@ -24,6 +24,7 @@ class Season extends Model
         'early_spring_deadline',
         'final_deadline',
         'spreadsheet_url',
+        'allow_renewals',
     ];
 
     /**
@@ -38,6 +39,7 @@ class Season extends Model
             'start_date' => 'datetime',
             'early_spring_deadline' => 'datetime',
             'final_deadline' => 'datetime',
+            'allow_renewals' => 'boolean',
         ];
     }
 

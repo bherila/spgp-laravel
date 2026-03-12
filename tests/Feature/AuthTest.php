@@ -11,6 +11,12 @@ class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class);
+    }
+
     /**
      * Test that the login page is accessible.
      */
@@ -49,6 +55,7 @@ class AuthTest extends TestCase
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'invite_code' => 'INVALID_CODE',
+            'agreement' => 'on',
         ]);
 
         $response->assertSessionHasErrors('invite_code');
@@ -71,6 +78,7 @@ class AuthTest extends TestCase
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'invite_code' => 'VALID_CODE',
+            'agreement' => 'on',
         ]);
 
         $response->assertRedirect('/dashboard');
@@ -107,10 +115,34 @@ class AuthTest extends TestCase
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'invite_code' => 'LIMITED_CODE',
+            'agreement' => 'on',
         ]);
 
         $response->assertSessionHasErrors('invite_code');
         $this->assertDatabaseMissing('users', ['email' => 'second@example.com']);
+    }
+
+    /**
+     * Test that registration requires agreement checkbox to be checked.
+     */
+    public function test_registration_requires_agreement(): void
+    {
+        InviteCode::create([
+            'invite_code' => 'AGREE_CODE',
+            'max_number_of_uses' => 5,
+        ]);
+
+        $response = $this->post('/register', [
+            'name' => 'Agree User',
+            'email' => 'agree@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'invite_code' => 'AGREE_CODE',
+            // agreement omitted on purpose
+        ]);
+
+        $response->assertSessionHasErrors('agreement');
+        $this->assertDatabaseMissing('users', ['email' => 'agree@example.com']);
     }
 
     /**

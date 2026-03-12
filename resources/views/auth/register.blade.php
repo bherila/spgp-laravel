@@ -6,6 +6,7 @@
     data-old-name="{{ old('name', '') }}"
     data-old-email="{{ old('email', '') }}"
     data-old-invite-code="{{ old('invite_code', '') }}"
+    data-old-agreement="{{ old('agreement') ? '1' : '0' }}"
   ></div>
 @endsection
 

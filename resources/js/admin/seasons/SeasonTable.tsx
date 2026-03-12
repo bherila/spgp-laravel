@@ -20,7 +20,6 @@ interface SeasonTableProps {
   onEdit: (season: Season) => void;
   onArchive: (season: Season) => void;
   onRestore: (season: Season) => void;
-  onManagePassTypes: (season: Season) => void;
 }
 
 export function SeasonTable({
@@ -29,8 +28,8 @@ export function SeasonTable({
   onEdit,
   onArchive,
   onRestore,
-  onManagePassTypes
 }: SeasonTableProps) {
+
   if (loading) {
     return (
       <div className="border rounded-lg">
@@ -42,7 +41,6 @@ export function SeasonTable({
               <TableHead>Start Date</TableHead>
               <TableHead>Early Spring Deadline</TableHead>
               <TableHead>Final Deadline</TableHead>
-              <TableHead>Requests</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -55,7 +53,6 @@ export function SeasonTable({
                 <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                 <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                 <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                <TableCell><Skeleton className="h-5 w-8" /></TableCell>
                 <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
                 <TableCell className="text-right"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
               </TableRow>
@@ -76,7 +73,6 @@ export function SeasonTable({
             <TableHead>Start Date</TableHead>
             <TableHead>Early Spring Deadline</TableHead>
             <TableHead>Final Deadline</TableHead>
-            <TableHead>Requests</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -84,7 +80,7 @@ export function SeasonTable({
         <TableBody>
           {seasons.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                 No seasons found.
               </TableCell>
             </TableRow>
@@ -96,14 +92,6 @@ export function SeasonTable({
                 <TableCell>{formatDate(season.start_date)}</TableCell>
                 <TableCell>{formatDate(season.early_spring_deadline)}</TableCell>
                 <TableCell>{formatDate(season.final_deadline)}</TableCell>
-                <TableCell>
-                  <a 
-                    href={`/admin/seasons/${season.id}/pass-requests`}
-                    className="text-primary hover:underline"
-                  >
-                    {season.pass_request_count}
-                  </a>
-                </TableCell>
                 <TableCell>
                   {season.deleted_at ? (
                     <Badge variant="secondary">Archived</Badge>
@@ -130,18 +118,12 @@ export function SeasonTable({
                           variant="outline"
                           size="sm"
                           asChild
+                          title={`View ${season.pass_request_count} Pass Requests`}
                         >
-                          <a href={`/admin/seasons/${season.id}/pass-requests`}>
+                          <a href={`/admin/seasons/${season.id}/pass-requests`} className="flex items-center gap-1">
                             <Users className="w-4 h-4" />
+                            <span className="text-xs font-medium">{season.pass_request_count}</span>
                           </a>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onManagePassTypes(season)}
-                          title="Manage Pass Types"
-                        >
-                          <Tag className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="outline"

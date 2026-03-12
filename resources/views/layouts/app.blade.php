@@ -41,5 +41,11 @@
     </footer>
 
     @stack('scripts')
+    <div id="sonner-toaster"></div>
+    @vite(['resources/js/components/ui/sonner.tsx'])
+    <script>
+      // This is a bit of a hack to ensure the Toaster is rendered
+      // In a real app we'd probably have a top-level React provider
+    </script>
   </body>
 </html>

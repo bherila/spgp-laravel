@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { Season } from './types';
 import { SeasonTable } from './SeasonTable';
 import { SeasonForm } from './SeasonForm';
-import { PassTypesModal } from './PassTypesModal';
+import { Toaster } from '@/components/ui/sonner';
 
 function AdminSeasons() {
   const mount = document.getElementById('admin-seasons');
@@ -29,7 +29,6 @@ function AdminSeasons() {
   
   // Modal states
   const [seasonFormOpen, setSeasonFormOpen] = useState(false);
-  const [passTypesModalOpen, setPassTypesModalOpen] = useState(false);
   const [archiveModalOpen, setArchiveModalOpen] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -150,7 +149,6 @@ function AdminSeasons() {
         onEdit={(season) => { setSelectedSeason(season); setSeasonFormOpen(true); }}
         onArchive={(season) => { setSelectedSeason(season); setArchiveModalOpen(true); }}
         onRestore={handleRestore}
-        onManagePassTypes={(season) => { setSelectedSeason(season); setPassTypesModalOpen(true); }}
       />
 
       <SeasonForm
@@ -161,12 +159,7 @@ function AdminSeasons() {
         onSuccess={fetchSeasons}
       />
 
-      <PassTypesModal
-        open={passTypesModalOpen}
-        onOpenChange={setPassTypesModalOpen}
-        season={selectedSeason}
-        csrfToken={csrfToken}
-      />
+      <Toaster />
 
       {/* Archive Confirmation Modal */}
       <Dialog open={archiveModalOpen} onOpenChange={setArchiveModalOpen}>

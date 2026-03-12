@@ -19,6 +19,7 @@ export interface Season {
   early_spring_deadline: string;
   final_deadline: string;
   spreadsheet_url: string | null;
+  allow_renewals: boolean;
   pass_request_count: number;
   invite_codes?: any[];
   deleted_at: string | null;

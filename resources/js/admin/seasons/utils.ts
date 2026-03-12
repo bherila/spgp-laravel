@@ -3,7 +3,7 @@ export function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
   return date.toLocaleDateString(undefined, { 
     year: 'numeric', 
-    month: 'long', 
+    month: 'short', 
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit'

@@ -146,23 +146,14 @@ The system uses several core tables:
 
 ## Testing
 
+See [TESTING.md](TESTING.md) for detailed instructions on running tests and troubleshooting common environment issues.
+
 ### Running Tests
 
 ```bash
 # Run all PHP tests
-composer test
-
-# Or directly with artisan
 php artisan test
 ```
-
-### Database Safety
-
-**Important:** Tests are configured to ALWAYS use SQLite in-memory database, never MySQL.
-
-This is enforced at multiple levels:
-1. `phpunit.xml` sets `DB_CONNECTION=sqlite` and `DB_DATABASE=:memory:`
-2. `Tests\SafeTestCase` verifies SQLite is active and throws an error if not.
 
 ## License
 

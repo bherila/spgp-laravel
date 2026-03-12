@@ -9,6 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import currency from 'currency.js';
 
 interface SeasonPassType {
@@ -31,6 +39,7 @@ interface Season {
   start_date: string;
   early_spring_deadline: string;
   final_deadline: string;
+  allow_renewals: boolean;
   pass_types: SeasonPassType[];
 }
 
@@ -180,7 +189,7 @@ function PassRequestForm() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-8">
         <MainTitle>New Pass Request</MainTitle>
         <p className="text-muted-foreground mt-2">
@@ -211,160 +220,163 @@ function PassRequestForm() {
           </CardContent>
         </Card>
       ) : step === 'type' ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 1: Select Pass Type</CardTitle>
-            <CardDescription>
-              Choose the season and type of pass you want to request.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="space-y-1">
-                <Label>Season</Label>
-                <p className="text-lg font-semibold">
-                  {selectedSeason?.pass_name} {selectedSeason?.pass_year}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Pass Type</Label>
-                {availablePassTypes.length === 0 ? (
-                  <Alert>
-                    <AlertDescription>
-                      No pass types available for this season. Please contact an administrator.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="grid gap-2">
-                    {availablePassTypes.map((type) => {
-                      const groupPrice = isEarlyBird ? type.group_early_price : type.group_regular_price;
-                      
-                                            // Determine regular price based on renewal status and early bird
-                      
-                                            let regularPrice;
-                      
-                                            if (isRenewal) {
-                      
-                                              regularPrice = isEarlyBird ? type.renewal_early_price : type.renewal_regular_price;
-                      
-                                            } else {
-                      
-                                              regularPrice = isEarlyBird ? type.regular_early_price : type.regular_regular_price;
-                      
-                                            }
-                      
-                                            
-                      
-                                            const savings = (regularPrice !== null && groupPrice !== null) 
-                      
-                                              ? parseFloat(regularPrice) - parseFloat(groupPrice) 
-                      
-                                              : 0;
-                      
-                                            
-                      
-                                            return (
-                      
-                                              <label
-                      
-                                                key={type.id}
-                      
-                                                className={`flex items-center justify-between p-3 rounded-md border cursor-pointer transition-colors ${
-                      
-                                                  passTypeId === type.id
-                      
-                                                    ? 'border-primary bg-primary/5'
-                      
-                                                    : 'border-input hover:bg-muted'
-                      
-                                                }`}
-                      
-                                              >
-                      
-                                                <div className="flex items-center">
-                      
-                                                  <input
-                      
-                                                    type="radio"
-                      
-                                                    name="passType"
-                      
-                                                    value={type.id}
-                      
-                                                    checked={passTypeId === type.id}
-                      
-                                                    onChange={() => setPassTypeId(type.id)}
-                      
-                                                    className="mr-3"
-                      
-                                                  />
-                      
-                                                  <span>{type.pass_type_name}</span>
-                      
-                                                </div>
-                      
-                                                <div className="text-right text-sm">
-                      
-                                                  <span className="font-medium">{formatPrice(groupPrice)}</span>
-                      
-                                                  {regularPrice !== null && (
-                      
-                                                    <>
-                      
-                                                      <span className="text-muted-foreground line-through ml-2">{formatPrice(regularPrice)}</span>
-                      
-                                                      {savings > 0 && (
-                      
-                                                        <span className="text-green-600 ml-2">(Save {formatPrice(savings.toString())})</span>
-                      
-                                                      )}
-                      
-                                                    </>
-                      
-                                                  )}
-                      
-                                                </div>
-                      
-                                              </label>
-                      
-                                            );
-                    })}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 order-2 lg:order-1">
+            <Card>
+              <CardHeader>
+                <CardTitle>Step 1: Select Pass Type</CardTitle>
+                <CardDescription>
+                  Choose the season and type of pass you want to request.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  <div className="space-y-1">
+                    <Label>Season</Label>
+                    <p className="text-lg font-semibold">
+                      {selectedSeason?.pass_name} {selectedSeason?.pass_year}
+                    </p>
                   </div>
-                )}
-                {isEarlyBird && selectedSeason && (
-                  <p className="text-sm text-green-600">
-                    🎉 Early bird pricing! Valid until {formatDate(selectedSeason.early_spring_deadline)}
-                  </p>
-                )}
-              </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="isRenewal"
-                  checked={isRenewal}
-                  onChange={(e) => setIsRenewal(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300"
-                />
-                <Label htmlFor="isRenewal">
-                  This is a renewal from a previous season
-                </Label>
-              </div>
+                  <div className="space-y-2">
+                    <Label>Pass Type</Label>
+                    {availablePassTypes.length === 0 ? (
+                      <Alert>
+                        <AlertDescription>
+                          No pass types available for this season. Please contact an administrator.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <div className="grid gap-2">
+                        {availablePassTypes.map((type) => {
+                          const groupPrice = isEarlyBird ? type.group_early_price : type.group_regular_price;
+                          
+                          // Determine regular price based on renewal status and early bird
+                          let regularPrice;
+                          if (isRenewal && selectedSeason?.allow_renewals) {
+                            regularPrice = isEarlyBird ? type.renewal_early_price : type.renewal_regular_price;
+                          } else {
+                            regularPrice = isEarlyBird ? type.regular_early_price : type.regular_regular_price;
+                          }
+                          
+                          const savings = (regularPrice !== null && groupPrice !== null) 
+                            ? parseFloat(regularPrice) - parseFloat(groupPrice) 
+                            : 0;
+                          
+                          return (
+                            <label
+                              key={type.id}
+                              className={`flex items-center justify-between p-3 rounded-md border cursor-pointer transition-colors ${
+                                passTypeId === type.id
+                                  ? 'border-primary bg-primary/5'
+                                  : 'border-input hover:bg-muted'
+                              }`}
+                            >
+                              <div className="flex items-center">
+                                <input
+                                  type="radio"
+                                  name="passType"
+                                  value={type.id}
+                                  checked={passTypeId === type.id}
+                                  onChange={() => setPassTypeId(type.id)}
+                                  className="mr-3"
+                                />
+                                <span>{type.pass_type_name}</span>
+                              </div>
+                              <div className="text-right text-sm">
+                                <span className="font-medium">{formatPrice(groupPrice)}</span>
+                                {regularPrice !== null && (
+                                  <>
+                                    <span className="text-muted-foreground line-through ml-2">{formatPrice(regularPrice)}</span>
+                                    {savings > 0 && (
+                                      <span className="text-green-600 ml-2">(Save {formatPrice(savings)})</span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {isEarlyBird && selectedSeason && (
+                      <p className="text-sm text-green-600">
+                        🎉 Early bird pricing! Valid until {formatDate(selectedSeason.early_spring_deadline)}
+                      </p>
+                    )}
+                  </div>
 
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  onClick={() => setStep('details')}
-                  disabled={!canProceedToDetails}
-                >
-                  Continue
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  {selectedSeason?.allow_renewals && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="isRenewal"
+                        checked={isRenewal}
+                        onChange={(e) => setIsRenewal(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="isRenewal">
+                        This is a renewal from a previous season
+                      </Label>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      onClick={() => setStep('details')}
+                      disabled={!canProceedToDetails}
+                    >
+                      Continue
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="order-1 lg:order-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Pricing Comparison</CardTitle>
+                <CardDescription>
+                  Current prices for all pass types.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="pl-6">Type</TableHead>
+                      <TableHead className="text-right pr-6">Group {isEarlyBird ? 'Early' : 'Reg'}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {availablePassTypes.map(type => (
+                      <TableRow key={type.id}>
+                        <TableCell className="pl-6 font-medium text-xs">{type.pass_type_name}</TableCell>
+                        <TableCell className="text-right pr-6 font-bold text-primary">
+                          {formatPrice(isEarlyBird ? type.group_early_price : type.group_regular_price)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                
+                <div className="p-4 mt-2 space-y-3">
+                  <div className="text-xs text-muted-foreground border-t pt-3">
+                    <p className="font-semibold mb-1">Standard Prices (Reference)</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>Early Bird:</div>
+                      <div className="text-right">{isEarlyBird ? 'ACTIVE' : 'Ended'}</div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       ) : (
         <form onSubmit={handleSubmit}>
           <Card>
@@ -383,7 +395,7 @@ function PassRequestForm() {
                     <p className="text-sm text-muted-foreground">
                       {selectedSeason?.pass_name}{' '}
                       {selectedSeason?.pass_year}
-                      {isRenewal && ' • Renewal'}
+                      {isRenewal && selectedSeason?.allow_renewals && ' • Renewal'}
                     </p>
                   </div>
                   <Button type="button" variant="ghost" size="sm" onClick={() => setStep('type')}>

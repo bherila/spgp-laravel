@@ -30,7 +30,8 @@
   - `/admin/*`: Admin management for seasons, users, invites, and logs.
 - **Testing Safety**: 
   - Tests ALWAYS use SQLite in-memory database (`:memory:`).
-  - `Tests\SafeTestCase` enforces this safety at runtime and calls `withoutVite()` so tests never depend on a frontend build.
+  - `Tests\SafeTestCase` enforces this safety at runtime.
+  - See [TESTING.md](TESTING.md) for environment-specific troubleshooting (e.g., `DB_CONNECTION` overrides).
   - All Jest unit tests must be located in `/tests-ts`, not `/resources/js`.
 - **Build Workflow**:
   - Backend: `composer install`, `php artisan migrate`.
