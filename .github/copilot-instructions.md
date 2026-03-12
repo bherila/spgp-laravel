@@ -2,11 +2,11 @@
 
 - **Architecture**: Laravel 12 API + Blade shell + React 19/TypeScript via Vite. Blade routes in `routes/web.php` return minimal views that mount React roots with `data-*` props for hydration (e.g., `data-user-name`, `data-is-admin`).
 - **Core Models**:
-  - `User`: Standard user with `is_admin` boolean and `invite_code_id`.
+  - `User`: Standard user with `is_admin` boolean. Linked to invite codes via `invite_code_user` pivot table (many-to-many).
   - `Season`: Represents a ski season (e.g., 2025-26) with deadlines (`start_date`, `early_spring_deadline`, `final_deadline`).
   - `SeasonPassType`: Pricing tiers for a season (Adult, Young Adult, etc.) with `regular_price`, `group_early_price`, and `group_price`.
   - `PassRequest`: A user's request for a pass. Tracks passholder details (name, DOB, email) and status (promo code, redemption date).
-  - `InviteCode`: Required for public registration, tracks usage limits.
+  - `InviteCode`: Required for public registration, tracks usage limits. Linked to users via `invite_code_user` pivot table.
   - `Question`: Q&A for seasons. Supports Markdown content/answer and many-to-many with `Season`.
   - `QuestionUpvote`: Tracks user upvotes on questions.
   - `EmailLog`: Audit trail of all system emails.
@@ -16,6 +16,10 @@
   - Components use `shadcn/ui` + Radix primitives + Tailwind CSS v4.
   - Path alias `@` points to `resources/js/`.
   - Data fetching for React components should typically happen via `fetch` to relative URLs (e.g., `/dashboard/pass-requests`).
+- **Error Tracking (Sentry)**:
+  - PHP: `sentry/sentry-laravel` package, configured via `config/sentry.php`. Active only when `SENTRY_DSN` env var is set.
+  - JS: `@sentry/browser` package, entrypoint at `resources/js/sentry.ts`. The layout blade (`resources/views/layouts/app.blade.php`) conditionally injects `window.SENTRY_DSN` and loads the Sentry JS bundle only when `SENTRY_DSN` is set.
+  - Set `SENTRY_DSN=` (blank) to disable Sentry in local/testing environments.
 - **Authorization**:
   - `auth` middleware for general access.
   - `can:admin` gate for administrative routes/actions.
@@ -26,11 +30,12 @@
   - `/admin/*`: Admin management for seasons, users, invites, and logs.
 - **Testing Safety**: 
   - Tests ALWAYS use SQLite in-memory database (`:memory:`).
-  - `Tests\SafeTestCase` enforces this safety at runtime.
+  - `Tests\SafeTestCase` enforces this safety at runtime and calls `withoutVite()` so tests never depend on a frontend build.
+  - All Jest unit tests must be located in `/tests-ts`, not `/resources/js`.
 - **Build Workflow**:
   - Backend: `composer install`, `php artisan migrate`.
   - Frontend: `pnpm install`, `pnpm run build` or `pnpm run dev`.
-  - Concurent dev: `pnpm run dev` and `php artisan serve`.
+  - Concurrent dev: `pnpm run dev` and `php artisan serve`.
 - **Conventions**:
   - Dates use `SerializesDatesAsLocal` trait for consistent TZ handling.
   - Use `import type` for TypeScript interfaces to prevent runtime SyntaxErrors in development.

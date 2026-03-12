@@ -267,7 +267,7 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 mt-1 shrink-0" />
                     <div className="flex flex-col flex-1">
-                      <span className="text-sm font-semibold mb-2">Answer from {question.answeredBy?.name || 'Admin'}:</span>
+                      <span className="text-sm font-semibold mb-2">Answer from {question.answered_by_user?.name || 'Admin'}:</span>
                       <div className="prose prose-sm dark:prose-invert max-w-none">
                         <MDXEditor 
                             markdown={question.answer} 

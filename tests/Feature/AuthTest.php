@@ -74,10 +74,12 @@ class AuthTest extends TestCase
         ]);
 
         $response->assertRedirect('/dashboard');
-        $this->assertDatabaseHas('users', [
-            'email' => 'test@example.com',
-            'invite_code_id' => $inviteCode->id,
-        ]);
+        $user = User::where('email', 'test@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertTrue(
+            $user->inviteCodes()->where('invite_codes.id', $inviteCode->id)->exists(),
+            'User should be linked to the invite code via pivot table'
+        );
     }
 
     /**
@@ -90,13 +92,13 @@ class AuthTest extends TestCase
             'max_number_of_uses' => 1,
         ]);
 
-        // First user uses the code
-        User::create([
+        // First user uses the code (via the pivot table)
+        $firstUser = User::create([
             'name' => 'First User',
             'email' => 'first@example.com',
             'password' => bcrypt('password'),
-            'invite_code_id' => $inviteCode->id,
         ]);
+        $firstUser->inviteCodes()->attach($inviteCode->id);
 
         // Second user tries to use same code
         $response = $this->post('/register', [
