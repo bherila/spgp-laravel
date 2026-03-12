@@ -324,7 +324,7 @@ function Dashboard() {
                 <div key={season.id} className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                      <h2 className="text-2xl font-bold">{season.pass_name} {season.pass_year}</h2>
+                      <h2 className="text-2xl font-bold">{season.pass_name}</h2>
                       <p className="text-muted-foreground mt-1">
                         Final deadline: {formatDate(season.final_deadline)}
                       </p>
