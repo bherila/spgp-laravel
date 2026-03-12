@@ -303,7 +303,7 @@ function SeasonPassRequestsAdmin() {
           </TableRow>
         ) : (
           requests.map((request) => (
-            <TableRow key={request.id} className={request.promo_code ? 'bg-green-50' : ''}>
+            <TableRow key={request.id} className={request.promo_code ? 'bg-primary/5' : ''}>
               <TableCell>
                 <Checkbox
                   checked={selectedIds.has(request.id)}
@@ -322,7 +322,7 @@ function SeasonPassRequestsAdmin() {
               {!hideExtraColumns && <TableCell>{request.user?.name || '—'}</TableCell>}
               <TableCell>
                 {request.promo_code ? (
-                  <code className="px-1.5 py-0.5 bg-green-100 text-green-800 rounded text-xs">
+                  <code className="px-1.5 py-0.5 bg-muted text-foreground border rounded text-xs font-bold">
                     {request.promo_code}
                   </code>
                 ) : (
@@ -405,7 +405,7 @@ function SeasonPassRequestsAdmin() {
               type="checkbox"
               checked={hideExtraColumns}
               onChange={(e) => setHideExtraColumns(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-input"
             />
             Hide Extra Columns
           </label>
@@ -414,7 +414,7 @@ function SeasonPassRequestsAdmin() {
               type="checkbox"
               checked={showRecentOnly}
               onChange={(e) => setShowRecentOnly(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-input"
             />
             Show Recently Assigned Only
           </label>

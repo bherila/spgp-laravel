@@ -495,7 +495,7 @@ function Dashboard() {
                                         onClick={() => handleCopyPromoCode(request.promo_code!, request.id)}
                                       >
                                         {copiedId === request.id ? (
-                                          <Check className="h-3.5 w-3.5 text-green-600" />
+                                          <Check className="h-3.5 w-3.5 text-primary" />
                                         ) : (
                                           <Copy className="h-3.5 w-3.5" />
                                         )}
@@ -528,7 +528,7 @@ function Dashboard() {
                                                         {request.redemption_date ? (
                                                           <Badge variant="default">Redeemed</Badge>
                                                         ) : request.renewal_order_number ? (
-                                                          <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white border-transparent">Renewed</Badge>
+                                                          <Badge variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground border-transparent">Renewed</Badge>
                                                         ) : request.promo_code ? (
                                                           <Badge variant="secondary">Code Assigned</Badge>
                                                         ) : (
