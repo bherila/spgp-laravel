@@ -87,12 +87,13 @@ interface Season {
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—';
   const date = new Date(dateStr);
-  return date.toLocaleDateString(undefined, { 
+  return date.toLocaleString(undefined, { 
     year: 'numeric', 
     month: 'long', 
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZoneName: 'short'
   });
 }
 

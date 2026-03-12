@@ -1,12 +1,13 @@
 export function formatDate(dateStr: string): string {
   if (!dateStr) return '—';
   const date = new Date(dateStr);
-  return date.toLocaleDateString(undefined, { 
+  return date.toLocaleString(undefined, { 
     year: 'numeric', 
     month: 'short', 
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZoneName: 'short'
   });
 }
 
