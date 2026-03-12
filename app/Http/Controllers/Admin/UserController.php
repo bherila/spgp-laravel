@@ -24,7 +24,7 @@ class UserController extends Controller
     {
         $users = User::query()
             ->withCount('passRequests as pass_request_count')
-            ->with('inviteCode:id,invite_code')
+            ->with('inviteCodes:id,invite_code')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -48,9 +48,9 @@ class UserController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'is_admin' => $validated['is_admin'] ?? false,
-            'email_verified_at' => now(), // Assume admin created users are verified
-            'invite_code_id' => null, // Admins don't need an invite code
         ]);
+        // Admin-created users are considered verified
+        $user->markEmailAsVerified();
 
         return response()->json($user, 201);
     }

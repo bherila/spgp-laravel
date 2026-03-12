@@ -263,20 +263,25 @@ class SeasonController extends Controller
 
                 // Log the email
                 EmailLog::create([
-                    'email' => implode(', ', $toAddresses),
+                    'event' => 'pass_code_notification',
+                    'email_to' => implode(', ', $toAddresses),
+                    'email_from' => config('mail.from.address', 'noreply@example.com'),
                     'subject' => "Your {$season->pass_name} {$season->pass_year} Promo Code",
                     'body' => "Promo code: {$passRequest->promo_code}",
-                    'sent_at' => now(),
+                    'result' => 'sent',
                 ]);
 
                 $sent++;
             } catch (\Exception $e) {
                 // Log failure but continue
                 EmailLog::create([
-                    'email' => $passRequest->passholder_email,
+                    'event' => 'pass_code_notification',
+                    'email_to' => $passRequest->passholder_email,
+                    'email_from' => config('mail.from.address', 'noreply@example.com'),
                     'subject' => "Your {$season->pass_name} {$season->pass_year} Promo Code",
                     'body' => "Failed: " . $e->getMessage(),
-                    'sent_at' => now(),
+                    'result' => 'failed',
+                    'error_message' => $e->getMessage(),
                 ]);
             }
         }
@@ -290,7 +295,7 @@ class SeasonController extends Controller
     /**
      * Delete a pass request (admin only).
      */
-    public function deletePassRequest(int $id)
+    public function deletePassRequest(string $id)
     {
         $passRequest = PassRequest::findOrFail($id);
         $passRequest->delete();
