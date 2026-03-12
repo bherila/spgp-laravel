@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Forgot Password')
+
 @section('content')
   <div id="forgot-password" 
     data-status="{{ session('status', '') }}"

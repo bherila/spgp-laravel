@@ -30,6 +30,9 @@ jobs:
           pnpm run build
           pnpm run test
 
+      - name: Prepare environment
+        run: cp .env.example .env && php artisan key:generate
+
       - name: Run PHPUnit
         run: vendor/bin/phpunit --configuration phpunit.xml
 

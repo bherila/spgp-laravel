@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import React, { useEffect, useState } from 'react';
 import MainTitle from '@/components/MainTitle';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Dialog,
@@ -69,11 +68,6 @@ function formatDate(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
-function formatDateTime(dateStr: string | null): string {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleString();
-}
-
 function SeasonPassRequestsAdmin() {
   const mount = document.getElementById('admin-season-pass-requests');
   const csrfToken = mount?.getAttribute('data-csrf-token') || '';
@@ -98,6 +92,12 @@ function SeasonPassRequestsAdmin() {
   const [codes, setCodes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+
+  // Send emails state
+  const [forceSend, setForceSend] = useState(false);
+  const [sendProgress, setSendProgress] = useState<{ current: number; total: number } | null>(null);
+  const [sendResultModalOpen, setSendResultModalOpen] = useState(false);
+  const [sendResult, setSendResult] = useState<{ succeeded: number; failed: number } | null>(null);
 
   const fetchData = async () => {
     try {
@@ -206,33 +206,53 @@ function SeasonPassRequestsAdmin() {
   };
 
   const handleSendEmails = async () => {
+    const ids = Array.from(selectedIds);
+    const total = ids.length;
+
     setActionLoading(true);
-    setActionMessage(null);
+    setSendProgress({ current: 0, total });
+    setSendEmailsModalOpen(false);
 
-    try {
-      const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/send-emails`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
-          pass_request_ids: Array.from(selectedIds),
-        }),
-      });
+    let succeeded = 0;
+    let failed = 0;
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to send emails');
+    for (let i = 0; i < ids.length; i++) {
+      setSendProgress({ current: i + 1, total });
+      try {
+        const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/send-emails`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+          },
+          body: JSON.stringify({
+            pass_request_ids: [ids[i]],
+            force_send: forceSend,
+          }),
+        });
 
-      setActionMessage(data.message);
-      setSendEmailsModalOpen(false);
-      fetchData();
-    } catch (err) {
-      setActionMessage(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setActionLoading(false);
+        const data = await response.json();
+        if (!response.ok) {
+          failed++;
+        } else {
+          const sent: number = data.sent ?? 0;
+          succeeded += sent;
+          if (sent === 0) {
+            // No email sent (already emailed and not force-sending, or no promo code)
+            failed++;
+          }
+        }
+      } catch {
+        failed++;
+      }
     }
+
+    setActionLoading(false);
+    setSendProgress(null);
+    setSendResult({ succeeded, failed });
+    setSendResultModalOpen(true);
+    fetchData();
   };
 
   const handleDelete = async (id: string) => {
@@ -397,6 +417,21 @@ function SeasonPassRequestsAdmin() {
         </div>
       )}
 
+      {/* Send progress bar */}
+      {sendProgress && (
+        <div className="mb-4 p-4 bg-primary/10 border border-primary rounded-lg">
+          <p className="text-sm text-primary mb-2">
+            Sending emails… {sendProgress.current} / {sendProgress.total}
+          </p>
+          <div className="w-full bg-primary/20 rounded-full h-2">
+            <div
+              className="bg-primary h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(sendProgress.current / sendProgress.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Actions Bar */}
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-4">
@@ -447,7 +482,7 @@ function SeasonPassRequestsAdmin() {
             variant="outline"
             size="sm"
             onClick={() => setSendEmailsModalOpen(true)}
-            disabled={selectedIds.size === 0}
+            disabled={selectedIds.size === 0 || actionLoading}
           >
             <Send className="w-4 h-4 mr-1" />
             Send Emails
@@ -539,18 +574,66 @@ function SeasonPassRequestsAdmin() {
           <DialogHeader>
             <DialogTitle>Send Email Notifications</DialogTitle>
             <DialogDescription>
-              Send promo code notification emails to selected passholders.
-              Only requests with promo codes that haven't been emailed yet will receive emails.
+              Send promo code notification emails to {selectedIds.size} selected passholders.
+              Each email will be sent to the passholder and to your account email.
             </DialogDescription>
           </DialogHeader>
+          <div className="py-4">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox
+                checked={forceSend}
+                onCheckedChange={(checked) => setForceSend(checked === true)}
+              />
+              Force-send even if already emailed
+            </label>
+            {!forceSend && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Only requests with promo codes that haven&apos;t been emailed yet will receive emails.
+              </p>
+            )}
+            {forceSend && (
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                Warning: emails will be sent even to passholders who already received one.
+              </p>
+            )}
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSendEmailsModalOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleSendEmails} disabled={actionLoading}>
               <Send className="w-4 h-4 mr-2" />
-              {actionLoading ? 'Sending...' : 'Send Emails'}
+              Send Emails
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Send Result Modal */}
+      <Dialog open={sendResultModalOpen} onOpenChange={setSendResultModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email Send Complete</DialogTitle>
+            <DialogDescription>
+              The email send operation has finished.
+            </DialogDescription>
+          </DialogHeader>
+          {sendResult && (
+            <div className="py-4 space-y-2">
+              <p className="text-sm">
+                <span className="font-semibold text-green-600 dark:text-green-400">{sendResult.succeeded}</span>{' '}
+                email{sendResult.succeeded !== 1 ? 's' : ''} sent successfully.
+              </p>
+              {sendResult.failed > 0 && (
+                <p className="text-sm">
+                  <span className="font-semibold text-destructive">{sendResult.failed}</span>{' '}
+                  request{sendResult.failed !== 1 ? 's' : ''} skipped (already emailed without force-send) or failed.
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setSendResultModalOpen(false)}>OK</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
