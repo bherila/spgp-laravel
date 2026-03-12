@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Register')
+
 @section('content')
   <div id="register"
     data-errors="{{ json_encode($errors->toArray()) }}"

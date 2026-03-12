@@ -230,26 +230,40 @@ class SeasonController extends Controller
         $validated = $request->validate([
             'pass_request_ids' => ['required', 'array'],
             'pass_request_ids.*' => ['required', 'string'],
+            'force_send' => ['sometimes', 'boolean'],
         ]);
 
-        $passRequests = PassRequest::with('user')
+        $forceSend = $validated['force_send'] ?? false;
+
+        $query = PassRequest::with('user')
             ->whereIn('id', $validated['pass_request_ids'])
             ->where('season_id', $id)
-            ->whereNotNull('promo_code')
-            ->whereNull('email_notify_time')
-            ->get();
+            ->whereNotNull('promo_code');
+
+        if (!$forceSend) {
+            $query->whereNull('email_notify_time');
+        }
+
+        $passRequests = $query->get();
+
+        $requestingUser = $request->user();
 
         $sent = 0;
         foreach ($passRequests as $passRequest) {
             try {
-                Mail::to($passRequest->passholder_email)
+                $toAddresses = [$passRequest->passholder_email];
+                if ($requestingUser !== null && $requestingUser->email !== $passRequest->passholder_email) {
+                    $toAddresses[] = $requestingUser->email;
+                }
+
+                Mail::to($toAddresses)
                     ->send(new PassCodeNotification($passRequest, $season));
 
                 $passRequest->update(['email_notify_time' => now()]);
 
                 // Log the email
                 EmailLog::create([
-                    'email' => $passRequest->passholder_email,
+                    'email' => implode(', ', $toAddresses),
                     'subject' => "Your {$season->pass_name} {$season->pass_year} Promo Code",
                     'body' => "Promo code: {$passRequest->promo_code}",
                     'sent_at' => now(),

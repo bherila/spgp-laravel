@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', $season->pass_name . ' ' . $season->pass_year . ' Pass Requests - Admin')
+
 @section('content')
   <div id="admin-season-pass-requests" 
        data-csrf-token="{{ csrf_token() }}" 
