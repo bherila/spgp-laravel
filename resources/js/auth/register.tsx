@@ -12,12 +12,14 @@ function RegisterForm() {
   const oldName = mount?.getAttribute('data-old-name') || '';
   const oldEmail = mount?.getAttribute('data-old-email') || '';
   const oldInviteCode = mount?.getAttribute('data-old-invite-code') || '';
+  const oldAgreement = mount?.getAttribute('data-old-agreement') === '1';
   
   const [name, setName] = useState(oldName);
   const [email, setEmail] = useState(oldEmail);
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [inviteCode, setInviteCode] = useState(oldInviteCode);
+  const [agreement, setAgreement] = useState(oldAgreement);
   const [errors, setErrors] = useState<Record<string, string[]>>(serverErrors);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -130,6 +132,26 @@ function RegisterForm() {
                   <p className="text-sm text-destructive">{errors.invite_code[0]}</p>
                 )}
               </div>
+
+              <div className="flex items-start space-x-2">
+                <input
+                  id="agreement"
+                  name="agreement"
+                  type="checkbox"
+                  checked={agreement}
+                  onChange={(e) => setAgreement(e.target.checked)}
+                  required
+                  className="mt-1 h-4 w-4"
+                />
+                <Label htmlFor="agreement" className="-mt-1">
+                  I agree to keep the details of this program confidential. It may be
+                  shared privately with friends and family but must never be shared
+                  publicly or posted on social media.
+                </Label>
+              </div>
+              {errors.agreement && (
+                <p className="text-sm text-destructive">{errors.agreement[0]}</p>
+              )}
               
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? 'Creating account...' : 'Create Account'}
