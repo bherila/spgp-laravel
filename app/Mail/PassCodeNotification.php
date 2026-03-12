@@ -30,7 +30,7 @@ class PassCodeNotification extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Your {$this->season->pass_name} {$this->season->pass_year} Promo Code",
+            subject: "🎿 {$this->season->pass_name} Promo Code for {$this->passRequest->passholder_first_name} {$this->passRequest->passholder_last_name}",
         );
     }
 
