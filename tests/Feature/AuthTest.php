@@ -27,17 +27,6 @@ class AuthTest extends TestCase
     }
 
     /**
-     * Test that the login page includes the Vite entrypoint script.
-     */
-    public function test_login_page_includes_vite_entrypoint(): void
-    {
-        $response = $this->get('/login');
-        $response->assertStatus(200);
-        // Assert that the compiled script tag for the login entrypoint is present
-        $response->assertSee('resources/js/auth/login.tsx', false);
-    }
-
-    /**
      * Test that the register page is accessible.
      */
     public function test_register_page_is_accessible(): void

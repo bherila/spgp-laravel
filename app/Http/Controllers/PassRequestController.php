@@ -103,6 +103,28 @@ class PassRequestController extends Controller
             'renewal_pass_id' => ['nullable', 'string', 'max:255'],
         ]);
 
+        // Check for duplicates
+        $existingRequest = PassRequest::where([
+            ['season_id', '=', $validated['season_id']],
+            ['passholder_first_name', '=', $validated['passholder_first_name']],
+            ['passholder_last_name', '=', $validated['passholder_last_name']],
+            ['passholder_email', '=', $validated['passholder_email']],
+        ])
+        ->whereDate('passholder_birth_date', $validated['passholder_birth_date'])
+        ->first();
+
+        if ($existingRequest) {
+            if ($existingRequest->user_id === $user->id) {
+                return response()->json([
+                    'message' => 'You have already created a pass request for this person. Only one pass request can exist for a Name/Email/DOB per Season.'
+                ], 422);
+            } else {
+                return response()->json([
+                    'message' => 'Another user has already created a pass request for this person. Please ensure they haven\'t already requested their own pass. Only one pass request can exist for a Name/Email/DOB per Season.'
+                ], 422);
+            }
+        }
+
         // Get the pass type name for legacy compatibility
         $passType = SeasonPassType::find($validated['season_pass_type_id']);
         $validated['pass_type'] = $passType?->pass_type_name ?? '';
