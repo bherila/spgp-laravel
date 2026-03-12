@@ -328,25 +328,34 @@ function Dashboard() {
                       <p className="text-muted-foreground mt-1">
                         Final deadline: {formatDate(season.final_deadline)}
                       </p>
-                      <div className="mt-2">
-                        <Button asChild variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground">
-                          <a href={`/season/${season.id}/questions`}>
-                            <HelpCircle className="w-4 h-4 mr-1.5" />
-                            View {season.questions_count} questions
-                          </a>
-                        </Button>
-                      </div>
-                    </div>
-                    <Button asChild size="lg" disabled={!canRequest} className={!canRequest ? 'opacity-50 pointer-events-none' : ''}>
-                      {canRequest ? (
-                        <a href={`/request/${season.id}`}>
-                          <Plus className="w-5 h-5 mr-2" />
-                          Request New Pass
-                        </a>
-                      ) : (
-                        <span>Opens on {openDateStr}</span>
+                      {season.early_spring_deadline && (
+                        (() => {
+                          const early = new Date(season.early_spring_deadline);
+                          const passed = early < now;
+                          return (
+                            <p className={`mt-1 ${passed ? 'text-red-600 line-through' : ''}`}>Early spring deadline: {formatDate(season.early_spring_deadline)}</p>
+                          );
+                        })()
                       )}
-                    </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button asChild variant="secondary" size="sm" className="h-8 px-2">
+                        <a href={`/season/${season.id}/questions`}>                        
+                          <HelpCircle className="w-4 h-4 mr-1.5" />
+                          View {season.questions_count} questions
+                        </a>
+                      </Button>
+                      <Button asChild size="lg" disabled={!canRequest} className={!canRequest ? 'opacity-50 pointer-events-none' : ''}>
+                        {canRequest ? (
+                          <a href={`/request/${season.id}`}>
+                            <Plus className="w-5 h-5 mr-2" />
+                            Request New Pass
+                          </a>
+                        ) : (
+                          <span>Opens on {openDateStr}</span>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
