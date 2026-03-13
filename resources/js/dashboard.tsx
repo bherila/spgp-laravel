@@ -1,12 +1,20 @@
 import './bootstrap';
-import { createRoot } from 'react-dom/client';
+
+import currency from 'currency.js';
+import { Check, Copy, FileEdit, HelpCircle, Plus, Trash2, X } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+
 import MainTitle from '@/components/MainTitle';
+import { RenewalInfo } from '@/components/RenewalInfo';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -14,8 +22,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -25,20 +35,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { FileEdit, Trash2, X, Plus, Copy, Check, HelpCircle } from 'lucide-react';
-import currency from 'currency.js';
-import { RenewalInfo } from '@/components/RenewalInfo';
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+
 import Questions from './components/Questions';
 
 interface SeasonPassType {

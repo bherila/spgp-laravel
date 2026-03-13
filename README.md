@@ -153,6 +153,22 @@ See [TESTING.md](TESTING.md) for detailed instructions on running tests and trou
 ```bash
 # Run all PHP tests
 php artisan test
+
+# Run TypeScript/JavaScript tests
+pnpm test
+```
+
+### Linting
+
+```bash
+# Run ESLint linter
+pnpm lint
+
+# Run ESLint linter and auto-fix issues
+pnpm lint:fix
+
+# Run TypeScript type-check
+pnpm type-check
 ```
 
 ## License

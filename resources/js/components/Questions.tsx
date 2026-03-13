@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import '@mdxeditor/editor/style.css';
+
+import { BoldItalicUnderlineToggles, headingsPlugin, listsPlugin, ListsToggle, markdownShortcutPlugin, MDXEditor, quotePlugin, Separator, thematicBreakPlugin, UndoRedo } from '@mdxeditor/editor';
+import { ArrowLeft, CheckCircle2, Edit2, HelpCircle, MessageSquare, Send, ThumbsUp, Trash2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+
 import MainTitle from '@/components/MainTitle';
 import { Button as ShadcnButton } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ThumbsUp, MessageSquare, ArrowLeft, Send, Edit2, Trash2, CheckCircle2, HelpCircle } from 'lucide-react';
-import { MDXEditor, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin, markdownShortcutPlugin, BoldItalicUnderlineToggles, UndoRedo, Separator, ListsToggle } from '@mdxeditor/editor';
-import '@mdxeditor/editor/style.css';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface User {
   id: number;

@@ -1,4 +1,9 @@
+import { Archive, Pencil, RotateCcw, Users } from 'lucide-react';
 import React from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -7,10 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Pencil, Archive, RotateCcw, Users, Tag } from 'lucide-react';
+
 import type { Season } from './types';
 import { formatDate } from './utils';
 
