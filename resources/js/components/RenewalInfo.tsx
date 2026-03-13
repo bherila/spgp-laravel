@@ -1,5 +1,5 @@
-import React from 'react';
 import currency from 'currency.js';
+import React from 'react';
 
 interface Season {
   id: number;

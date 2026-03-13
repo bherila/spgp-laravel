@@ -1,6 +1,9 @@
 import '../../bootstrap';
-import { createRoot } from 'react-dom/client';
+
+import { Plus } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+
 import MainTitle from '@/components/MainTitle';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,12 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Plus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Season } from './types';
-import { SeasonTable } from './SeasonTable';
-import { SeasonForm } from './SeasonForm';
 import { Toaster } from '@/components/ui/sonner';
+
+import { SeasonForm } from './SeasonForm';
+import { SeasonTable } from './SeasonTable';
+import type { Season } from './types';
 
 function AdminSeasons() {
   const mount = document.getElementById('admin-seasons');

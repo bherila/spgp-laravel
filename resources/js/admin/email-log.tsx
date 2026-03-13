@@ -1,10 +1,10 @@
 import '../bootstrap';
+
+import React, { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import React, { useEffect, useState, useCallback } from 'react';
+
 import MainTitle from '@/components/MainTitle';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,

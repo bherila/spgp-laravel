@@ -1,10 +1,12 @@
 import '../bootstrap';
-import { createRoot } from 'react-dom/client';
+
+import { Key, Pencil, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+
 import MainTitle from '@/components/MainTitle';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +15,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -21,9 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Pencil, Trash2, Key } from 'lucide-react';
 
 interface User {
   id: number;
