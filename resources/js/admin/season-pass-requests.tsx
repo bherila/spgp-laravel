@@ -1,6 +1,6 @@
 import '../bootstrap';
 
-import { ArrowLeft, FileSpreadsheet, Send, Trash2, XCircle } from 'lucide-react';
+import { ArrowLeft, Copy, FileSpreadsheet, Send, Tag, Trash2, XCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface User {
   id: number;
@@ -86,6 +86,7 @@ function SeasonPassRequestsAdmin() {
   // Filters
   const [hideExtraColumns, setHideExtraColumns] = useState(false);
   const [showRecentOnly, setShowRecentOnly] = useState(false);
+  const [filterMode, setFilterMode] = useState<'new' | 'renewal' | 'both'>('new');
 
   // Modal states
   const [assignCodesModalOpen, setAssignCodesModalOpen] = useState(false);
@@ -195,7 +196,7 @@ function SeasonPassRequestsAdmin() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to clear codes');
+      if (!response.ok) throw new Error(data.message || 'Failed to unassign codes');
 
       setActionMessage(data.message);
       setClearCodesModalOpen(false);
@@ -289,11 +290,51 @@ function SeasonPassRequestsAdmin() {
     .filter((r) => r.is_renewal)
     .sort((a, b) => (a.promo_code ? 1 : 0) - (b.promo_code ? 1 : 0));
 
+  const filteredRequests =
+    filterMode === 'new'
+      ? newRequests
+      : filterMode === 'renewal'
+        ? renewalRequests
+        : [...passRequests].sort((a, b) => (a.promo_code ? 1 : 0) - (b.promo_code ? 1 : 0));
+
+  // Quick-selection helpers (operate on filtered/visible requests)
+  const selectWithCode = () =>
+    setSelectedIds(new Set(filteredRequests.filter((r) => r.promo_code).map((r) => r.id)));
+  const selectWithoutCode = () =>
+    setSelectedIds(new Set(filteredRequests.filter((r) => !r.promo_code).map((r) => r.id)));
+  const selectWithCodeEmailed = () =>
+    setSelectedIds(
+      new Set(filteredRequests.filter((r) => r.promo_code && r.email_notify_time).map((r) => r.id)),
+    );
+  const selectWithCodeNotEmailed = () =>
+    setSelectedIds(
+      new Set(filteredRequests.filter((r) => r.promo_code && !r.email_notify_time).map((r) => r.id)),
+    );
+
+  const handleCopyTSV = async () => {
+    const headers = ['Promo Code', 'Passholder', 'Email', 'Pass Type', 'Birth Date'];
+    const selectedRequests = passRequests.filter((r) => selectedIds.has(r.id));
+    const rows = selectedRequests.map((r) => [
+      r.promo_code ?? '',
+      `${r.passholder_first_name} ${r.passholder_last_name}`,
+      r.passholder_email,
+      r.season_pass_type?.pass_type_name ?? r.pass_type,
+      formatDate(r.passholder_birth_date),
+    ]);
+    const tsv = [headers, ...rows].map((row) => row.join('\t')).join('\n');
+    try {
+      await navigator.clipboard.writeText(tsv);
+      setActionMessage(`Copied ${selectedRequests.length} row${selectedRequests.length !== 1 ? 's' : ''} to clipboard as TSV.`);
+    } catch {
+      setError('Failed to copy to clipboard. Please check browser permissions.');
+    }
+  };
+
   const renderTable = (requests: PassRequest[]) => (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="w-12">
+          <TableHead className="w-10 py-2">
             <Checkbox
               checked={requests.length > 0 && requests.every((r) => selectedIds.has(r.id))}
               onCheckedChange={(checked) => {
@@ -305,44 +346,44 @@ function SeasonPassRequestsAdmin() {
               }}
             />
           </TableHead>
-          <TableHead>Passholder</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Pass Type</TableHead>
-          {!hideExtraColumns && <TableHead>Birth Date</TableHead>}
-          {!hideExtraColumns && <TableHead>Requester</TableHead>}
-          <TableHead>Promo Code</TableHead>
-          <TableHead>Assigned</TableHead>
-          <TableHead>Emailed</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
+          <TableHead className="py-2">Passholder</TableHead>
+          <TableHead className="py-2">Email</TableHead>
+          <TableHead className="py-2">Pass Type</TableHead>
+          {!hideExtraColumns && <TableHead className="py-2">Birth Date</TableHead>}
+          {!hideExtraColumns && <TableHead className="py-2">Requester</TableHead>}
+          <TableHead className="py-2">Promo Code</TableHead>
+          <TableHead className="py-2">Assigned</TableHead>
+          <TableHead className="py-2">Emailed</TableHead>
+          <TableHead className="py-2 text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {requests.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={hideExtraColumns ? 8 : 10} className="text-center py-8 text-muted-foreground">
+            <TableCell colSpan={hideExtraColumns ? 8 : 10} className="text-center py-6 text-muted-foreground">
               No pass requests found.
             </TableCell>
           </TableRow>
         ) : (
           requests.map((request) => (
             <TableRow key={request.id} className={request.promo_code ? 'bg-primary/5' : ''}>
-              <TableCell>
+              <TableCell className="py-1">
                 <Checkbox
                   checked={selectedIds.has(request.id)}
                   onCheckedChange={() => toggleSelect(request.id)}
                 />
               </TableCell>
-              <TableCell className="font-medium">
+              <TableCell className="py-1 font-medium">
                 {request.passholder_first_name} {request.passholder_last_name}
                 {request.is_renewal && (
                   <Badge variant="outline" className="ml-2">Renewal</Badge>
                 )}
               </TableCell>
-              <TableCell>{request.passholder_email}</TableCell>
-              <TableCell>{request.season_pass_type?.pass_type_name ?? request.pass_type}</TableCell>
-              {!hideExtraColumns && <TableCell>{formatDate(request.passholder_birth_date)}</TableCell>}
-              {!hideExtraColumns && <TableCell>{request.user?.name || '—'}</TableCell>}
-              <TableCell>
+              <TableCell className="py-1">{request.passholder_email}</TableCell>
+              <TableCell className="py-1">{request.season_pass_type?.pass_type_name ?? request.pass_type}</TableCell>
+              {!hideExtraColumns && <TableCell className="py-1">{formatDate(request.passholder_birth_date)}</TableCell>}
+              {!hideExtraColumns && <TableCell className="py-1">{request.user?.name || '—'}</TableCell>}
+              <TableCell className="py-1">
                 {request.promo_code ? (
                   <code className="px-1.5 py-0.5 bg-muted text-foreground border rounded text-xs font-bold">
                     {request.promo_code}
@@ -351,8 +392,8 @@ function SeasonPassRequestsAdmin() {
                   <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
-              <TableCell>{formatDate(request.assign_code_date)}</TableCell>
-              <TableCell>
+              <TableCell className="py-1">{formatDate(request.assign_code_date)}</TableCell>
+              <TableCell className="py-1">
                 {request.email_notify_time ? (
                   <Badge variant="default">Sent</Badge>
                 ) : request.promo_code ? (
@@ -361,7 +402,7 @@ function SeasonPassRequestsAdmin() {
                   <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="py-1 text-right">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -469,6 +510,7 @@ function SeasonPassRequestsAdmin() {
             onClick={() => setAssignCodesModalOpen(true)}
             disabled={selectedIds.size === 0}
           >
+            <Tag className="w-4 h-4 mr-1" />
             Assign Codes
           </Button>
           <Button
@@ -478,8 +520,26 @@ function SeasonPassRequestsAdmin() {
             disabled={selectedIds.size === 0}
           >
             <XCircle className="w-4 h-4 mr-1" />
-            Clear Codes
+            Unassign Codes
           </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={selectedIds.size === 0 ? 0 : undefined}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyTSV}
+                  disabled={selectedIds.size === 0}
+                >
+                  <Copy className="w-4 h-4 mr-1" />
+                  Copy TSV
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {selectedIds.size === 0 && (
+              <TooltipContent>Select rows to copy TSV</TooltipContent>
+            )}
+          </Tooltip>
           <Button
             variant="outline"
             size="sm"
@@ -498,19 +558,59 @@ function SeasonPassRequestsAdmin() {
           <Skeleton className="h-64 w-full" />
         </div>
       ) : (
-        <Tabs defaultValue="new" className="mt-6">
-          <TabsList>
-            <TabsTrigger value="new">New ({newRequests.length})</TabsTrigger>
-            <TabsTrigger value="renewal">Renewal ({renewalRequests.length})</TabsTrigger>
-          </TabsList>
+        <div className="mt-6">
+          {/* New / Renewal / Both filter ButtonGroup */}
+          <div className="flex items-center gap-0 mb-4">
+            <Button
+              variant={filterMode === 'new' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-r-none"
+              onClick={() => setFilterMode('new')}
+            >
+              New ({newRequests.length})
+            </Button>
+            <Button
+              variant={filterMode === 'renewal' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-none border-l-0"
+              onClick={() => setFilterMode('renewal')}
+            >
+              Renewal ({renewalRequests.length})
+            </Button>
+            <Button
+              variant={filterMode === 'both' ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-l-none border-l-0"
+              onClick={() => setFilterMode('both')}
+            >
+              Both ({passRequests.length})
+            </Button>
+          </div>
 
-          <TabsContent value="new" className="border rounded-lg mt-4">
-            {renderTable(newRequests)}
-          </TabsContent>
-          <TabsContent value="renewal" className="border rounded-lg mt-4">
-            {renderTable(renewalRequests)}
-          </TabsContent>
-        </Tabs>
+          {/* Quick-selection buttons */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="text-xs text-muted-foreground mr-1">Quick select:</span>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={deselectAll}>
+              Unselect All
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectWithCode}>
+              Has Code
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectWithoutCode}>
+              No Code
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectWithCodeEmailed}>
+              Has Code + Emailed
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={selectWithCodeNotEmailed}>
+              Has Code + Not Emailed
+            </Button>
+          </div>
+
+          <div className="border rounded-lg">
+            {renderTable(filteredRequests)}
+          </div>
+        </div>
       )}
 
       {/* Assign Codes Modal */}
@@ -549,13 +649,13 @@ function SeasonPassRequestsAdmin() {
         </DialogContent>
       </Dialog>
 
-      {/* Clear Codes Modal */}
+      {/* Unassign Codes Modal */}
       <Dialog open={clearCodesModalOpen} onOpenChange={setClearCodesModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Clear Promo Codes</DialogTitle>
+            <DialogTitle>Unassign Promo Codes</DialogTitle>
             <DialogDescription>
-              Are you sure you want to clear promo codes from {selectedIds.size} selected pass requests?
+              Are you sure you want to unassign promo codes from {selectedIds.size} selected pass requests?
               This will also reset the assign date.
             </DialogDescription>
           </DialogHeader>
@@ -564,7 +664,7 @@ function SeasonPassRequestsAdmin() {
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleClearCodes} disabled={actionLoading}>
-              {actionLoading ? 'Clearing...' : 'Clear Codes'}
+              {actionLoading ? 'Unassigning...' : 'Unassign Codes'}
             </Button>
           </DialogFooter>
         </DialogContent>
