@@ -13,6 +13,7 @@
         "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.0",
         "sentry/sentry-laravel": "^4.21",
+        "spatie/laravel-csp": "^3.23",
         "symfony/brevo-mailer": "^7.4",
         "symfony/http-client": "^7.4",
         "symfony/yaml": "^7.3",
