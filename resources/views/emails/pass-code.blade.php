@@ -1,5 +1,5 @@
 <x-mail::message>
-# Your {{ $season->pass_name }} {{ $season->pass_year }} Promo Code
+# Your {{ $season->pass_name }} Promo Code
 
 Hello {{ $passRequest->passholder_first_name }},
 
