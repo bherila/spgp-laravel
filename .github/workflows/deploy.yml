@@ -89,4 +89,4 @@ jobs:
         run: |
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} \
-            "cd ~/laravel-spgp && /opt/cpanel/ea-php83/root/usr/bin/php artisan config:clear && /opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache && cd ~ && rm -rf spgp.vxcv.com && rm -rf web && ln -s laravel-spgp/public spgp.vxcv.com && ln -s laravel-spgp/public web"
+            "cd ~/laravel-spgp && /opt/cpanel/ea-php83/root/usr/bin/php artisan config:clear && /opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache && /opt/cpanel/ea-php83/root/usr/bin/php artisan migrate --force && cd ~ && rm -rf spgp.vxcv.com && rm -rf web && ln -s laravel-spgp/public spgp.vxcv.com && ln -s laravel-spgp/public web"
