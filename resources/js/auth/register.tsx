@@ -11,12 +11,14 @@ import { Label } from '@/components/ui/label';
 function RegisterForm() {
   const mount = document.getElementById('register');
   const serverErrors = JSON.parse(mount?.getAttribute('data-errors') || '{}');
-  const oldName = mount?.getAttribute('data-old-name') || '';
+  const oldFirstName = mount?.getAttribute('data-old-first-name') || '';
+  const oldLastName = mount?.getAttribute('data-old-last-name') || '';
   const oldEmail = mount?.getAttribute('data-old-email') || '';
   const oldInviteCode = mount?.getAttribute('data-old-invite-code') || '';
   const oldAgreement = mount?.getAttribute('data-old-agreement') === '1';
   
-  const [name, setName] = useState(oldName);
+  const [firstName, setFirstName] = useState(oldFirstName);
+  const [lastName, setLastName] = useState(oldLastName);
   const [email, setEmail] = useState(oldEmail);
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
@@ -47,21 +49,40 @@ function RegisterForm() {
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="first_name">First Name</Label>
                 <Input
-                  id="name"
-                  name="name"
+                  id="first_name"
+                  name="first_name"
                   type="text"
-                  placeholder="Your name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your first name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   required
                   maxLength={255}
-                  autoComplete="name"
-                  aria-invalid={!!errors.name}
+                  autoComplete="given-name"
+                  aria-invalid={!!errors.first_name}
                 />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name[0]}</p>
+                {errors.first_name && (
+                  <p className="text-sm text-destructive">{errors.first_name[0]}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="last_name">Last Name</Label>
+                <Input
+                  id="last_name"
+                  name="last_name"
+                  type="text"
+                  placeholder="Your last name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  maxLength={255}
+                  autoComplete="family-name"
+                  aria-invalid={!!errors.last_name}
+                />
+                {errors.last_name && (
+                  <p className="text-sm text-destructive">{errors.last_name[0]}</p>
                 )}
               </div>
               

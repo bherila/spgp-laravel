@@ -141,7 +141,8 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', PasswordRule::defaults()],
             'invite_code' => ['required', 'string'],
@@ -166,7 +167,8 @@ class AuthController extends Controller
         }
 
         $user = User::create([
-            'name' => $validated['name'],
+            'first_name' => $validated['first_name'],
+            'last_name' => $validated['last_name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
@@ -248,7 +250,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return response()->json([
-            'message' => 'Now logged in as ' . $user->name,
+            'message' => 'Now logged in as ' . $user->first_name,
             'redirect' => '/dashboard',
         ]);
     }

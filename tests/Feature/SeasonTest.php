@@ -23,7 +23,8 @@ class SeasonTest extends TestCase
     public function test_can_create_season_with_allow_renewals(): void
     {
         $admin = User::create([
-            'name' => 'Admin User',
+            'first_name' => 'Admin',
+            'last_name' => 'User',
             'email' => 'admin@example.com',
             'password' => bcrypt('password'),
             'is_admin' => true,
@@ -51,7 +52,8 @@ class SeasonTest extends TestCase
     public function test_can_update_season_allow_renewals(): void
     {
         $admin = User::create([
-            'name' => 'Admin User',
+            'first_name' => 'Admin',
+            'last_name' => 'User',
             'email' => 'admin@example.com',
             'password' => bcrypt('password'),
             'is_admin' => true,
