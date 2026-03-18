@@ -1,6 +1,6 @@
 import '../bootstrap';
 
-import { Key, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Key, Pencil, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -29,6 +29,8 @@ import {
 
 interface User {
   id: number;
+  first_name: string | null;
+  last_name: string | null;
   name: string;
   email: string;
   is_admin: boolean;
@@ -55,6 +57,7 @@ function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
   
   // Modal states
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -62,7 +65,8 @@ function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
   // Form states
-  const [formName, setFormName] = useState('');
+  const [formFirstName, setFormFirstName] = useState('');
+  const [formLastName, setFormLastName] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [formIsAdmin, setFormIsAdmin] = useState(false);
   const [formPassword, setFormPassword] = useState('');
@@ -90,6 +94,23 @@ function AdminUsers() {
     fetchUsers();
   }, []);
 
+  const handleCopyTSV = async () => {
+    const header = ['ID', 'EMAIL', 'FIRSTNAME', 'LASTNAME'].join('\t');
+    const rows = users.map((u) => [
+      u.id,
+      u.email,
+      u.first_name ?? '',
+      u.last_name ?? '',
+    ].join('\t'));
+    const tsv = [header, ...rows].join('\n');
+    try {
+      await navigator.clipboard.writeText(tsv);
+      setActionMessage(`Copied ${users.length} user${users.length !== 1 ? 's' : ''} to clipboard as TSV.`);
+    } catch {
+      setError('Failed to copy to clipboard. Please check browser permissions.');
+    }
+  };
+
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
@@ -99,7 +120,8 @@ function AdminUsers() {
     
     try {
       const body: Record<string, unknown> = {
-        name: formName,
+        first_name: formFirstName,
+        last_name: formLastName,
         email: formEmail,
         is_admin: formIsAdmin,
       };
@@ -164,7 +186,8 @@ function AdminUsers() {
 
   const openEditModal = (user: User) => {
     setSelectedUser(user);
-    setFormName(user.name);
+    setFormFirstName(user.first_name ?? '');
+    setFormLastName(user.last_name ?? '');
     setFormEmail(user.email);
     setFormIsAdmin(user.is_admin);
     setFormPassword('');
@@ -179,7 +202,7 @@ function AdminUsers() {
   };
 
   const handleImpersonate = async (user: User) => {
-    if (!confirm(`Login as ${user.name}? You will need to log out and back in to return to your admin account.`)) {
+    if (!confirm(`Login as ${user.first_name ?? user.name}? You will need to log out and back in to return to your admin account.`)) {
       return;
     }
 
@@ -213,11 +236,26 @@ function AdminUsers() {
             Manage user accounts and permissions.
           </p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleCopyTSV}
+          disabled={loading || users.length === 0}
+        >
+          <Copy className="w-4 h-4 mr-1" />
+          Copy TSV
+        </Button>
       </div>
 
       {error && (
         <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-lg text-destructive">
           {error}
+        </div>
+      )}
+
+      {actionMessage && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
+          {actionMessage}
         </div>
       )}
 
@@ -251,7 +289,11 @@ function AdminUsers() {
               ) : (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {user.first_name || user.last_name
+                        ? `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim()
+                        : <span className="text-muted-foreground">—</span>}
+                    </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       {user.is_admin ? (
@@ -327,11 +369,20 @@ function AdminUsers() {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="edit-name">Name</Label>
+                <Label htmlFor="edit-first-name">First Name</Label>
                 <Input
-                  id="edit-name"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
+                  id="edit-first-name"
+                  value={formFirstName}
+                  onChange={(e) => setFormFirstName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-last-name">Last Name</Label>
+                <Input
+                  id="edit-last-name"
+                  value={formLastName}
+                  onChange={(e) => setFormLastName(e.target.value)}
                   required
                 />
               </div>
@@ -391,7 +442,7 @@ function AdminUsers() {
           <DialogHeader>
             <DialogTitle>Delete User</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{selectedUser?.name}"?
+              Are you sure you want to delete "{selectedUser?.first_name} {selectedUser?.last_name}"?
               This action cannot be undone.
               {selectedUser && selectedUser.pass_request_count > 0 && (
                 <span className="block mt-2 text-amber-600">

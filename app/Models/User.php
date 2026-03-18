@@ -19,10 +19,20 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
         'is_admin',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'name',
     ];
 
     /**
@@ -55,6 +65,14 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->is_admin === true;
+    }
+
+    /**
+     * Get the user's full name.
+     */
+    public function getNameAttribute(): string
+    {
+        return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
     }
 
     /**

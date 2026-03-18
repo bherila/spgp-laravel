@@ -67,6 +67,8 @@ class AdminTest extends TestCase
 
         $adminData = collect($data)->firstWhere('id', $this->admin->id);
         $this->assertNotNull($adminData);
+        $this->assertArrayHasKey('first_name', $adminData);
+        $this->assertArrayHasKey('last_name', $adminData);
         $this->assertArrayHasKey('name', $adminData);
         $this->assertArrayHasKey('email', $adminData);
         $this->assertArrayHasKey('is_admin', $adminData);
@@ -130,7 +132,8 @@ class AdminTest extends TestCase
     public function test_admin_can_create_user(): void
     {
         $response = $this->actingAs($this->admin)->post('/api/admin/users', [
-            'name' => 'New User',
+            'first_name' => 'New',
+            'last_name' => 'User',
             'email' => 'newuser@example.com',
             'password' => 'password123',
             'is_admin' => false,
@@ -143,7 +146,8 @@ class AdminTest extends TestCase
     public function test_admin_created_user_is_email_verified(): void
     {
         $response = $this->actingAs($this->admin)->post('/api/admin/users', [
-            'name' => 'Verified User',
+            'first_name' => 'Verified',
+            'last_name' => 'User',
             'email' => 'verified@example.com',
             'password' => 'password123',
         ]);
@@ -157,13 +161,15 @@ class AdminTest extends TestCase
     public function test_admin_can_update_user(): void
     {
         $response = $this->actingAs($this->admin)->put("/api/admin/users/{$this->regularUser->id}", [
-            'name' => 'Updated Name',
+            'first_name' => 'Updated',
+            'last_name' => 'Name',
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('users', [
             'id' => $this->regularUser->id,
-            'name' => 'Updated Name',
+            'first_name' => 'Updated',
+            'last_name' => 'Name',
         ]);
     }
 

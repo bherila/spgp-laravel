@@ -15,7 +15,7 @@ class CreateUser extends Command
      *
      * @var string
      */
-    protected $signature = 'user:create {email} {--name=} {--password=} {--is-admin}';
+    protected $signature = 'user:create {email} {--first-name=} {--last-name=} {--name=} {--password=} {--is-admin}';
 
     /**
      * The console command description.
@@ -30,10 +30,24 @@ class CreateUser extends Command
     public function handle()
     {
         $email = $this->argument('email');
-        $name = $this->option('name') ?: $this->ask('Name');
-        $password = $this->option('password');
         $isAdmin = $this->option('is-admin');
 
+        // Support --name for backward compatibility (split at first space)
+        $firstName = $this->option('first-name');
+        $lastName = $this->option('last-name');
+        if (!$firstName && $this->option('name')) {
+            $parts = explode(' ', $this->option('name'), 2);
+            $firstName = $parts[0];
+            $lastName = $parts[1] ?? null;
+        }
+        if (!$firstName) {
+            $firstName = $this->ask('First Name');
+        }
+        if (!$lastName) {
+            $lastName = $this->ask('Last Name');
+        }
+
+        $password = $this->option('password');
         if (empty($password)) {
             $password = $this->secret('Password (leave blank to generate)');
         }
@@ -58,16 +72,16 @@ class CreateUser extends Command
         }
 
         $user = User::create([
-            'name' => $name,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
             'email' => $email,
             'password' => Hash::make($password),
             'email_verified_at' => now(),
-            'invite_code_id' => null,
             'is_admin' => $isAdmin ? true : false,
         ]);
 
         $adminText = $user->is_admin ? ' (Admin)' : '';
-        $this->info("User {$user->name} ({$user->email}){$adminText} created successfully.");
+        $this->info("User {$user->first_name} {$user->last_name} ({$user->email}){$adminText} created successfully.");
         if (!empty($generated)) {
             $this->info("Generated password: {$password}");
         }
