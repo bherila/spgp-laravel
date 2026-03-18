@@ -17,14 +17,21 @@ return new class extends Migration
             $table->string('last_name')->nullable()->after('first_name');
         });
 
-        // Migrate existing name data: split at first space
-        DB::table('users')->whereNotNull('name')->orderBy('id')->each(function ($user) {
-            $parts = explode(' ', $user->name, 2);
-            DB::table('users')->where('id', $user->id)->update([
-                'first_name' => $parts[0],
-                'last_name' => $parts[1] ?? null,
-            ]);
-        });
+        // Migrate existing name data: split at first space using a single SQL statement.
+        // INSTR and SUBSTR are supported by both SQLite and MySQL.
+        DB::statement("
+            UPDATE users
+            SET
+                first_name = CASE
+                    WHEN INSTR(name, ' ') > 0 THEN SUBSTR(name, 1, INSTR(name, ' ') - 1)
+                    ELSE name
+                END,
+                last_name = CASE
+                    WHEN INSTR(name, ' ') > 0 THEN SUBSTR(name, INSTR(name, ' ') + 1)
+                    ELSE NULL
+                END
+            WHERE name IS NOT NULL
+        ");
 
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('name');
@@ -40,12 +47,20 @@ return new class extends Migration
             $table->string('name')->nullable()->after('id');
         });
 
-        // Restore name from first_name and last_name
-        DB::table('users')->orderBy('id')->each(function ($user) {
-            DB::table('users')->where('id', $user->id)->update([
-                'name' => trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')),
-            ]);
-        });
+        // Restore name from first_name and last_name using a single SQL statement.
+        // Use driver-specific concatenation syntax.
+        $driver = DB::connection()->getDriverName();
+        if ($driver === 'sqlite') {
+            DB::statement("
+                UPDATE users
+                SET name = TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, ''))
+            ");
+        } else {
+            DB::statement("
+                UPDATE users
+                SET name = TRIM(CONCAT(COALESCE(first_name, ''), ' ', COALESCE(last_name, '')))
+            ");
+        }
 
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn(['first_name', 'last_name']);
