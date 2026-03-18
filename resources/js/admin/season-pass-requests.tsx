@@ -27,6 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatBirthDateUTC, getAgeGroup } from '@/lib/passRequestHelpers';
 
 interface User {
   id: number;
@@ -70,6 +71,13 @@ function formatDate(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
+/** Format a date string as MM/DD/YYYY (UTC) for table display and Excel pasting */
+function formatBirthDateLocal(dateStr: string | null): string {
+  if (!dateStr) return '—';
+  const result = formatBirthDateUTC(dateStr);
+  return result || '—';
+}
+
 function SeasonPassRequestsAdmin() {
   const mount = document.getElementById('admin-season-pass-requests');
   const csrfToken = mount?.getAttribute('data-csrf-token') || '';
@@ -82,6 +90,7 @@ function SeasonPassRequestsAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
 
   // Filters
   const [hideExtraColumns, setHideExtraColumns] = useState(false);
@@ -127,13 +136,27 @@ function SeasonPassRequestsAdmin() {
     fetchData();
   }, [showRecentOnly]);
 
-  const toggleSelect = (id: string) => {
+  const shiftKeyRef = React.useRef(false);
+
+  const toggleSelect = (id: string, shiftKey: boolean, allRequests: PassRequest[]) => {
+    const currentIndex = allRequests.findIndex((r) => r.id === id);
     const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
+
+    if (shiftKey && lastSelectedIndex !== null && currentIndex !== -1) {
+      const start = Math.min(lastSelectedIndex, currentIndex);
+      const end = Math.max(lastSelectedIndex, currentIndex);
+      for (let i = start; i <= end; i++) {
+        newSelected.add(allRequests[i]?.id ?? '');
+      }
     } else {
-      newSelected.add(id);
+      if (newSelected.has(id)) {
+        newSelected.delete(id);
+      } else {
+        newSelected.add(id);
+      }
+      setLastSelectedIndex(currentIndex);
     }
+
     setSelectedIds(newSelected);
   };
 
@@ -312,16 +335,18 @@ function SeasonPassRequestsAdmin() {
     );
 
   const handleCopyTSV = async () => {
-    const headers = ['Promo Code', 'Passholder', 'Email', 'Pass Type', 'Birth Date'];
     const selectedRequests = passRequests.filter((r) => selectedIds.has(r.id));
     const rows = selectedRequests.map((r) => [
-      r.promo_code ?? '',
-      `${r.passholder_first_name} ${r.passholder_last_name}`,
+      formatDate(r.created_at),
+      r.passholder_first_name,
+      r.passholder_last_name,
+      formatBirthDateUTC(r.passholder_birth_date),
       r.passholder_email,
       r.season_pass_type?.pass_type_name ?? r.pass_type,
-      formatDate(r.passholder_birth_date),
+      getAgeGroup(r.passholder_birth_date),
+      r.promo_code ?? '',
     ]);
-    const tsv = [headers, ...rows].map((row) => row.join('\t')).join('\n');
+    const tsv = rows.map((row) => row.join('\t')).join('\n');
     try {
       await navigator.clipboard.writeText(tsv);
       setActionMessage(`Copied ${selectedRequests.length} row${selectedRequests.length !== 1 ? 's' : ''} to clipboard as TSV.`);
@@ -346,21 +371,24 @@ function SeasonPassRequestsAdmin() {
               }}
             />
           </TableHead>
-          <TableHead className="py-2">Passholder</TableHead>
-          <TableHead className="py-2">Email</TableHead>
-          <TableHead className="py-2">Pass Type</TableHead>
-          {!hideExtraColumns && <TableHead className="py-2">Birth Date</TableHead>}
-          {!hideExtraColumns && <TableHead className="py-2">Requester</TableHead>}
+          <TableHead className="py-2">Date</TableHead>
+          <TableHead className="py-2">First Name</TableHead>
+          <TableHead className="py-2">Last Name</TableHead>
+          <TableHead className="py-2">Birthday</TableHead>
+          <TableHead className="py-2">Email Address</TableHead>
+          <TableHead className="py-2">Type of Pass</TableHead>
+          <TableHead className="py-2">Age Group</TableHead>
           <TableHead className="py-2">Promo Code</TableHead>
-          <TableHead className="py-2">Assigned</TableHead>
-          <TableHead className="py-2">Emailed</TableHead>
+          {!hideExtraColumns && <TableHead className="py-2">Requester</TableHead>}
+          {!hideExtraColumns && <TableHead className="py-2">Assigned</TableHead>}
+          {!hideExtraColumns && <TableHead className="py-2">Emailed</TableHead>}
           <TableHead className="py-2 text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {requests.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={hideExtraColumns ? 8 : 10} className="text-center py-6 text-muted-foreground">
+            <TableCell colSpan={hideExtraColumns ? 10 : 13} className="text-center py-6 text-muted-foreground">
               No pass requests found.
             </TableCell>
           </TableRow>
@@ -370,19 +398,22 @@ function SeasonPassRequestsAdmin() {
               <TableCell className="py-1">
                 <Checkbox
                   checked={selectedIds.has(request.id)}
-                  onCheckedChange={() => toggleSelect(request.id)}
+                  onMouseDown={(e: React.MouseEvent) => { shiftKeyRef.current = e.shiftKey; }}
+                  onCheckedChange={() => toggleSelect(request.id, shiftKeyRef.current, requests)}
                 />
               </TableCell>
-              <TableCell className="py-1 font-medium">
-                {request.passholder_first_name} {request.passholder_last_name}
+              <TableCell className="py-1 text-sm text-muted-foreground whitespace-nowrap">
+                {formatDate(request.created_at)}
                 {request.is_renewal && (
                   <Badge variant="outline" className="ml-2">Renewal</Badge>
                 )}
               </TableCell>
+              <TableCell className="py-1 font-medium">{request.passholder_first_name}</TableCell>
+              <TableCell className="py-1 font-medium">{request.passholder_last_name}</TableCell>
+              <TableCell className="py-1">{formatBirthDateLocal(request.passholder_birth_date)}</TableCell>
               <TableCell className="py-1">{request.passholder_email}</TableCell>
               <TableCell className="py-1">{request.season_pass_type?.pass_type_name ?? request.pass_type}</TableCell>
-              {!hideExtraColumns && <TableCell className="py-1">{formatDate(request.passholder_birth_date)}</TableCell>}
-              {!hideExtraColumns && <TableCell className="py-1">{request.user?.name || '—'}</TableCell>}
+              <TableCell className="py-1">{getAgeGroup(request.passholder_birth_date)}</TableCell>
               <TableCell className="py-1">
                 {request.promo_code ? (
                   <code className="px-1.5 py-0.5 bg-muted text-foreground border rounded text-xs font-bold">
@@ -392,16 +423,19 @@ function SeasonPassRequestsAdmin() {
                   <span className="text-muted-foreground">—</span>
                 )}
               </TableCell>
-              <TableCell className="py-1">{formatDate(request.assign_code_date)}</TableCell>
-              <TableCell className="py-1">
-                {request.email_notify_time ? (
-                  <Badge variant="default">Sent</Badge>
-                ) : request.promo_code ? (
-                  <Badge variant="secondary">Pending</Badge>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </TableCell>
+              {!hideExtraColumns && <TableCell className="py-1">{request.user?.name || '—'}</TableCell>}
+              {!hideExtraColumns && <TableCell className="py-1">{formatDate(request.assign_code_date)}</TableCell>}
+              {!hideExtraColumns && (
+                <TableCell className="py-1">
+                  {request.email_notify_time ? (
+                    <Badge variant="default">Sent</Badge>
+                  ) : request.promo_code ? (
+                    <Badge variant="secondary">Pending</Badge>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+              )}
               <TableCell className="py-1 text-right">
                 <Button
                   variant="ghost"
