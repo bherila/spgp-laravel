@@ -9,8 +9,23 @@ import MainTitle from '@/components/MainTitle';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -82,6 +97,8 @@ function PassRequestForm() {
   const [email, setEmail] = useState(userEmail);
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [renewalPassId, setRenewalPassId] = useState('');
+  const [country, setCountry] = useState<'USA' | 'Canada' | 'Other' | ''>('');
+  const [otherCountryModalOpen, setOtherCountryModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchSeasons = async () => {
@@ -122,6 +139,12 @@ function PassRequestForm() {
     e.preventDefault();
     if (submitting || !passTypeId) return;
 
+    // Block "Other" submissions
+    if (country === 'Other') {
+      setOtherCountryModalOpen(true);
+      return;
+    }
+
     setError(null);
     setSubmitting(true);
 
@@ -142,6 +165,7 @@ function PassRequestForm() {
           passholder_email: email,
           passholder_birth_date: dateOfBirth,
           renewal_pass_id: isRenewal ? renewalPassId : null,
+          country,
         }),
       });
 
@@ -451,6 +475,25 @@ function PassRequestForm() {
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="country">Country of Purchase *</Label>
+                  <Select value={country} onValueChange={(v) => {
+                    setCountry(v as 'USA' | 'Canada' | 'Other');
+                    if (v === 'Other') {
+                      setOtherCountryModalOpen(true);
+                    }
+                  }}>
+                    <SelectTrigger id="country">
+                      <SelectValue placeholder="Select country..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USA">USA</SelectItem>
+                      <SelectItem value="Canada">Canada</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {error && (
                   <Alert variant="destructive">
                     <AlertDescription>{error}</AlertDescription>
@@ -462,7 +505,7 @@ function PassRequestForm() {
                     <ChevronLeft className="w-4 h-4 mr-2" />
                     Back
                   </Button>
-                  <Button type="submit" disabled={submitting}>
+                  <Button type="submit" disabled={submitting || !country || country === 'Other'}>
                     {submitting ? 'Submitting...' : 'Submit Request'}
                   </Button>
                 </div>
@@ -471,6 +514,28 @@ function PassRequestForm() {
           </Card>
         </form>
       )}
+
+      {/* Other Country Modal */}
+      <Dialog open={otherCountryModalOpen} onOpenChange={setOtherCountryModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Country Not Supported</DialogTitle>
+            <DialogDescription>
+              We're sorry, but at this time only passes purchased in the <strong>USA</strong> or{' '}
+              <strong>Canada</strong> are supported. Please select a different country or contact
+              your group administrator for assistance.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => {
+              setOtherCountryModalOpen(false);
+              setCountry('');
+            }}>
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

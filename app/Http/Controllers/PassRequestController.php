@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PassRequest;
+use App\Models\PromoCodeRepository;
 use App\Models\Season;
 use App\Models\SeasonPassType;
 use Illuminate\Http\Request;
@@ -124,6 +125,7 @@ class PassRequestController extends Controller
             'passholder_birth_date' => ['required', 'date'],
             'is_renewal' => ['sometimes', 'boolean'],
             'renewal_pass_id' => ['nullable', 'string', 'max:255'],
+            'country' => ['required', 'string', 'in:USA,Canada,Other'],
         ]);
 
         // Check for duplicates
@@ -231,25 +233,39 @@ class PassRequestController extends Controller
     }
 
     /**
-     * Delete a pass request (only by owner or admin).
+     * Bulk-update the country on all of the user's pass requests that are missing a country.
+     * If the selected country is not USA and a promo code is assigned, the promo code is
+     * unassigned and returned to the PromoCodeRepository so it can be reused.
      */
-    public function destroy(Request $request, string $id)
+    public function updateCountry(Request $request)
     {
         $user = $request->user();
-        $passRequest = PassRequest::findOrFail($id);
 
-        // Check ownership or admin
-        if ($passRequest->user_id !== $user->id && !$user->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        $validated = $request->validate([
+            'country' => ['required', 'string', 'in:USA,Canada'],
+        ]);
+
+        $passRequests = PassRequest::where('user_id', $user->id)
+            ->whereNull('country')
+            ->get();
+
+        foreach ($passRequests as $passRequest) {
+            // If changing away from USA and a promo code is assigned, unassign it
+            // so the promo code becomes available for reassignment to another request
+            if ($validated['country'] !== 'USA' && $passRequest->promo_code) {
+                $passRequest->update([
+                    'promo_code' => null,
+                    'assign_code_date' => null,
+                    'country' => $validated['country'],
+                ]);
+            } else {
+                $passRequest->update(['country' => $validated['country']]);
+            }
         }
 
-        // Only allow deletion if no promo code assigned (renewal order can still be deleted)
-        if ($passRequest->promo_code) {
-            return response()->json(['message' => 'Cannot delete a pass request with a promo code assigned'], 400);
-        }
-
-        $passRequest->delete();
-
-        return response()->json(['message' => 'Pass request deleted successfully']);
+        return response()->json([
+            'message' => 'Country updated for ' . $passRequests->count() . ' pass request(s).',
+            'updated' => $passRequests->count(),
+        ]);
     }
 }

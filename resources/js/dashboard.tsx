@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import MainTitle from '@/components/MainTitle';
+import { MissingCountryModal } from '@/components/MissingCountryModal';
 import { RenewalInfo } from '@/components/RenewalInfo';
 import {
   Accordion,
@@ -66,6 +67,7 @@ interface PassRequest {
   renewal_pass_id: string | null;
   renewal_order_number: string | null;
   promo_code: string | null;
+  country: string | null;
   redemption_date: string | null;
   assign_code_date: string | null;
   email_notify_time: string | null;
@@ -129,6 +131,7 @@ function Dashboard() {
   const [inviteCode, setInviteCode] = useState('');
   const [redeeming, setRedeeming] = useState(false);
   const [redeemSuccess, setRedeemSuccess] = useState<string | null>(null);
+  const [missingCountryModalOpen, setMissingCountryModalOpen] = useState(false);
 
   const fetchPassRequests = async () => {
     try {
@@ -137,9 +140,17 @@ function Dashboard() {
         headers: { 'Accept': 'application/json' },
       });
       if (!response.ok) throw new Error('Failed to fetch pass requests');
-      const data = await response.json();
+      const data: Season[] = await response.json();
       setSeasons(data);
       setError(null);
+
+      // Check if any pass requests are missing a country
+      const hasMissingCountry = data.some(season =>
+        (season.pass_requests || []).some(r => !r.country)
+      );
+      if (hasMissingCountry) {
+        setMissingCountryModalOpen(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -650,6 +661,16 @@ function Dashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Missing Country Modal */}
+        <MissingCountryModal
+          open={missingCountryModalOpen}
+          csrfToken={csrfToken}
+          onSuccess={() => {
+            setMissingCountryModalOpen(false);
+            fetchPassRequests();
+          }}
+        />
       </div>
     </TooltipProvider>
   );
