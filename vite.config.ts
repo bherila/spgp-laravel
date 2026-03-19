@@ -23,6 +23,7 @@ export default defineConfig({
                 'resources/js/admin/users.tsx',
                 'resources/js/admin/season-pass-requests.tsx',
                 'resources/js/admin/email-log.tsx',
+                'resources/js/admin/promo-code-repository.tsx',
                 'resources/js/request/index.tsx',
                 'resources/js/components/ui/sonner.tsx',
             ],
