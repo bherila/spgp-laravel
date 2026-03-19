@@ -51,20 +51,23 @@ class PromoCodeRepositoryController extends Controller
             'country' => ['required', 'string', 'in:USA,Canada'],
         ]);
 
-        $lines = array_filter(array_map('trim', explode("\n", $validated['tsv'])));
         $country = $validated['country'];
-
         $imported = 0;
         $skipped = 0;
         $errors = [];
 
-        foreach ($lines as $lineIndex => $line) {
-            // Skip header line if present (contains "Code" or "Date Added")
-            if ($lineIndex === 0 && (stripos($line, 'code') !== false || stripos($line, 'date') !== false)) {
+        // Split the TSV into lines, strip trailing \r from Windows line endings
+        $rawLines = explode("\n", str_replace("\r", '', $validated['tsv']));
+
+        foreach ($rawLines as $lineIndex => $rawLine) {
+            $rawLine = trim($rawLine);
+            if ($rawLine === '') {
                 continue;
             }
 
-            $parts = preg_split('/\t/', $line);
+            // Use str_getcsv with tab separator for proper CSV/TSV parsing
+            $parts = str_getcsv($rawLine, "\t");
+
             if (count($parts) < 2) {
                 $errors[] = "Line " . ($lineIndex + 1) . ": expected 2 columns (Code, Date Added)";
                 continue;
@@ -72,6 +75,12 @@ class PromoCodeRepositoryController extends Controller
 
             $promoCode = trim($parts[0]);
             $startDateRaw = trim($parts[1]);
+
+            // Skip header row if present (first non-empty line containing "Code" or "Date")
+            if ($imported === 0 && $skipped === 0 && empty($errors) &&
+                (stripos($promoCode, 'code') !== false || stripos($startDateRaw, 'date') !== false)) {
+                continue;
+            }
 
             if (empty($promoCode)) {
                 continue;
@@ -91,7 +100,7 @@ class PromoCodeRepositoryController extends Controller
                 $expirationDate->addYear();
             }
 
-            // Upsert the promo code
+            // Create the promo code in the repository if it doesn't already exist
             PromoCodeRepository::firstOrCreate(
                 ['promo_code' => $promoCode],
                 [
