@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PassRequestController;
 use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\InviteCodeController;
+use App\Http\Controllers\Admin\PromoCodeRepositoryController;
 use App\Http\Controllers\Admin\SeasonController;
 use App\Http\Controllers\Admin\SeasonPassTypeController;
 use App\Http\Controllers\Admin\UserController;
@@ -32,6 +33,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::delete('/pass-requests/{id}', [PassRequestController::class, 'destroy']);
     Route::post('/pass-requests/{id}/renewal-order', [PassRequestController::class, 'updateRenewalOrder']);
     Route::delete('/pass-requests/{id}/renewal-order', [PassRequestController::class, 'removeRenewalOrder']);
+    Route::post('/pass-requests/update-country', [PassRequestController::class, 'updateCountry']);
     
     // Question (Q&A) routes
     Route::get('/season/{season}/questions', [\App\Http\Controllers\QuestionController::class, 'getQuestions']);
@@ -70,6 +72,11 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/seasons/{id}/pass-requests/clear-codes', [SeasonController::class, 'clearCodes']);
         Route::post('/seasons/{id}/pass-requests/send-emails', [SeasonController::class, 'sendEmails']);
         Route::delete('/pass-requests/{id}/admin', [SeasonController::class, 'deletePassRequest']);
+        
+        // Promo code repository
+        Route::get('/seasons/{id}/promo-codes/list', [PromoCodeRepositoryController::class, 'list']);
+        Route::post('/seasons/{id}/promo-codes/import', [PromoCodeRepositoryController::class, 'import']);
+        Route::post('/seasons/{id}/promo-codes/auto-assign', [PromoCodeRepositoryController::class, 'autoAssign']);
         
         // Email logs
         Route::get('/email-log/list', [EmailLogController::class, 'list']);

@@ -54,6 +54,7 @@ interface PassRequest {
   renewal_pass_id: string | null;
   renewal_order_number: string | null;
   promo_code: string | null;
+  country: string | null;
   assign_code_date: string | null;
   email_notify_time: string | null;
   created_at: string;
@@ -104,6 +105,7 @@ function SeasonPassRequestsAdmin() {
   const [codes, setCodes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [repoCount, setRepoCount] = useState<number | null>(null);
 
   // Send emails state
   const [forceSend, setForceSend] = useState(false);
@@ -117,14 +119,28 @@ function SeasonPassRequestsAdmin() {
       const params = new URLSearchParams();
       if (showRecentOnly) params.set('recent_only', 'true');
 
-      const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/list?${params}`, {
-        headers: { 'Accept': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to fetch data');
-      const data = await response.json();
+      const [passRequestsResponse, repoResponse] = await Promise.all([
+        fetch(`/api/admin/seasons/${seasonId}/pass-requests/list?${params}`, {
+          headers: { 'Accept': 'application/json' },
+        }),
+        fetch(`/api/admin/seasons/${seasonId}/promo-codes/list`, {
+          headers: { 'Accept': 'application/json' },
+        }),
+      ]);
+
+      if (!passRequestsResponse.ok) throw new Error('Failed to fetch data');
+      const data = await passRequestsResponse.json();
       setSeason(data.season);
       setPassRequests(data.pass_requests);
       setError(null);
+
+      if (repoResponse.ok) {
+        const repoData = await repoResponse.json();
+        const available = (repoData.promo_codes || []).filter(
+          (c: { is_suspended: boolean }) => !c.is_suspended
+        ).length;
+        setRepoCount(available);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -304,6 +320,33 @@ function SeasonPassRequestsAdmin() {
     }
   };
 
+  const handleAutoAssign = async () => {
+    setActionLoading(true);
+    setActionMessage(null);
+
+    try {
+      const response = await fetch(`/api/admin/seasons/${seasonId}/promo-codes/auto-assign`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-TOKEN': csrfToken,
+        },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to auto-assign codes');
+
+      setActionMessage(data.message);
+      fetchData();
+    } catch (err) {
+      setActionMessage(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Filter requests
   const newRequests = passRequests
     .filter((r) => !r.is_renewal)
@@ -379,6 +422,7 @@ function SeasonPassRequestsAdmin() {
           <TableHead className="py-2">Type of Pass</TableHead>
           <TableHead className="py-2">Age Group</TableHead>
           <TableHead className="py-2">Promo Code</TableHead>
+          <TableHead className="py-2">Country</TableHead>
           {!hideExtraColumns && <TableHead className="py-2">Requester</TableHead>}
           {!hideExtraColumns && <TableHead className="py-2">Assigned</TableHead>}
           {!hideExtraColumns && <TableHead className="py-2">Emailed</TableHead>}
@@ -388,7 +432,7 @@ function SeasonPassRequestsAdmin() {
       <TableBody>
         {requests.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={hideExtraColumns ? 10 : 13} className="text-center py-6 text-muted-foreground">
+            <TableCell colSpan={hideExtraColumns ? 11 : 14} className="text-center py-6 text-muted-foreground">
               No pass requests found.
             </TableCell>
           </TableRow>
@@ -421,6 +465,13 @@ function SeasonPassRequestsAdmin() {
                   </code>
                 ) : (
                   <span className="text-muted-foreground">—</span>
+                )}
+              </TableCell>
+              <TableCell className="py-1">
+                {request.country ? (
+                  <span className="text-sm">{request.country}</span>
+                ) : (
+                  <span className="text-muted-foreground text-xs">—</span>
                 )}
               </TableCell>
               {!hideExtraColumns && <TableCell className="py-1">{request.user?.name || '—'}</TableCell>}
@@ -547,6 +598,24 @@ function SeasonPassRequestsAdmin() {
             <Tag className="w-4 h-4 mr-1" />
             Assign Codes
           </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={repoCount === 0 ? 0 : undefined}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAutoAssign}
+                  disabled={actionLoading || repoCount === 0}
+                >
+                  <Tag className="w-4 h-4 mr-1" />
+                  Auto Assign from Repository
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {repoCount === 0 && (
+              <TooltipContent>No available promo codes in repository</TooltipContent>
+            )}
+          </Tooltip>
           <Button
             variant="outline"
             size="sm"

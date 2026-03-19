@@ -32,6 +32,7 @@ class DuplicatePassRequestTest extends TestCase
             'passholder_last_name' => 'Doe',
             'passholder_email' => 'john@example.com',
             'passholder_birth_date' => '1990-01-01',
+            'country' => 'USA',
         ];
 
         // First request
@@ -60,6 +61,7 @@ class DuplicatePassRequestTest extends TestCase
             'passholder_last_name' => 'Doe',
             'passholder_email' => 'john@example.com',
             'passholder_birth_date' => '1990-01-01',
+            'country' => 'USA',
         ];
 
         // First request by user1

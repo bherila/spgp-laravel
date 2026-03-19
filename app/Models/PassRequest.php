@@ -45,6 +45,7 @@ class PassRequest extends Model
         'renewal_pass_id',
         'renewal_order_number',
         'promo_code',
+        'country',
         'redemption_date',
         'assign_code_date',
         'email_notify_time',

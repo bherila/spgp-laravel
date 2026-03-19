@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\PassCodeNotification;
 use App\Models\EmailLog;
 use App\Models\PassRequest;
+use App\Models\PromoCodeRepository;
 use App\Models\Season;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -123,7 +124,7 @@ class SeasonController extends Controller
         $season = Season::findOrFail($id);
         
         $query = PassRequest::where('season_id', $id)
-            ->with(['user:id,name,email', 'seasonPassType']);
+            ->with(['user:id,first_name,last_name,email', 'seasonPassType']);
 
         // Filter by is_renewal if specified
         if ($request->has('is_renewal')) {
@@ -181,8 +182,27 @@ class SeasonController extends Controller
                 ->first();
 
             if ($passRequest && isset($codes[$index])) {
+                $code = $codes[$index];
+                
+                // Ensure the code exists in the PromoCodeRepository for this season
+                $startDate = now()->toDateString();
+                $now = now();
+                $expirationYear = $now->month >= 9 ? $now->year + 1 : $now->year;
+                $expirationDate = \Carbon\Carbon::create($expirationYear, 9, 1)->toDateString();
+                
+                PromoCodeRepository::firstOrCreate(
+                    ['promo_code' => $code],
+                    [
+                        'season_id' => $id,
+                        'start_date' => $startDate,
+                        'expiration_date' => $expirationDate,
+                        'country' => null,
+                        'is_suspended' => false,
+                    ]
+                );
+
                 $passRequest->update([
-                    'promo_code' => $codes[$index],
+                    'promo_code' => $code,
                     'assign_code_date' => now(),
                 ]);
                 $assigned++;

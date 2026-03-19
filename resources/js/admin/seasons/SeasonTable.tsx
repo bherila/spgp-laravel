@@ -1,4 +1,4 @@
-import { Archive, Pencil, RotateCcw, Users } from 'lucide-react';
+import { Archive, Database, Pencil, RotateCcw, Users } from 'lucide-react';
 import React from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import type { Season } from './types';
 import { formatDate } from './utils';
@@ -31,7 +32,6 @@ export function SeasonTable({
   onArchive,
   onRestore,
 }: SeasonTableProps) {
-
   if (loading) {
     return (
       <div className="border rounded-lg">
@@ -115,33 +115,53 @@ export function SeasonTable({
                         Restore
                       </Button>
                     ) : (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                          title={`View ${season.pass_request_count} Pass Requests`}
-                        >
-                          <a href={`/admin/seasons/${season.id}/pass-requests`} className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            <span className="text-xs font-medium">{season.pass_request_count}</span>
-                          </a>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEdit(season)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onArchive(season)}
-                        >
-                          <Archive className="w-4 h-4" />
-                        </Button>
-                      </>
+                      <TooltipProvider>
+                        <>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                asChild
+                              >
+                                <a href={`/admin/seasons/${season.id}/pass-requests`} className="flex items-center gap-1">
+                                  <Users className="w-4 h-4" />
+                                  <span className="text-xs font-medium">{season.pass_request_count}</span>
+                                </a>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>View {season.pass_request_count} Pass Requests</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                asChild
+                              >
+                                <a href={`/admin/seasons/${season.id}/promo-codes`}>
+                                  <Database className="w-4 h-4" />
+                                </a>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Promo Code Repository</TooltipContent>
+                          </Tooltip>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onEdit(season)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onArchive(season)}
+                          >
+                            <Archive className="w-4 h-4" />
+                          </Button>
+                        </>
+                      </TooltipProvider>
                     )}
                   </div>
                 </TableCell>

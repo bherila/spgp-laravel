@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PassRequestController;
 use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\InviteCodeController;
+use App\Http\Controllers\Admin\PromoCodeRepositoryController;
 use App\Http\Controllers\Admin\SeasonController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +49,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/invites', [InviteCodeController::class, 'index'])->name('admin.invites');
         Route::get('/seasons', [SeasonController::class, 'index'])->name('admin.seasons');
         Route::get('/seasons/{id}/pass-requests', [SeasonController::class, 'showPassRequests'])->name('admin.seasons.pass-requests');
+        Route::get('/seasons/{id}/promo-codes', [PromoCodeRepositoryController::class, 'index'])->name('admin.seasons.promo-codes');
         Route::get('/email-log', [EmailLogController::class, 'index'])->name('admin.email-log');
         Route::get('/users', [UserController::class, 'index'])->name('admin.users');
     });
