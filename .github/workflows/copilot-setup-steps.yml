@@ -29,3 +29,11 @@ jobs:
         run: |
           composer install --no-interaction --prefer-dist --optimize-autoloader
           cp .env.example .env && php artisan key:generate
+          
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
