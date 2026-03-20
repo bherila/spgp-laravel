@@ -1,8 +1,6 @@
-import '@mdxeditor/editor/style.css';
-
-import { BoldItalicUnderlineToggles, headingsPlugin, listsPlugin, ListsToggle, markdownShortcutPlugin, MDXEditor, quotePlugin, Separator, thematicBreakPlugin, UndoRedo } from '@mdxeditor/editor';
 import { ArrowLeft, CheckCircle2, Edit2, HelpCircle, MessageSquare, Send, ThumbsUp, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 import MainTitle from '@/components/MainTitle';
 import { Button as ShadcnButton } from '@/components/ui/button';
@@ -16,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 
 interface User {
   id: number;
@@ -41,16 +40,6 @@ interface QuestionsProps {
   isAdmin: boolean;
   csrfToken: string;
 }
-
-const EditorToolbar = () => (
-    <>
-        <UndoRedo />
-        <Separator />
-        <BoldItalicUnderlineToggles />
-        <Separator />
-        <ListsToggle />
-    </>
-);
 
 export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -228,11 +217,7 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-primary mb-1">{question.user.name} asked:</span>
                   <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <MDXEditor 
-                        markdown={question.content} 
-                        readOnly 
-                        plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin()]}
-                    />
+                    <ReactMarkdown skipHtml>{question.content}</ReactMarkdown>
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-2">
@@ -271,11 +256,7 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
                     <div className="flex flex-col flex-1">
                       <span className="text-sm font-semibold mb-2">Answer from {question.answered_by_user?.name || 'Admin'}:</span>
                       <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <MDXEditor 
-                            markdown={question.answer} 
-                            readOnly 
-                            plugins={[headingsPlugin(), listsPlugin(), quotePlugin(), thematicBreakPlugin()]}
-                        />
+                        <ReactMarkdown skipHtml>{question.answer}</ReactMarkdown>
                       </div>
                       {isAdmin && (
                         <ShadcnButton variant="ghost" size="sm" className="mt-4 self-start" onClick={() => {
@@ -316,18 +297,12 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
               Use Markdown to format your question. Headings, lists, and bold text are supported.
             </DialogDescription>
           </DialogHeader>
-          <div className="border rounded-md min-h-[200px] mt-4">
-            <MDXEditor 
-                markdown={newQuestionContent} 
-                onChange={setNewQuestionContent}
-                placeholder="Type your question here..."
-                plugins={[
-                    headingsPlugin(), 
-                    listsPlugin(), 
-                    quotePlugin(), 
-                    thematicBreakPlugin(),
-                    markdownShortcutPlugin(),
-                ]}
+          <div className="mt-4">
+            <Textarea
+                value={newQuestionContent}
+                onChange={(e) => setNewQuestionContent(e.target.value)}
+                placeholder="Type your question here... (Markdown supported)"
+                className="min-h-[200px] font-mono text-sm"
             />
           </div>
           <DialogFooter>
@@ -346,17 +321,11 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
           <DialogHeader>
             <DialogTitle>Edit Question</DialogTitle>
           </DialogHeader>
-          <div className="border rounded-md min-h-[200px] mt-4">
-            <MDXEditor 
-                markdown={editContent} 
-                onChange={setEditContent}
-                plugins={[
-                    headingsPlugin(), 
-                    listsPlugin(), 
-                    quotePlugin(), 
-                    thematicBreakPlugin(),
-                    markdownShortcutPlugin(),
-                ]}
+          <div className="mt-4">
+            <Textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="min-h-[200px] font-mono text-sm"
             />
           </div>
           <DialogFooter>
@@ -372,18 +341,12 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
           <DialogHeader>
             <DialogTitle>{answeringQuestion?.answer ? 'Edit Answer' : 'Post Answer'}</DialogTitle>
           </DialogHeader>
-          <div className="border rounded-md min-h-[200px] mt-4">
-            <MDXEditor 
-                markdown={answerContent} 
-                onChange={setAnswerContent}
-                placeholder="Type your answer here..."
-                plugins={[
-                    headingsPlugin(), 
-                    listsPlugin(), 
-                    quotePlugin(), 
-                    thematicBreakPlugin(),
-                    markdownShortcutPlugin(),
-                ]}
+          <div className="mt-4">
+            <Textarea
+                value={answerContent}
+                onChange={(e) => setAnswerContent(e.target.value)}
+                placeholder="Type your answer here... (Markdown supported)"
+                className="min-h-[200px] font-mono text-sm"
             />
           </div>
           <DialogFooter>
