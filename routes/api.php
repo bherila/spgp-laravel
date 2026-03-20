@@ -71,6 +71,7 @@ Route::middleware(['web', 'auth'])->group(function () {
         Route::post('/seasons/{id}/pass-requests/assign-codes', [SeasonController::class, 'assignCodes']);
         Route::post('/seasons/{id}/pass-requests/clear-codes', [SeasonController::class, 'clearCodes']);
         Route::post('/seasons/{id}/pass-requests/send-emails', [SeasonController::class, 'sendEmails']);
+        Route::post('/seasons/{id}/pass-requests/bulk-delete', [SeasonController::class, 'bulkDeletePassRequests']);
         Route::delete('/pass-requests/{id}/admin', [SeasonController::class, 'deletePassRequest']);
         
         // Promo code repository

@@ -8,15 +8,6 @@ import MainTitle from '@/components/MainTitle';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -29,43 +20,24 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatBirthDateUTC, getAgeGroup } from '@/lib/passRequestHelpers';
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
-
-interface SeasonPassType {
-  id: number;
-  pass_type_name: string;
-}
-
-interface PassRequest {
-  id: string;
-  user_id: number;
-  user: User;
-  passholder_email: string;
-  pass_type: string;
-  season_pass_type: SeasonPassType | null;
-  passholder_first_name: string;
-  passholder_last_name: string;
-  passholder_birth_date: string;
-  is_renewal: boolean;
-  renewal_pass_id: string | null;
-  renewal_order_number: string | null;
-  promo_code: string | null;
-  country: string | null;
-  assign_code_date: string | null;
-  email_notify_time: string | null;
-  created_at: string;
-}
-
-interface Season {
-  id: number;
-  pass_name: string;
-  pass_year: number;
-  spreadsheet_url: string | null;
-}
+import {
+  assignCodes,
+  autoAssign,
+  bulkDeletePassRequests,
+  clearCodes,
+  fetchPassRequests,
+  fetchRepoCount,
+  type PassRequest,
+  type Season,
+  sendEmail,
+} from './passRequestsAdminApi';
+import {
+  AssignCodesDialog,
+  DeletePassRequestsDialog,
+  SendEmailsDialog,
+  SendResultDialog,
+  UnassignCodesDialog,
+} from './PassRequestsAdminDialogs';
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—';
@@ -81,10 +53,10 @@ function formatBirthDateLocal(dateStr: string | null): string {
 
 function SeasonPassRequestsAdmin() {
   const mount = document.getElementById('admin-season-pass-requests');
-  const csrfToken = mount?.getAttribute('data-csrf-token') || '';
-  const seasonId = mount?.getAttribute('data-season-id') || '';
-  const seasonName = mount?.getAttribute('data-season-name') || '';
-  const seasonYear = mount?.getAttribute('data-season-year') || '';
+  const csrfToken = mount?.getAttribute('data-csrf-token') ?? '';
+  const seasonId = mount?.getAttribute('data-season-id') ?? '';
+  const seasonName = mount?.getAttribute('data-season-name') ?? '';
+  const seasonYear = mount?.getAttribute('data-season-year') ?? '';
 
   const [season, setSeason] = useState<Season | null>(null);
   const [passRequests, setPassRequests] = useState<PassRequest[]>([]);
@@ -102,6 +74,7 @@ function SeasonPassRequestsAdmin() {
   const [assignCodesModalOpen, setAssignCodesModalOpen] = useState(false);
   const [sendEmailsModalOpen, setSendEmailsModalOpen] = useState(false);
   const [clearCodesModalOpen, setClearCodesModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [codes, setCodes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
@@ -113,34 +86,17 @@ function SeasonPassRequestsAdmin() {
   const [sendResultModalOpen, setSendResultModalOpen] = useState(false);
   const [sendResult, setSendResult] = useState<{ succeeded: number; failed: number } | null>(null);
 
-  const fetchData = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (showRecentOnly) params.set('recent_only', 'true');
-
-      const [passRequestsResponse, repoResponse] = await Promise.all([
-        fetch(`/api/admin/seasons/${seasonId}/pass-requests/list?${params}`, {
-          headers: { 'Accept': 'application/json' },
-        }),
-        fetch(`/api/admin/seasons/${seasonId}/promo-codes/list`, {
-          headers: { 'Accept': 'application/json' },
-        }),
+      const [data, count] = await Promise.all([
+        fetchPassRequests(seasonId, showRecentOnly),
+        fetchRepoCount(seasonId),
       ]);
-
-      if (!passRequestsResponse.ok) throw new Error('Failed to fetch data');
-      const data = await passRequestsResponse.json();
       setSeason(data.season);
       setPassRequests(data.pass_requests);
+      setRepoCount(count);
       setError(null);
-
-      if (repoResponse.ok) {
-        const repoData = await repoResponse.json();
-        const available = (repoData.promo_codes || []).filter(
-          (c: { is_suspended: boolean }) => !c.is_suspended
-        ).length;
-        setRepoCount(available);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -149,7 +105,7 @@ function SeasonPassRequestsAdmin() {
   };
 
   useEffect(() => {
-    fetchData();
+    void loadData();
   }, [showRecentOnly]);
 
   const shiftKeyRef = React.useRef(false);
@@ -188,28 +144,12 @@ function SeasonPassRequestsAdmin() {
   const handleAssignCodes = async () => {
     setActionLoading(true);
     setActionMessage(null);
-
     try {
-      const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/assign-codes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
-          pass_request_ids: Array.from(selectedIds),
-          codes,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to assign codes');
-
+      const data = await assignCodes(seasonId, Array.from(selectedIds), codes, csrfToken);
       setActionMessage(data.message);
       setCodes('');
       setAssignCodesModalOpen(false);
-      fetchData();
+      void loadData();
     } catch (err) {
       setActionMessage(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -220,26 +160,11 @@ function SeasonPassRequestsAdmin() {
   const handleClearCodes = async () => {
     setActionLoading(true);
     setActionMessage(null);
-
     try {
-      const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/clear-codes`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
-          pass_request_ids: Array.from(selectedIds),
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to unassign codes');
-
+      const data = await clearCodes(seasonId, Array.from(selectedIds), csrfToken);
       setActionMessage(data.message);
       setClearCodesModalOpen(false);
-      fetchData();
+      void loadData();
     } catch (err) {
       setActionMessage(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -261,29 +186,11 @@ function SeasonPassRequestsAdmin() {
     for (let i = 0; i < ids.length; i++) {
       setSendProgress({ current: i + 1, total });
       try {
-        const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/send-emails`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-          },
-          body: JSON.stringify({
-            pass_request_ids: [ids[i]],
-            force_send: forceSend,
-          }),
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
+        const data = await sendEmail(seasonId, ids[i]!, forceSend, csrfToken);
+        const sent: number = data.sent ?? 0;
+        succeeded += sent;
+        if (sent === 0) {
           failed++;
-        } else {
-          const sent: number = data.sent ?? 0;
-          succeeded += sent;
-          if (sent === 0) {
-            // No email sent (already emailed and not force-sending, or no promo code)
-            failed++;
-          }
         }
       } catch {
         failed++;
@@ -294,52 +201,33 @@ function SeasonPassRequestsAdmin() {
     setSendProgress(null);
     setSendResult({ succeeded, failed });
     setSendResultModalOpen(true);
-    fetchData();
+    void loadData();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this pass request?')) return;
-
+  const handleBulkDelete = async () => {
+    setActionLoading(true);
+    setActionMessage(null);
     try {
-      const response = await fetch(`/api/admin/pass-requests/${id}/admin`, {
-        method: 'DELETE',
-        headers: {
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to delete');
-      }
-
-      fetchData();
+      const data = await bulkDeletePassRequests(seasonId, Array.from(selectedIds), csrfToken);
+      setActionMessage(data.message);
+      setDeleteModalOpen(false);
+      setSelectedIds(new Set());
+      void loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setActionMessage(err instanceof Error ? err.message : 'An error occurred');
+      setDeleteModalOpen(false);
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleAutoAssign = async () => {
     setActionLoading(true);
     setActionMessage(null);
-
     try {
-      const response = await fetch(`/api/admin/seasons/${seasonId}/promo-codes/auto-assign`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({}),
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Failed to auto-assign codes');
-
+      const data = await autoAssign(seasonId, csrfToken);
       setActionMessage(data.message);
-      fetchData();
+      void loadData();
     } catch (err) {
       setActionMessage(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -378,7 +266,10 @@ function SeasonPassRequestsAdmin() {
     );
 
   const handleCopyTSV = async () => {
-    const selectedRequests = passRequests.filter((r) => selectedIds.has(r.id));
+    // Sort selected requests oldest-first (by created_at asc) for Excel paste appending
+    const selectedRequests = passRequests
+      .filter((r) => selectedIds.has(r.id))
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     const rows = selectedRequests.map((r) => [
       formatDate(r.created_at),
       r.passholder_first_name,
@@ -426,13 +317,12 @@ function SeasonPassRequestsAdmin() {
           {!hideExtraColumns && <TableHead className="py-2">Requester</TableHead>}
           {!hideExtraColumns && <TableHead className="py-2">Assigned</TableHead>}
           {!hideExtraColumns && <TableHead className="py-2">Emailed</TableHead>}
-          <TableHead className="py-2 text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {requests.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={hideExtraColumns ? 11 : 14} className="text-center py-6 text-muted-foreground">
+            <TableCell colSpan={hideExtraColumns ? 10 : 13} className="text-center py-6 text-muted-foreground">
               No pass requests found.
             </TableCell>
           </TableRow>
@@ -487,15 +377,6 @@ function SeasonPassRequestsAdmin() {
                   )}
                 </TableCell>
               )}
-              <TableCell className="py-1 text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(request.id)}
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-              </TableCell>
             </TableRow>
           ))
         )}
@@ -658,6 +539,15 @@ function SeasonPassRequestsAdmin() {
             <Send className="w-4 h-4 mr-1" />
             Send Emails
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDeleteModalOpen(true)}
+            disabled={selectedIds.size === 0 || actionLoading}
+          >
+            <Trash2 className="w-4 h-4 mr-1 text-destructive" />
+            Delete
+          </Button>
         </div>
       </div>
 
@@ -722,132 +612,48 @@ function SeasonPassRequestsAdmin() {
         </div>
       )}
 
-      {/* Assign Codes Modal */}
-      <Dialog open={assignCodesModalOpen} onOpenChange={setAssignCodesModalOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Assign Promo Codes</DialogTitle>
-            <DialogDescription>
-              Paste promo codes (one per line) to assign to {selectedIds.size} selected pass requests.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="codes">Promo Codes (one per line)</Label>
-              <textarea
-                id="codes"
-                value={codes}
-                onChange={(e) => setCodes(e.target.value)}
-                className="w-full h-48 rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
-                placeholder="CODE1&#10;CODE2&#10;CODE3"
-              />
-              <p className="text-sm text-muted-foreground">
-                {codes.split('\n').filter((c) => c.trim()).length} codes entered,{' '}
-                {selectedIds.size} selected
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAssignCodesModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAssignCodes} disabled={actionLoading}>
-              {actionLoading ? 'Assigning...' : 'Assign Codes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Dialogs */}
+      <AssignCodesDialog
+        open={assignCodesModalOpen}
+        onOpenChange={setAssignCodesModalOpen}
+        selectedCount={selectedIds.size}
+        codes={codes}
+        onCodesChange={setCodes}
+        onConfirm={handleAssignCodes}
+        loading={actionLoading}
+      />
 
-      {/* Unassign Codes Modal */}
-      <Dialog open={clearCodesModalOpen} onOpenChange={setClearCodesModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Unassign Promo Codes</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to unassign promo codes from {selectedIds.size} selected pass requests?
-              This will also reset the assign date.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setClearCodesModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleClearCodes} disabled={actionLoading}>
-              {actionLoading ? 'Unassigning...' : 'Unassign Codes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <UnassignCodesDialog
+        open={clearCodesModalOpen}
+        onOpenChange={setClearCodesModalOpen}
+        selectedCount={selectedIds.size}
+        onConfirm={handleClearCodes}
+        loading={actionLoading}
+      />
 
-      {/* Send Emails Modal */}
-      <Dialog open={sendEmailsModalOpen} onOpenChange={setSendEmailsModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Send Email Notifications</DialogTitle>
-            <DialogDescription>
-              Send promo code notification emails to {selectedIds.size} selected passholders.
-              Each email will be sent to the passholder and to your account email.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox
-                checked={forceSend}
-                onCheckedChange={(checked) => setForceSend(checked === true)}
-              />
-              Force-send even if already emailed
-            </label>
-            {!forceSend && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Only requests with promo codes that haven&apos;t been emailed yet will receive emails.
-              </p>
-            )}
-            {forceSend && (
-              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                Warning: emails will be sent even to passholders who already received one.
-              </p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSendEmailsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSendEmails} disabled={actionLoading}>
-              <Send className="w-4 h-4 mr-2" />
-              Send Emails
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeletePassRequestsDialog
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        selectedCount={selectedIds.size}
+        onConfirm={handleBulkDelete}
+        loading={actionLoading}
+      />
 
-      {/* Send Result Modal */}
-      <Dialog open={sendResultModalOpen} onOpenChange={setSendResultModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Email Send Complete</DialogTitle>
-            <DialogDescription>
-              The email send operation has finished.
-            </DialogDescription>
-          </DialogHeader>
-          {sendResult && (
-            <div className="py-4 space-y-2">
-              <p className="text-sm">
-                <span className="font-semibold text-green-600 dark:text-green-400">{sendResult.succeeded}</span>{' '}
-                email{sendResult.succeeded !== 1 ? 's' : ''} sent successfully.
-              </p>
-              {sendResult.failed > 0 && (
-                <p className="text-sm">
-                  <span className="font-semibold text-destructive">{sendResult.failed}</span>{' '}
-                  request{sendResult.failed !== 1 ? 's' : ''} skipped (already emailed without force-send) or failed.
-                </p>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setSendResultModalOpen(false)}>OK</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SendEmailsDialog
+        open={sendEmailsModalOpen}
+        onOpenChange={setSendEmailsModalOpen}
+        selectedCount={selectedIds.size}
+        forceSend={forceSend}
+        onForceSendChange={setForceSend}
+        onConfirm={handleSendEmails}
+        loading={actionLoading}
+      />
+
+      <SendResultDialog
+        open={sendResultModalOpen}
+        onOpenChange={setSendResultModalOpen}
+        result={sendResult}
+      />
     </div>
   );
 }
