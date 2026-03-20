@@ -1,6 +1,6 @@
 # SPGP (Season Pass Group Purchase) Copilot Instructions
 
-- **Architecture**: Laravel 12 API + Blade shell + React 19/TypeScript via Vite. Blade routes in `routes/web.php` return minimal views that mount React roots with `data-*` props for hydration (e.g., `data-user-name`, `data-is-admin`).
+- **Architecture**: Laravel 13 API + Blade shell + React 19/TypeScript via Vite. Blade routes in `routes/web.php` return minimal views that mount React roots with `data-*` props for hydration (e.g., `data-user-name`, `data-is-admin`).
 - **Core Models**:
   - `User`: Standard user with `is_admin` boolean. Linked to invite codes via `invite_code_user` pivot table (many-to-many).
   - `Season`: Represents a ski season (e.g., 2025-26) with deadlines (`start_date`, `early_spring_deadline`, `final_deadline`).
