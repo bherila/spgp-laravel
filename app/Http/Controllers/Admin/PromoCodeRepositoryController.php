@@ -27,9 +27,14 @@ class PromoCodeRepositoryController extends Controller
         $season = Season::findOrFail($seasonId);
 
         $codes = PromoCodeRepository::where('season_id', $seasonId)
+            ->withCount('passRequests')
             ->orderBy('start_date', 'desc')
             ->orderBy('promo_code')
-            ->get();
+            ->get()
+            ->map(function ($code) {
+                $code->is_assigned = $code->pass_requests_count > 0;
+                return $code;
+            });
 
         return response()->json([
             'season' => $season,
@@ -39,7 +44,7 @@ class PromoCodeRepositoryController extends Controller
 
     /**
      * Import promo codes from TSV paste.
-     * Expected TSV columns: Code, Date Added
+     * Expected TSV columns: Code, Date Added (Date Added is optional; defaults to today)
      * Country is provided as a request parameter.
      */
     public function import(Request $request, int $seasonId)
@@ -68,13 +73,8 @@ class PromoCodeRepositoryController extends Controller
             // Use str_getcsv with tab separator for proper CSV/TSV parsing
             $parts = str_getcsv($rawLine, "\t");
 
-            if (count($parts) < 2) {
-                $errors[] = "Line " . ($lineIndex + 1) . ": expected 2 columns (Code, Date Added)";
-                continue;
-            }
-
-            $promoCode = trim($parts[0]);
-            $startDateRaw = trim($parts[1]);
+            $promoCode = trim($parts[0] ?? '');
+            $startDateRaw = trim($parts[1] ?? '');
 
             // Skip header row if present (first non-empty line containing "Code" or "Date")
             if ($imported === 0 && $skipped === 0 && empty($errors) &&
@@ -86,12 +86,16 @@ class PromoCodeRepositoryController extends Controller
                 continue;
             }
 
-            // Parse start date
-            try {
-                $startDate = Carbon::parse($startDateRaw);
-            } catch (\Exception $e) {
-                $errors[] = "Line " . ($lineIndex + 1) . ": invalid date '{$startDateRaw}'";
-                continue;
+            // Parse start date — fall back to today if missing or blank
+            if ($startDateRaw === '') {
+                $startDate = Carbon::today();
+            } else {
+                try {
+                    $startDate = Carbon::parse($startDateRaw);
+                } catch (\Exception $e) {
+                    $errors[] = "Line " . ($lineIndex + 1) . ": invalid date '{$startDateRaw}'";
+                    continue;
+                }
             }
 
             // Expiration date is September 1st following the start date
@@ -125,6 +129,8 @@ class PromoCodeRepositoryController extends Controller
 
     /**
      * Auto-assign promo codes from the repository to pass requests that don't have one.
+     * Pass requests with a null country are treated as USA for matching purposes,
+     * but the country field on the pass request is NOT updated.
      */
     public function autoAssign(Request $request, int $seasonId)
     {
@@ -145,12 +151,19 @@ class PromoCodeRepositoryController extends Controller
             ->orderBy('promo_code')
             ->get();
 
-        // Get pass requests without codes for this season
+        // Get pass requests without codes for this season.
+        // When no country filter is given (or filtering for USA), also include
+        // pass requests where country is null — those default to USA.
         $passRequestsQuery = \App\Models\PassRequest::where('season_id', $seasonId)
             ->whereNull('promo_code');
 
-        if ($country) {
+        if ($country && $country !== 'USA') {
             $passRequestsQuery->where('country', $country);
+        } elseif ($country === 'USA' || !$country) {
+            // Include explicit USA requests AND requests with no country set (default = USA)
+            $passRequestsQuery->where(function ($q) {
+                $q->where('country', 'USA')->orWhereNull('country');
+            });
         }
 
         $passRequests = $passRequestsQuery->orderBy('created_at')->get();
@@ -166,6 +179,7 @@ class PromoCodeRepositoryController extends Controller
             }
 
             $code = $availableCodes[$index];
+            // Do NOT update the country field — just assign the promo code
             $passRequest->update([
                 'promo_code' => $code->promo_code,
                 'assign_code_date' => now(),

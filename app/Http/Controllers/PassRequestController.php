@@ -251,11 +251,14 @@ class PassRequestController extends Controller
 
         foreach ($passRequests as $passRequest) {
             // If changing away from USA and a promo code is assigned, unassign it
-            // so the promo code becomes available for reassignment to another request
+            // so the promo code becomes available for reassignment to another request.
+            // Also clear the emailed flag so the user will get a new email when a
+            // replacement promo code is assigned.
             if ($validated['country'] !== 'USA' && $passRequest->promo_code) {
                 $passRequest->update([
                     'promo_code' => null,
                     'assign_code_date' => null,
+                    'email_notify_time' => null,
                     'country' => $validated['country'],
                 ]);
             } else {
