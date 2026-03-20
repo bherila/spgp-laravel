@@ -76,9 +76,11 @@ class PromoCodeRepositoryController extends Controller
             $promoCode = trim($parts[0] ?? '');
             $startDateRaw = trim($parts[1] ?? '');
 
-            // Skip header row if present (first non-empty line containing "Code" or "Date")
+            // Skip header row if present on first non-empty row
+            // (e.g. "Code" or "Code\tDate Added"), while allowing real promo
+            // codes like "CODEONLY1".
             if ($imported === 0 && $skipped === 0 && empty($errors) &&
-                (stripos($promoCode, 'code') !== false || stripos($startDateRaw, 'date') !== false)) {
+                (strtolower($promoCode) === 'code' || stripos($startDateRaw, 'date') !== false)) {
                 continue;
             }
 
@@ -143,9 +145,17 @@ class PromoCodeRepositoryController extends Controller
         $country = $validated['country'] ?? null;
 
         // Get available (non-suspended, unassigned) codes for this season
-        $availableCodes = PromoCodeRepository::where('season_id', $seasonId)
-            ->where('is_suspended', false)
-            ->when($country, fn($q) => $q->where('country', $country))
+        $availableCodesQuery = PromoCodeRepository::where('season_id', $seasonId)
+            ->where('is_suspended', false);
+
+        if ($country === 'Canada') {
+            $availableCodesQuery->where('country', 'Canada');
+        } else {
+            // For USA or no explicit filter, default to USA repository codes.
+            $availableCodesQuery->where('country', 'USA');
+        }
+
+        $availableCodes = $availableCodesQuery
             ->whereDoesntHave('passRequests')
             ->orderBy('start_date')
             ->orderBy('promo_code')

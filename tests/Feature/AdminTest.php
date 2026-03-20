@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\EmailLog;
 use App\Models\InviteCode;
 use App\Models\PassRequest;
+use App\Models\PromoCodeRepository;
 use App\Models\Season;
 use App\Models\SeasonPassType;
 use App\Models\User;
@@ -707,5 +708,236 @@ class AdminTest extends TestCase
             ]);
 
         $response->assertStatus(422);
+    }
+
+    public function test_admin_can_import_single_column_promo_codes_using_current_date(): void
+    {
+        $today = now()->toDateString();
+        $response = $this->actingAs($this->admin)
+            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/import", [
+                'country' => 'USA',
+                'tsv' => "CODEONLY1\nCODEONLY2",
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson(['imported' => 2]);
+
+        $this->assertDatabaseHas('promo_code_repository', [
+            'promo_code' => 'CODEONLY1',
+            'season_id' => $this->season->id,
+            'country' => 'USA',
+        ]);
+        $this->assertDatabaseHas('promo_code_repository', [
+            'promo_code' => 'CODEONLY2',
+            'season_id' => $this->season->id,
+            'country' => 'USA',
+        ]);
+
+        $codeOnly1 = PromoCodeRepository::find('CODEONLY1');
+        $codeOnly2 = PromoCodeRepository::find('CODEONLY2');
+        $this->assertEquals($today, $codeOnly1?->start_date?->toDateString());
+        $this->assertEquals($today, $codeOnly2?->start_date?->toDateString());
+    }
+
+    public function test_admin_import_promo_codes_reports_invalid_date_and_imports_valid_rows(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/import", [
+                'country' => 'Canada',
+                'tsv' => "VALID1\t2026-01-15\nINVALID1\tNOT-A-DATE\nVALID2\t2026-01-16",
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson(['imported' => 2]);
+
+        $errors = $response->json('errors');
+        $this->assertIsArray($errors);
+        $this->assertNotEmpty($errors);
+        $this->assertStringContainsString('invalid date', strtolower($errors[0]));
+
+        $this->assertDatabaseHas('promo_code_repository', [
+            'promo_code' => 'VALID1',
+            'country' => 'Canada',
+        ]);
+        $this->assertDatabaseHas('promo_code_repository', [
+            'promo_code' => 'VALID2',
+            'country' => 'Canada',
+        ]);
+        $valid1 = PromoCodeRepository::find('VALID1');
+        $valid2 = PromoCodeRepository::find('VALID2');
+        $this->assertEquals('2026-01-15', $valid1?->start_date?->toDateString());
+        $this->assertEquals('2026-01-16', $valid2?->start_date?->toDateString());
+        $this->assertDatabaseMissing('promo_code_repository', [
+            'promo_code' => 'INVALID1',
+        ]);
+    }
+
+    public function test_auto_assign_usa_filter_includes_null_country_requests(): void
+    {
+        $passType = SeasonPassType::create([
+            'season_id' => $this->season->id,
+            'pass_type_name' => 'Adult',
+            'sort_order' => 0,
+        ]);
+
+        PromoCodeRepository::create([
+            'promo_code' => 'USA_CODE_1',
+            'season_id' => $this->season->id,
+            'start_date' => now()->toDateString(),
+            'expiration_date' => now()->addYear()->toDateString(),
+            'country' => 'USA',
+            'is_suspended' => false,
+        ]);
+
+        $passRequest = PassRequest::create([
+            'user_id' => $this->regularUser->id,
+            'season_id' => $this->season->id,
+            'season_pass_type_id' => $passType->id,
+            'passholder_email' => 'nullcountry@example.com',
+            'pass_type' => 'Adult',
+            'passholder_first_name' => 'Null',
+            'passholder_last_name' => 'Country',
+            'passholder_birth_date' => '1990-01-01',
+            'country' => null,
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", [
+                'country' => 'USA',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson(['assigned' => 1]);
+
+        $this->assertDatabaseHas('pass_requests', [
+            'id' => $passRequest->id,
+            'promo_code' => 'USA_CODE_1',
+            'country' => null,
+        ]);
+    }
+
+    public function test_auto_assign_canada_filter_excludes_null_country_requests(): void
+    {
+        $passType = SeasonPassType::create([
+            'season_id' => $this->season->id,
+            'pass_type_name' => 'Adult',
+            'sort_order' => 0,
+        ]);
+
+        PromoCodeRepository::create([
+            'promo_code' => 'CAN_CODE_1',
+            'season_id' => $this->season->id,
+            'start_date' => now()->toDateString(),
+            'expiration_date' => now()->addYear()->toDateString(),
+            'country' => 'Canada',
+            'is_suspended' => false,
+        ]);
+
+        $nullCountryRequest = PassRequest::create([
+            'user_id' => $this->regularUser->id,
+            'season_id' => $this->season->id,
+            'season_pass_type_id' => $passType->id,
+            'passholder_email' => 'nullcountry2@example.com',
+            'pass_type' => 'Adult',
+            'passholder_first_name' => 'Null',
+            'passholder_last_name' => 'Country2',
+            'passholder_birth_date' => '1990-01-01',
+            'country' => null,
+        ]);
+
+        $canadaRequest = PassRequest::create([
+            'user_id' => $this->regularUser->id,
+            'season_id' => $this->season->id,
+            'season_pass_type_id' => $passType->id,
+            'passholder_email' => 'canada@example.com',
+            'pass_type' => 'Adult',
+            'passholder_first_name' => 'Canada',
+            'passholder_last_name' => 'User',
+            'passholder_birth_date' => '1990-01-01',
+            'country' => 'Canada',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", [
+                'country' => 'Canada',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson(['assigned' => 1]);
+
+        $this->assertDatabaseHas('pass_requests', [
+            'id' => $canadaRequest->id,
+            'promo_code' => 'CAN_CODE_1',
+        ]);
+        $this->assertDatabaseHas('pass_requests', [
+            'id' => $nullCountryRequest->id,
+            'promo_code' => null,
+            'country' => null,
+        ]);
+    }
+
+    public function test_auto_assign_without_country_defaults_to_usa_requests_and_codes(): void
+    {
+        $passType = SeasonPassType::create([
+            'season_id' => $this->season->id,
+            'pass_type_name' => 'Adult',
+            'sort_order' => 0,
+        ]);
+
+        PromoCodeRepository::create([
+            'promo_code' => 'USA_DEFAULT_1',
+            'season_id' => $this->season->id,
+            'start_date' => now()->toDateString(),
+            'expiration_date' => now()->addYear()->toDateString(),
+            'country' => 'USA',
+            'is_suspended' => false,
+        ]);
+        PromoCodeRepository::create([
+            'promo_code' => 'CAN_DEFAULT_1',
+            'season_id' => $this->season->id,
+            'start_date' => now()->toDateString(),
+            'expiration_date' => now()->addYear()->toDateString(),
+            'country' => 'Canada',
+            'is_suspended' => false,
+        ]);
+
+        $usaRequest = PassRequest::create([
+            'user_id' => $this->regularUser->id,
+            'season_id' => $this->season->id,
+            'season_pass_type_id' => $passType->id,
+            'passholder_email' => 'usa-default@example.com',
+            'pass_type' => 'Adult',
+            'passholder_first_name' => 'Usa',
+            'passholder_last_name' => 'Default',
+            'passholder_birth_date' => '1990-01-01',
+            'country' => 'USA',
+        ]);
+
+        $canadaRequest = PassRequest::create([
+            'user_id' => $this->regularUser->id,
+            'season_id' => $this->season->id,
+            'season_pass_type_id' => $passType->id,
+            'passholder_email' => 'canada-default@example.com',
+            'pass_type' => 'Adult',
+            'passholder_first_name' => 'Canada',
+            'passholder_last_name' => 'Default',
+            'passholder_birth_date' => '1990-01-01',
+            'country' => 'Canada',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", []);
+
+        $response->assertStatus(200)
+            ->assertJson(['assigned' => 1]);
+
+        $this->assertDatabaseHas('pass_requests', [
+            'id' => $usaRequest->id,
+            'promo_code' => 'USA_DEFAULT_1',
+        ]);
+        $this->assertDatabaseHas('pass_requests', [
+            'id' => $canadaRequest->id,
+            'promo_code' => null,
+        ]);
     }
 }

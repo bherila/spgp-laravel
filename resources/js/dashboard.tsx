@@ -2,7 +2,7 @@ import './bootstrap';
 
 import currency from 'currency.js';
 import { Check, Copy, FileEdit, HelpCircle, Plus, Trash2, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import MainTitle from '@/components/MainTitle';
@@ -42,7 +42,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import Questions from './components/Questions';
+const Questions = React.lazy(() => import('./components/Questions'));
 
 interface SeasonPassType {
   id: number;
@@ -165,7 +165,11 @@ function Dashboard() {
   }, [isQuestionsView]);
 
   if (isQuestionsView && seasonId) {
-    return <Questions seasonId={parseInt(seasonId)} isAdmin={isAdmin} csrfToken={csrfToken} />;
+    return (
+      <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-8">Loading questions…</div>}>
+        <Questions seasonId={parseInt(seasonId)} isAdmin={isAdmin} csrfToken={csrfToken} />
+      </Suspense>
+    );
   }
 
   const handleOpenRenewalModal = (request: PassRequest) => {
