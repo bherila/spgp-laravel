@@ -28,7 +28,7 @@ class PromoCodeRepositoryController extends Controller
 
         $codes = PromoCodeRepository::where('season_id', $seasonId)
             ->withCount('passRequests')
-            ->orderBy('start_date', 'desc')
+            ->orderBy('start_date')
             ->orderBy('promo_code')
             ->get()
             ->map(function ($code) {

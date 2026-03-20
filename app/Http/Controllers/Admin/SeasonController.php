@@ -232,6 +232,7 @@ class SeasonController extends Controller
             ->update([
                 'promo_code' => null,
                 'assign_code_date' => null,
+                'email_notify_time' => null,
             ]);
 
         return response()->json([
@@ -321,5 +322,40 @@ class SeasonController extends Controller
         $passRequest->delete();
 
         return response()->json(['message' => 'Pass request deleted successfully']);
+    }
+
+    /**
+     * Bulk-delete pass requests (admin only).
+     * Rejects requests that still have a promo code assigned.
+     */
+    public function bulkDeletePassRequests(Request $request, int $id)
+    {
+        Season::findOrFail($id);
+
+        $validated = $request->validate([
+            'pass_request_ids' => ['required', 'array'],
+            'pass_request_ids.*' => ['required', 'string'],
+        ]);
+
+        $passRequests = PassRequest::whereIn('id', $validated['pass_request_ids'])
+            ->where('season_id', $id)
+            ->get();
+
+        $withCode = $passRequests->filter(fn ($r) => $r->promo_code !== null);
+        if ($withCode->isNotEmpty()) {
+            return response()->json([
+                'message' => 'Cannot delete pass requests that have a promo code assigned. Please unassign the codes first.',
+            ], 422);
+        }
+
+        $count = $passRequests->count();
+        PassRequest::whereIn('id', $validated['pass_request_ids'])
+            ->where('season_id', $id)
+            ->delete();
+
+        return response()->json([
+            'message' => "Deleted {$count} pass request(s).",
+            'deleted' => $count,
+        ]);
     }
 }

@@ -33,18 +33,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Textarea } from '@/components/ui/textarea';
 
-interface PromoCode {
-  promo_code: string;
-  season_id: number;
-  start_date: string;
-  expiration_date: string;
-  country: 'USA' | 'Canada' | null;
-  is_suspended: boolean;
-  is_assigned: boolean;
-  created_at: string;
-}
+import { fetchPromoCodes, importCodes,type PromoCode } from './promoCodeRepositoryApi';
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—';
@@ -53,10 +43,10 @@ function formatDate(dateStr: string | null): string {
 
 function PromoCodeRepositoryAdmin() {
   const mount = document.getElementById('admin-promo-code-repository');
-  const csrfToken = mount?.getAttribute('data-csrf-token') || '';
-  const seasonId = mount?.getAttribute('data-season-id') || '';
-  const seasonName = mount?.getAttribute('data-season-name') || '';
-  const seasonYear = mount?.getAttribute('data-season-year') || '';
+  const csrfToken = mount?.getAttribute('data-csrf-token') ?? '';
+  const seasonId = mount?.getAttribute('data-season-id') ?? '';
+  const seasonName = mount?.getAttribute('data-season-name') ?? '';
+  const seasonYear = mount?.getAttribute('data-season-year') ?? '';
 
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,15 +60,11 @@ function PromoCodeRepositoryAdmin() {
   const [importing, setImporting] = useState(false);
   const [importErrors, setImportErrors] = useState<string[]>([]);
 
-  const fetchData = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/seasons/${seasonId}/promo-codes/list`, {
-        headers: { 'Accept': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to fetch promo codes');
-      const data = await response.json();
-      setPromoCodes(data.promo_codes || []);
+      const data = await fetchPromoCodes(seasonId);
+      setPromoCodes(data.promo_codes ?? []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -87,7 +73,7 @@ function PromoCodeRepositoryAdmin() {
   };
 
   useEffect(() => {
-    fetchData();
+    void loadData();
   }, []);
 
   const handleImport = async () => {
@@ -99,27 +85,12 @@ function PromoCodeRepositoryAdmin() {
     setSuccess(null);
 
     try {
-      const response = await fetch(`/api/admin/seasons/${seasonId}/promo-codes/import`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({ tsv: importTsv, country: importCountry }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Import failed');
-      }
-
+      const data = await importCodes(seasonId, importTsv, importCountry, csrfToken);
       setSuccess(data.message);
-      setImportErrors(data.errors || []);
+      setImportErrors(data.errors ?? []);
       setImportTsv('');
       setImportOpen(false);
-      fetchData();
+      void loadData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -266,8 +237,9 @@ function PromoCodeRepositoryAdmin() {
 
             <div className="space-y-1">
               <Label>TSV Data (paste from Excel)</Label>
-              <Textarea
-                className="font-mono text-xs min-h-[200px]"
+              <textarea
+                className="font-mono text-xs w-full rounded-md border border-input bg-background px-3 py-2 resize-none overflow-y-auto"
+                style={{ minHeight: '8rem', maxHeight: '15rem' }}
                 placeholder={"Code\tDate Added\nABCD1234\t1/15/2026\nEFGH5678"}
                 value={importTsv}
                 onChange={(e) => setImportTsv(e.target.value)}
