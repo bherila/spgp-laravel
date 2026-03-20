@@ -42,6 +42,7 @@ interface PromoCode {
   expiration_date: string;
   country: 'USA' | 'Canada' | null;
   is_suspended: boolean;
+  is_assigned: boolean;
   created_at: string;
 }
 
@@ -126,8 +127,8 @@ function PromoCodeRepositoryAdmin() {
     }
   };
 
-  const usaCount = promoCodes.filter(c => c.country === 'USA' && !c.is_suspended).length;
-  const canadaCount = promoCodes.filter(c => c.country === 'Canada' && !c.is_suspended).length;
+  const usaCount = promoCodes.filter(c => c.country === 'USA' && !c.is_suspended && !c.is_assigned).length;
+  const canadaCount = promoCodes.filter(c => c.country === 'Canada' && !c.is_suspended && !c.is_assigned).length;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -173,10 +174,17 @@ function PromoCodeRepositoryAdmin() {
           <span>Canada: <strong>{canadaCount}</strong> available</span>
           <span>Total: <strong>{promoCodes.length}</strong></span>
         </div>
-        <Button onClick={() => setImportOpen(true)}>
-          <Upload className="w-4 h-4 mr-2" />
-          Import Codes
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <a href={`/admin/seasons/${seasonId}/pass-requests`}>
+              View Pass Requests
+            </a>
+          </Button>
+          <Button onClick={() => setImportOpen(true)}>
+            <Upload className="w-4 h-4 mr-2" />
+            Import Codes
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-lg">
@@ -217,6 +225,8 @@ function PromoCodeRepositoryAdmin() {
                   <TableCell>
                     {code.is_suspended ? (
                       <Badge variant="destructive">Suspended</Badge>
+                    ) : code.is_assigned ? (
+                      <Badge variant="default">Assigned</Badge>
                     ) : (
                       <Badge variant="secondary">Available</Badge>
                     )}
@@ -234,7 +244,8 @@ function PromoCodeRepositoryAdmin() {
           <DialogHeader>
             <DialogTitle>Import Promo Codes</DialogTitle>
             <DialogDescription>
-              Paste TSV data from Excel with columns: <strong>Code</strong> and <strong>Date Added</strong>.
+              Paste TSV data from Excel with columns: <strong>Code</strong> and optionally <strong>Date Added</strong>.
+              If Date Added is omitted or blank, the current server date will be used.
               The expiration date will be set to September 1st following the start date.
             </DialogDescription>
           </DialogHeader>
@@ -257,7 +268,7 @@ function PromoCodeRepositoryAdmin() {
               <Label>TSV Data (paste from Excel)</Label>
               <Textarea
                 className="font-mono text-xs min-h-[200px]"
-                placeholder={"Code\tDate Added\nABCD1234\t1/15/2026\nEFGH5678\t1/15/2026"}
+                placeholder={"Code\tDate Added\nABCD1234\t1/15/2026\nEFGH5678"}
                 value={importTsv}
                 onChange={(e) => setImportTsv(e.target.value)}
               />

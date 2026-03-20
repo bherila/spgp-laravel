@@ -531,6 +531,12 @@ function SeasonPassRequestsAdmin() {
             </a>
           </Button>
         )}
+        <Button variant="outline" asChild>
+          <a href={`/admin/seasons/${seasonId}/promo-codes`}>
+            <Tag className="w-4 h-4 mr-2" />
+            Promo Code Repository
+          </a>
+        </Button>
       </div>
 
       {actionMessage && (

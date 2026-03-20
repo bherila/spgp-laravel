@@ -11,6 +11,11 @@ Your promo code for the {{ $season->pass_name }}  is ready!
 - **Name:** {{ $passRequest->passholder_first_name }} {{ $passRequest->passholder_last_name }}
 - **Email:** {{ $passRequest->passholder_email }}
 - **Pass Type:** {{ $passRequest->pass_type }}
+- **Country:** {{ $passRequest->country ?? 'USA (assumed)' }}
+
+@if(is_null($passRequest->country))
+> **⚠️ WARNING:** Your country has not been confirmed. We are assuming your country is **USA**. Please log in to the portal and confirm your country is USA. If you update your country to something other than USA, your promo code will become **unassigned** and will need to be manually reassigned by Admin.
+@endif
 
 This promo code MUST be used by the passholder above. If you need a code for a different person, then please submit a new request for that person.
 

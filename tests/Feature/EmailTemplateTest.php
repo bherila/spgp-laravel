@@ -171,4 +171,48 @@ class EmailTemplateTest extends TestCase
                 && $mail->passRequest->passholder_last_name === 'Builder';
         });
     }
+
+    public function test_pass_code_email_renders_country_when_set(): void
+    {
+        $passRequest = PassRequest::create([
+            'user_id' => $this->user->id,
+            'season_id' => $this->season->id,
+            'season_pass_type_id' => $this->passType->id,
+            'pass_type' => 'Adult',
+            'passholder_first_name' => 'Country',
+            'passholder_last_name' => 'Set',
+            'passholder_email' => 'country-set@example.com',
+            'passholder_birth_date' => '1990-01-01',
+            'promo_code' => 'COUNTRYSET1',
+            'country' => 'Canada',
+        ]);
+
+        $rendered = (new PassCodeNotification($passRequest, $this->season))->render();
+
+        $this->assertStringContainsString('Country:', $rendered);
+        $this->assertStringContainsString('Canada', $rendered);
+        $this->assertStringNotContainsString('WARNING', $rendered);
+    }
+
+    public function test_pass_code_email_shows_null_country_warning_and_assumed_usa(): void
+    {
+        $passRequest = PassRequest::create([
+            'user_id' => $this->user->id,
+            'season_id' => $this->season->id,
+            'season_pass_type_id' => $this->passType->id,
+            'pass_type' => 'Adult',
+            'passholder_first_name' => 'Country',
+            'passholder_last_name' => 'Null',
+            'passholder_email' => 'country-null@example.com',
+            'passholder_birth_date' => '1990-01-01',
+            'promo_code' => 'COUNTRYNUL1',
+            'country' => null,
+        ]);
+
+        $rendered = (new PassCodeNotification($passRequest, $this->season))->render();
+
+        $this->assertStringContainsString('USA (assumed)', $rendered);
+        $this->assertStringContainsString('WARNING', $rendered);
+        $this->assertStringContainsString('confirm your country is USA', $rendered);
+    }
 }
