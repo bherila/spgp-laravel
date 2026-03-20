@@ -40,7 +40,7 @@ class QuestionController extends Controller
     public function getQuestions(Season $season)
     {
         $questions = $season->questions()
-            ->with(['user:id,name', 'answeredBy:id,name'])
+            ->with(['user:id,first_name,last_name', 'answeredBy:id,first_name,last_name'])
             ->withCount('upvotes')
             ->orderBy('upvotes_count', 'desc')
             ->orderBy('created_at', 'desc')
@@ -69,7 +69,7 @@ class QuestionController extends Controller
 
         $question->seasons()->attach($season->id);
 
-        return response()->json($question->load(['user:id,name', 'answeredBy:id,name'])->setAttribute('upvotes_count', 0)->setAttribute('user_has_upvoted', false));
+        return response()->json($question->load(['user:id,first_name,last_name', 'answeredBy:id,first_name,last_name'])->setAttribute('upvotes_count', 0)->setAttribute('user_has_upvoted', false));
     }
 
     /**
@@ -119,7 +119,7 @@ class QuestionController extends Controller
             $question->seasons()->sync($validated['seasons']);
         }
 
-        return response()->json($question->load(['user:id,name', 'answeredBy:id,name']));
+        return response()->json($question->load(['user:id,first_name,last_name', 'answeredBy:id,first_name,last_name']));
     }
 
     /**

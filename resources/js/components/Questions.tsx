@@ -18,6 +18,8 @@ import { Textarea } from '@/components/ui/textarea';
 
 interface User {
   id: number;
+  first_name: string | null;
+  last_name: string | null;
   name: string;
 }
 
@@ -27,8 +29,7 @@ interface Question {
   user: User;
   content: string;
   answer: string | null;
-  answered_by: number | null;
-  answered_by_user?: User;
+  answered_by: User | null;
   answered_at: string | null;
   created_at: string;
   upvotes_count: number;
@@ -254,7 +255,7 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-green-600 mt-1 shrink-0" />
                     <div className="flex flex-col flex-1">
-                      <span className="text-sm font-semibold mb-2">Answer from {question.answered_by_user?.name || 'Admin'}:</span>
+                      <span className="text-sm font-semibold mb-2">Answer from {question.answered_by?.name || 'Admin'}:</span>
                       <div className="prose prose-sm dark:prose-invert max-w-none">
                         <ReactMarkdown skipHtml>{question.answer}</ReactMarkdown>
                       </div>
