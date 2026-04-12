@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name'))</title>
     <meta name="color-scheme" content="dark light">
-    <script>
+    <script @cspNonce>
       (function() {
         try {
           var theme = localStorage.getItem('theme') || 'system';
@@ -19,7 +19,7 @@
     </script>
     @vite(['resources/css/app.css', 'resources/js/navbar.tsx'])
     @if(config('sentry.dsn'))
-    <script>window.SENTRY_DSN = "{{ config('sentry.dsn') }}";</script>
+    <script @cspNonce>window.SENTRY_DSN = "{{ config('sentry.dsn') }}";</script>
     @vite(['resources/js/sentry.ts'])
     @endif
     @stack('head')
@@ -43,7 +43,7 @@
     @stack('scripts')
     <div id="sonner-toaster"></div>
     @vite(['resources/js/components/ui/sonner.tsx'])
-    <script>
+    <script @cspNonce>
       // This is a bit of a hack to ensure the Toaster is rendered
       // In a real app we'd probably have a top-level React provider
     </script>
