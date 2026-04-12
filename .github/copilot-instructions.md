@@ -34,9 +34,11 @@
   - See [TESTING.md](TESTING.md) for environment-specific troubleshooting (e.g., `DB_CONNECTION` overrides).
   - All Jest unit tests must be located in `/tests-ts`, not `/resources/js`.
 - **Build Workflow**:
-  - Backend: `composer install`, `php artisan migrate`.
+  - Backend: `composer install`. Then ask the user before running migrations — see Database Migrations rule below.
   - Frontend: `pnpm install`, `pnpm run build` or `pnpm run dev`.
   - Concurrent dev: `pnpm run dev` and `php artisan serve`.
+- **Database Migrations**:
+  - **IMPORTANT**: Never run `php artisan migrate` or `php artisan schema:dump` unless the user **explicitly requests it**. When asked, always pass `--database=sqlite --no-interaction` — the `.env` may point to a staging/production MySQL host and omitting this flag risks running against real data. Never use `--prune` with `schema:dump`. Always use migration files (`database/migrations/`) for schema changes.
 - **Conventions**:
   - Dates use `SerializesDatesAsLocal` trait for consistent TZ handling.
   - Use `import type` for TypeScript interfaces to prevent runtime SyntaxErrors in development.
