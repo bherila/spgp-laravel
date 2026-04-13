@@ -3,30 +3,33 @@
 namespace App\Csp;
 
 use Spatie\Csp\Directive;
-use Spatie\Csp\Policies\Policy;
+use Spatie\Csp\Policy;
+use Spatie\Csp\Preset;
 
-class CloudflareCspPolicy extends Policy
+class CloudflareCspPolicy implements Preset
 {
-    public function configure()
+    public function configure(Policy $policy): void
     {
-        $this
-            ->addDirective(Directive::DEFAULT_SRC, ["'self'"])
-            ->addDirective(Directive::SCRIPT_SRC, [
+        $policy
+            ->add(Directive::DEFAULT_SRC, ["'self'"])
+            ->add(Directive::SCRIPT_SRC, [
                 "'self'",
-                "https://static.cloudflareinsights.com",
+                'https://static.cloudflareinsights.com',
             ])
-            ->addDirective(Directive::CONNECT_SRC, [
+            ->addNonce(Directive::SCRIPT_SRC)
+            ->add(Directive::CONNECT_SRC, [
                 "'self'",
-                "https://static.cloudflareinsights.com",
+                'https://static.cloudflareinsights.com',
             ])
-            ->addDirective(Directive::IMG_SRC, [
+            ->add(Directive::IMG_SRC, [
                 "'self'",
-                "https://static.cloudflareinsights.com",
+                'https://static.cloudflareinsights.com',
             ])
-            ->addDirective(Directive::STYLE_SRC, ["'self'"])
-            ->addDirective(Directive::OBJECT_SRC, ["'none'"])
-            ->addDirective(Directive::BASE_URI, ["'self'"])
-            ->addDirective(Directive::FRAME_ANCESTORS, ["'none'"])
-            ->addDirective(Directive::FORM_ACTION, ["'self'"]);
+            ->add(Directive::STYLE_SRC, ["'self'"])
+            ->addNonce(Directive::STYLE_SRC)
+            ->add(Directive::OBJECT_SRC, ["'none'"])
+            ->add(Directive::BASE_URI, ["'self'"])
+            ->add(Directive::FRAME_ANCESTORS, ["'none'"])
+            ->add(Directive::FORM_ACTION, ["'self'"]);
     }
 }
