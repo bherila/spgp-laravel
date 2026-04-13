@@ -802,9 +802,7 @@ class AdminTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", [
-                'country' => 'USA',
-            ]);
+            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", []);
 
         $response->assertStatus(200)
             ->assertJson(['assigned' => 1]);
@@ -858,9 +856,7 @@ class AdminTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", [
-                'country' => 'Canada',
-            ]);
+            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", []);
 
         $response->assertStatus(200)
             ->assertJson(['assigned' => 1]);
