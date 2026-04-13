@@ -16,7 +16,7 @@ A specialized Laravel application for coordinating group purchases of ski passes
 
 ## Tech Stack
 
-- **Backend**: Laravel 12 (PHP 8.2+)
+- **Backend**: Laravel 13 (PHP 8.2+)
 - **Frontend**: React 19 with TypeScript
 - **UI Components**: shadcn/ui + Radix UI primitives
 - **Styling**: Tailwind CSS v4
@@ -60,8 +60,10 @@ A specialized Laravel application for coordinating group purchases of ski passes
 
 4. **Run migrations**
    ```bash
-   php artisan migrate
+   php artisan migrate --database=sqlite --no-interaction
    ```
+
+   > **Note**: If your `.env` points to a production MySQL host, always pass `--database=sqlite` to avoid running against real data.
 
 5. **Build assets**
    ```bash

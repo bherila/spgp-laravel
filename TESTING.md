@@ -51,6 +51,19 @@ php artisan test
 
 ---
 
+## Schema Management
+
+**NEVER run migrations or schema dumps unless the user explicitly requests it.**
+
+When the user explicitly asks to run migrations or update the schema dump:
+
+1. Run migrations against SQLite only: `php artisan migrate --database=sqlite --no-interaction`
+2. Dump the schema against SQLite only: `php artisan schema:dump --database=sqlite` (**NEVER** use `--prune`)
+
+Always pass `--database=sqlite` explicitly — the `.env` may point to a staging/production MySQL host, and omitting this flag risks running against real data.
+
+---
+
 ## Database Safety
 
 All backend tests use **SQLite in-memory**, enforced by `Tests\SafeTestCase`.
