@@ -131,70 +131,59 @@ class PromoCodeRepositoryController extends Controller
 
     /**
      * Auto-assign promo codes from the repository to pass requests that don't have one.
-     * Pass requests with a null country are treated as USA for matching purposes,
-     * but the country field on the pass request is NOT updated.
+     * Codes are matched to pass requests by country. Pass requests with a null country
+     * are treated as USA, but the country field on the pass request is NOT updated.
      */
     public function autoAssign(Request $request, int $seasonId)
     {
-        $season = Season::findOrFail($seasonId);
+        Season::findOrFail($seasonId);
 
-        $validated = $request->validate([
-            'country' => ['sometimes', 'string', 'in:USA,Canada'],
-        ]);
-
-        $country = $validated['country'] ?? null;
-
-        // Get available (non-suspended, unassigned) codes for this season
-        $availableCodesQuery = PromoCodeRepository::where('season_id', $seasonId)
-            ->where('is_suspended', false);
-
-        if ($country === 'Canada') {
-            $availableCodesQuery->where('country', 'Canada');
-        } else {
-            // For USA or no explicit filter, default to USA repository codes.
-            $availableCodesQuery->where('country', 'USA');
-        }
-
-        $availableCodes = $availableCodesQuery
+        // Derive the set of countries to process from what's actually in the repository,
+        // so no country values need to be hardcoded here.
+        $countries = PromoCodeRepository::where('season_id', $seasonId)
+            ->where('is_suspended', false)
             ->whereDoesntHave('passRequests')
-            ->orderBy('start_date')
-            ->orderBy('promo_code')
-            ->get();
-
-        // Get pass requests without codes for this season.
-        // When no country filter is given (or filtering for USA), also include
-        // pass requests where country is null — those default to USA.
-        $passRequestsQuery = \App\Models\PassRequest::where('season_id', $seasonId)
-            ->whereNull('promo_code');
-
-        if ($country && $country !== 'USA') {
-            $passRequestsQuery->where('country', $country);
-        } elseif ($country === 'USA' || !$country) {
-            // Include explicit USA requests AND requests with no country set (default = USA)
-            $passRequestsQuery->where(function ($q) {
-                $q->where('country', 'USA')->orWhereNull('country');
-            });
-        }
-
-        $passRequests = $passRequestsQuery->orderBy('created_at')->get();
-
-        if ($availableCodes->isEmpty()) {
-            return response()->json(['message' => 'No available promo codes in repository.'], 422);
-        }
+            ->distinct()
+            ->pluck('country');
 
         $assigned = 0;
-        foreach ($passRequests as $index => $passRequest) {
-            if ($index >= $availableCodes->count()) {
-                break;
+
+        foreach ($countries as $c) {
+            $availableCodes = PromoCodeRepository::where('season_id', $seasonId)
+                ->where('is_suspended', false)
+                ->where('country', $c)
+                ->whereDoesntHave('passRequests')
+                ->orderBy('start_date')
+                ->orderBy('promo_code')
+                ->get();
+
+            $passRequestsQuery = \App\Models\PassRequest::where('season_id', $seasonId)
+                ->whereNull('promo_code');
+
+            if ($c === 'USA') {
+                // Null-country pass requests default to USA.
+                $passRequestsQuery->where(function ($q) {
+                    $q->where('country', 'USA')->orWhereNull('country');
+                });
+            } else {
+                $passRequestsQuery->where('country', $c);
             }
 
-            $code = $availableCodes[$index];
-            // Do NOT update the country field — just assign the promo code
-            $passRequest->update([
-                'promo_code' => $code->promo_code,
-                'assign_code_date' => now(),
-            ]);
-            $assigned++;
+            $passRequests = $passRequestsQuery->orderBy('created_at')->get();
+
+            foreach ($passRequests as $index => $passRequest) {
+                if ($index >= $availableCodes->count()) {
+                    break;
+                }
+
+                $code = $availableCodes[$index];
+                // Do NOT update the country field — just assign the promo code.
+                $passRequest->update([
+                    'promo_code' => $code->promo_code,
+                    'assign_code_date' => now(),
+                ]);
+                $assigned++;
+            }
         }
 
         return response()->json([

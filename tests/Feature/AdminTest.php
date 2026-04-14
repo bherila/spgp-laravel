@@ -802,9 +802,7 @@ class AdminTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", [
-                'country' => 'USA',
-            ]);
+            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", []);
 
         $response->assertStatus(200)
             ->assertJson(['assigned' => 1]);
@@ -858,9 +856,7 @@ class AdminTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", [
-                'country' => 'Canada',
-            ]);
+            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", []);
 
         $response->assertStatus(200)
             ->assertJson(['assigned' => 1]);
@@ -876,7 +872,7 @@ class AdminTest extends TestCase
         ]);
     }
 
-    public function test_auto_assign_without_country_defaults_to_usa_requests_and_codes(): void
+    public function test_auto_assign_without_country_processes_both_usa_and_canada(): void
     {
         $passType = SeasonPassType::create([
             'season_id' => $this->season->id,
@@ -929,7 +925,7 @@ class AdminTest extends TestCase
             ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", []);
 
         $response->assertStatus(200)
-            ->assertJson(['assigned' => 1]);
+            ->assertJson(['assigned' => 2]);
 
         $this->assertDatabaseHas('pass_requests', [
             'id' => $usaRequest->id,
@@ -937,7 +933,49 @@ class AdminTest extends TestCase
         ]);
         $this->assertDatabaseHas('pass_requests', [
             'id' => $canadaRequest->id,
-            'promo_code' => null,
+            'promo_code' => 'CAN_DEFAULT_1',
+        ]);
+    }
+
+    public function test_auto_assign_without_country_assigns_canada_codes_when_only_canada_available(): void
+    {
+        $passType = SeasonPassType::create([
+            'season_id' => $this->season->id,
+            'pass_type_name' => 'Adult',
+            'sort_order' => 0,
+        ]);
+
+        // Only Canada codes exist — no USA codes
+        PromoCodeRepository::create([
+            'promo_code' => 'CAN_ONLY_1',
+            'season_id' => $this->season->id,
+            'start_date' => now()->toDateString(),
+            'expiration_date' => now()->addYear()->toDateString(),
+            'country' => 'Canada',
+            'is_suspended' => false,
+        ]);
+
+        $canadaRequest = PassRequest::create([
+            'user_id' => $this->regularUser->id,
+            'season_id' => $this->season->id,
+            'season_pass_type_id' => $passType->id,
+            'passholder_email' => 'canada-only@example.com',
+            'pass_type' => 'Adult',
+            'passholder_first_name' => 'Canada',
+            'passholder_last_name' => 'Only',
+            'passholder_birth_date' => '1990-01-01',
+            'country' => 'Canada',
+        ]);
+
+        $response = $this->actingAs($this->admin)
+            ->post("/api/admin/seasons/{$this->season->id}/promo-codes/auto-assign", []);
+
+        $response->assertStatus(200)
+            ->assertJson(['assigned' => 1]);
+
+        $this->assertDatabaseHas('pass_requests', [
+            'id' => $canadaRequest->id,
+            'promo_code' => 'CAN_ONLY_1',
         ]);
     }
 }
