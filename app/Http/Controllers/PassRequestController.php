@@ -233,6 +233,30 @@ class PassRequestController extends Controller
     }
 
     /**
+     * Delete a pass request owned by the authenticated user.
+     * Requests with an assigned promo code cannot be deleted.
+     */
+    public function destroy(Request $request, string $id)
+    {
+        $user = $request->user();
+        $passRequest = PassRequest::findOrFail($id);
+
+        if ($passRequest->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($passRequest->promo_code) {
+            return response()->json([
+                'message' => 'This pass request cannot be cancelled because a promo code has already been assigned.',
+            ], 422);
+        }
+
+        $passRequest->delete();
+
+        return response()->json(['message' => 'Pass request cancelled successfully']);
+    }
+
+    /**
      * Bulk-update the country on all of the user's pass requests that are missing a country.
      * If the selected country is not USA and a promo code is assigned, the promo code is
      * unassigned and returned to the PromoCodeRepository so it can be reused.
