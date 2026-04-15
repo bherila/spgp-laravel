@@ -1,6 +1,6 @@
+import MDEditor from '@uiw/react-md-editor';
 import { ArrowLeft, CheckCircle2, Edit2, HelpCircle, MessageSquare, Send, ThumbsUp, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
 
 import MainTitle from '@/components/MainTitle';
 import { Button as ShadcnButton } from '@/components/ui/button';
@@ -14,7 +14,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 
 interface User {
   id: number;
@@ -217,8 +216,8 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
               <CardHeader className="flex flex-row items-start justify-between pb-2">
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-primary mb-1">{question.user.name} asked:</span>
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown skipHtml>{question.content}</ReactMarkdown>
+                  <div data-color-mode="auto">
+                    <MDEditor.Markdown source={question.content} />
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-2">
@@ -256,8 +255,8 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
                     <CheckCircle2 className="w-5 h-5 text-green-600 mt-1 shrink-0" />
                     <div className="flex flex-col flex-1">
                       <span className="text-sm font-semibold mb-2">Answer from {question.answered_by?.name || 'Admin'}:</span>
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <ReactMarkdown skipHtml>{question.answer}</ReactMarkdown>
+                      <div data-color-mode="auto">
+                        <MDEditor.Markdown source={question.answer ?? ''} />
                       </div>
                       {isAdmin && (
                         <ShadcnButton variant="ghost" size="sm" className="mt-4 self-start" onClick={() => {
@@ -298,12 +297,11 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
               Use Markdown to format your question. Headings, lists, and bold text are supported.
             </DialogDescription>
           </DialogHeader>
-          <div className="mt-4">
-            <Textarea
+          <div className="mt-4" data-color-mode="auto">
+            <MDEditor
                 value={newQuestionContent}
-                onChange={(e) => setNewQuestionContent(e.target.value)}
-                placeholder="Type your question here... (Markdown supported)"
-                className="min-h-[200px] font-mono text-sm"
+                onChange={(val) => setNewQuestionContent(val ?? '')}
+                height={200}
             />
           </div>
           <DialogFooter>
@@ -322,11 +320,11 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
           <DialogHeader>
             <DialogTitle>Edit Question</DialogTitle>
           </DialogHeader>
-          <div className="mt-4">
-            <Textarea
+          <div className="mt-4" data-color-mode="auto">
+            <MDEditor
                 value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                className="min-h-[200px] font-mono text-sm"
+                onChange={(val) => setEditContent(val ?? '')}
+                height={200}
             />
           </div>
           <DialogFooter>
@@ -342,12 +340,11 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
           <DialogHeader>
             <DialogTitle>{answeringQuestion?.answer ? 'Edit Answer' : 'Post Answer'}</DialogTitle>
           </DialogHeader>
-          <div className="mt-4">
-            <Textarea
+          <div className="mt-4" data-color-mode="auto">
+            <MDEditor
                 value={answerContent}
-                onChange={(e) => setAnswerContent(e.target.value)}
-                placeholder="Type your answer here... (Markdown supported)"
-                className="min-h-[200px] font-mono text-sm"
+                onChange={(val) => setAnswerContent(val ?? '')}
+                height={200}
             />
           </div>
           <DialogFooter>
