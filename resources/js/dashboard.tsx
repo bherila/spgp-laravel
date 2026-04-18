@@ -94,6 +94,27 @@ function getPassTypeName(request: PassRequest): string {
   return request.season_pass_type?.pass_type_name ?? request.pass_type ?? 'Unknown';
 }
 
+function Deadline({ label, dateStr, now, isNext, isUrgent }: {
+  label: string;
+  dateStr: string;
+  now: Date;
+  isNext: boolean;
+  isUrgent: boolean;
+}) {
+  const passed = new Date(dateStr) < now;
+  const countdown = isNext ? getCountdown(dateStr, now) : null;
+  return (
+    <p className={`mt-1 ${passed ? 'text-muted-foreground line-through' : ''}`}>
+      {label}: {formatDateTime(dateStr)}
+      {countdown && (
+        <span className={`ml-2 font-medium ${isUrgent ? 'text-destructive' : 'text-foreground'}`}>
+          ({countdown} remaining)
+        </span>
+      )}
+    </p>
+  );
+}
+
 const formatPrice = (value: number | string | null | undefined): string => {
   if (value === null || value === undefined) return '$ TBA';
   return currency(value).format();
@@ -338,7 +359,6 @@ function Dashboard() {
               const nextDeadline = season.early_spring_deadline && !earlyPassed
                 ? season.early_spring_deadline
                 : season.final_deadline;
-              const countdown = getCountdown(nextDeadline, now);
               const nextDeadlineMs = new Date(nextDeadline).getTime() - now.getTime();
               const isUrgent = nextDeadlineMs > 0 && nextDeadlineMs < THREE_DAYS_MS;
 
@@ -348,23 +368,21 @@ function Dashboard() {
                     <div>
                       <h2 className="text-2xl font-bold">{season.pass_name}</h2>
                       {season.early_spring_deadline && (
-                        <p className={`mt-1 ${earlyPassed ? 'text-muted-foreground line-through' : ''}`}>
-                          Early spring deadline: {formatDateTime(season.early_spring_deadline)}
-                          {!earlyPassed && countdown && (
-                            <span className={`ml-2 font-medium ${isUrgent ? 'text-destructive' : 'text-foreground'}`}>
-                              ({countdown} remaining)
-                            </span>
-                          )}
-                        </p>
+                        <Deadline
+                          label="Early spring deadline"
+                          dateStr={season.early_spring_deadline}
+                          now={now}
+                          isNext={!earlyPassed}
+                          isUrgent={isUrgent}
+                        />
                       )}
-                      <p className="text-muted-foreground mt-1">
-                        Final deadline: {formatDateTime(season.final_deadline)}
-                        {earlyPassed && countdown && (
-                          <span className={`ml-2 font-medium ${isUrgent ? 'text-destructive' : 'text-foreground'}`}>
-                            ({countdown} remaining)
-                          </span>
-                        )}
-                      </p>
+                      <Deadline
+                        label="Final deadline"
+                        dateStr={season.final_deadline}
+                        now={now}
+                        isNext={!!earlyPassed}
+                        isUrgent={isUrgent}
+                      />
                       {isUrgent && (
                         <div className="flex items-start gap-1.5 mt-2 text-sm text-destructive">
                           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
