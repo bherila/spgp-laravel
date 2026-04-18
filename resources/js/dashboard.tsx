@@ -254,7 +254,9 @@ function Dashboard() {
   };
 
   const handleCopyPromoCode = (code: string, requestId: string) => {
-    navigator.clipboard.writeText(code);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code);
+    }
     setCopiedId(requestId);
     setTimeout(() => setCopiedId(null), 2000);
   };
