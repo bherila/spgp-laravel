@@ -2,6 +2,8 @@
 
 All steps must pass. Order matters.
 
+> For architecture conventions and code patterns, see [AGENTS.md](AGENTS.md).
+
 ---
 
 ## Full Validation Pipeline

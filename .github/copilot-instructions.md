@@ -39,7 +39,16 @@
   - Concurrent dev: `pnpm run dev` and `php artisan serve`.
 - **Database Migrations**:
   - **IMPORTANT**: Never run `php artisan migrate` or `php artisan schema:dump` unless the user **explicitly requests it**. When asked, always pass `--database=sqlite --no-interaction` — the `.env` may point to a staging/production MySQL host and omitting this flag risks running against real data. Never use `--prune` with `schema:dump`. Always use migration files (`database/migrations/`) for schema changes.
-- **Conventions**:
-  - Dates use `SerializesDatesAsLocal` trait for consistent TZ handling.
+- **Date / Time Conventions**:
+  - All dates stored as UTC. All models must use `App\Traits\SerializesDatesAsLocal` — it serializes dates as ISO 8601 ATOM strings with timezone offset so browsers convert to local time correctly.
+  - Frontend: use shared helpers from `resources/js/lib/dateHelpers.ts`. Never call `toLocaleDateString()` or `toLocaleString()` directly in components.
+    - `formatDateOnly(str)` → `DATE` columns (no time): birth dates, `assign_code_date`, promo code dates. Uses UTC components to avoid midnight-UTC off-by-one in negative-offset timezones.
+    - `formatDateTime(str)` → `DATETIME`/`TIMESTAMP` columns: deadlines, `created_at`, etc. Shows local time with 3-letter TZ abbreviation.
+    - `getCountdown(str, now)` → human-readable countdown to a deadline (`"2d 4h 37m"` or `null` if expired).
+    - `THREE_DAYS_MS` → constant for urgent-deadline detection (< 3 days remaining).
+  - Countdown timers: use `useState(() => new Date())` + `useEffect` with `setInterval(..., 60_000)` and return the cleanup `() => clearInterval(id)`.
+- **Clipboard API**: `navigator.clipboard` is only available in secure contexts. Always guard with `if (navigator.clipboard) { ... }`.
+- **Promo Code Auto-Assign**: `PromoCodeRepositoryController::autoAssign()` assigns codes oldest-request-first per country. Null-country requests are treated as USA. After auto-assign, the frontend auto-selects newly assigned rows using a before/after snapshot of `assign_code_date`.
+- **Other Conventions**:
   - Use `import type` for TypeScript interfaces to prevent runtime SyntaxErrors in development.
   - Keep logic in Controllers or Services; minimize logic in Blade views.

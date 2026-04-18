@@ -7,11 +7,13 @@ A specialized Laravel application for coordinating group purchases of ski passes
 - **User Authentication**: Secure login and registration with invite code enforcement.
 - **Season Management**: Admin control over pass seasons, deadlines, and pricing.
 - **Season Q&A**: Users can ask questions about seasons in Markdown format. Admins can provide answers, and users can upvote helpful questions.
-- **Pass Request Workflow**: 
+- **Pass Request Workflow**:
   - Users request passes for specific seasons.
   - Support for new requests and renewals.
   - Admin tracking of redemption codes and email notifications.
-- **Admin Dashboard**: Comprehensive overview of all requests, with tools for bulk operations.
+- **Promo Code Repository**: Admins import promo codes per season and country (USA / Canada). Auto-assign distributes available codes to matching pending pass requests oldest-first. Newly auto-assigned rows are automatically selected after the operation.
+- **Dashboard Deadline Countdown**: Each active season card shows a live countdown (days / hours / minutes, updating every minute) to the final deadline. If the deadline is fewer than 3 days away, a warning is shown that promo codes will be fulfilled ASAP but may not arrive in time.
+- **Admin Dashboard**: Comprehensive overview of all requests, with tools for bulk operations (assign codes, send emails, copy TSV, delete).
 - **Email Logging**: Detailed history of all system-generated emails.
 
 ## Tech Stack
@@ -145,6 +147,20 @@ The system uses several core tables:
    php artisan route:cache
    php artisan view:cache
    ```
+
+## Date Handling
+
+All dates are stored as **UTC**. The `SerializesDatesAsLocal` trait serializes every model date as an ISO 8601 string with timezone offset so the browser can convert to local time automatically.
+
+Frontend date display uses shared helpers in `resources/js/lib/dateHelpers.ts`:
+
+| Helper | Use for |
+|---|---|
+| `formatDateOnly` | `DATE` columns (no time): birth dates, `assign_code_date`, promo code dates |
+| `formatDateTime` | `DATETIME`/`TIMESTAMP` columns: deadlines, `created_at`, login times |
+| `getCountdown` | Human-readable time-until for deadlines |
+
+Never use `toLocaleDateString()` or `toLocaleString()` directly — always use the shared helpers.
 
 ## Testing
 
