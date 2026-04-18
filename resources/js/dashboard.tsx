@@ -334,18 +334,32 @@ function Dashboard() {
               const canRequest = isStarted || isAdmin;
               const openDateStr = startDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
 
-              const finalDeadlineMs = new Date(season.final_deadline).getTime() - now.getTime();
-              const countdown = getCountdown(season.final_deadline, now);
-              const isUrgent = finalDeadlineMs > 0 && finalDeadlineMs < THREE_DAYS_MS;
+              const earlyPassed = season.early_spring_deadline && new Date(season.early_spring_deadline) < now;
+              const nextDeadline = season.early_spring_deadline && !earlyPassed
+                ? season.early_spring_deadline
+                : season.final_deadline;
+              const countdown = getCountdown(nextDeadline, now);
+              const nextDeadlineMs = new Date(nextDeadline).getTime() - now.getTime();
+              const isUrgent = nextDeadlineMs > 0 && nextDeadlineMs < THREE_DAYS_MS;
 
               return (
                 <div key={season.id} className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                       <h2 className="text-2xl font-bold">{season.pass_name}</h2>
+                      {season.early_spring_deadline && (
+                        <p className={`mt-1 ${earlyPassed ? 'text-muted-foreground line-through' : ''}`}>
+                          Early spring deadline: {formatDateTime(season.early_spring_deadline)}
+                          {!earlyPassed && countdown && (
+                            <span className={`ml-2 font-medium ${isUrgent ? 'text-destructive' : 'text-foreground'}`}>
+                              ({countdown} remaining)
+                            </span>
+                          )}
+                        </p>
+                      )}
                       <p className="text-muted-foreground mt-1">
                         Final deadline: {formatDateTime(season.final_deadline)}
-                        {countdown && (
+                        {earlyPassed && countdown && (
                           <span className={`ml-2 font-medium ${isUrgent ? 'text-destructive' : 'text-foreground'}`}>
                             ({countdown} remaining)
                           </span>
@@ -356,15 +370,6 @@ function Dashboard() {
                           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
                           <span>The deadline is very soon. Your promo code will be fulfilled as soon as possible, but may not arrive before the deadline.</span>
                         </div>
-                      )}
-                      {season.early_spring_deadline && (
-                        (() => {
-                          const early = new Date(season.early_spring_deadline);
-                          const passed = early < now;
-                          return (
-                            <p className={`mt-1 ${passed ? 'text-red-600 line-through' : ''}`}>Early spring deadline: {formatDateTime(season.early_spring_deadline)}</p>
-                          );
-                        })()
                       )}
                     </div>
                     <div className="flex items-center gap-2">
