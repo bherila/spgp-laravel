@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -15,26 +19,50 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
+          coverage: none
 
-      - name: Install Composer (with dev)
-        run: composer install --no-interaction --prefer-dist
-        
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 10
 
-      - name: Build frontend and run tests
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm run build
-          pnpm run test
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
 
-      - name: Prepare environment
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "store=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store }}
+          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist &
+          pnpm install --frozen-lockfile &
+          wait
+
+      - name: Build frontend
+        run: pnpm run build
+
+      - name: Prepare PHP environment
         run: cp .env.example .env && php artisan key:generate
 
-      - name: Run PHPUnit
-        run: vendor/bin/phpunit --configuration phpunit.xml
+      - name: Run all checks
+        run: |
+          pnpm exec concurrently --kill-others-on-fail \
+            "pnpm run type-check" \
+            "pnpm run lint" \
+            "pnpm run test" \
+            "vendor/bin/paratest --processes=auto"
 
   deploy:
     runs-on: ubuntu-latest
@@ -50,7 +78,7 @@ jobs:
 
       - name: Install Composer (no dev)
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
-        
+
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
