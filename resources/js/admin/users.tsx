@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { formatDateTime } from '@/lib/dateHelpers';
 
 interface User {
   id: number;
@@ -42,11 +43,6 @@ interface User {
   last_login_at: string | null;
   created_at: string;
   updated_at: string;
-}
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return 'Never';
-  return new Date(dateStr).toLocaleDateString();
 }
 
 function AdminUsers() {
@@ -312,8 +308,8 @@ function AdminUsers() {
                       )}
                     </TableCell>
                     <TableCell>{user.pass_request_count}</TableCell>
-                    <TableCell>{formatDate(user.last_login_at)}</TableCell>
-                    <TableCell>{formatDate(user.created_at)}</TableCell>
+                    <TableCell>{user.last_login_at ? formatDateTime(user.last_login_at) : 'Never'}</TableCell>
+                    <TableCell>{formatDateTime(user.created_at)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button

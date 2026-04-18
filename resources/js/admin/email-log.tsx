@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { formatDateTime } from '@/lib/dateHelpers';
 
 interface EmailLog {
   id: number;
@@ -149,7 +150,7 @@ function EmailLogAdmin() {
                       <TableCell className="font-medium">{log.email_to}</TableCell>
                       <TableCell>{log.email_from}</TableCell>
                       <TableCell>{log.subject}</TableCell>
-                      <TableCell>{new Date(log.created_at).toLocaleString()}</TableCell>
+                      <TableCell>{formatDateTime(log.created_at)}</TableCell>
                       <TableCell>
                         <Dialog>
                           <DialogTrigger asChild>
@@ -165,7 +166,7 @@ function EmailLogAdmin() {
                               <p><strong>Subject:</strong> {log.subject}</p>
                               <p><strong>Event:</strong> {log.event}</p>
                               <p><strong>Result:</strong> {log.result || 'N/A'}</p>
-                              <p><strong>Timestamp:</strong> {new Date(log.created_at).toLocaleString()}</p>
+                              <p><strong>Timestamp:</strong> {formatDateTime(log.created_at)}</p>
                               {log.error_message && (
                                 <div className="p-3 bg-destructive/10 border border-destructive rounded text-destructive">
                                   <strong>Error:</strong> {log.error_message}

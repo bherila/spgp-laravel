@@ -18,6 +18,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatDateOnly, formatDateTime } from '@/lib/dateHelpers';
 import { formatBirthDateUTC, getAgeGroup } from '@/lib/passRequestHelpers';
 
 import {
@@ -39,17 +40,9 @@ import {
   UnassignCodesDialog,
 } from './PassRequestsAdminDialogs';
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`;
-}
-
-/** Format a date string as MM/DD/YYYY (UTC) for table display and Excel pasting */
 function formatBirthDateLocal(dateStr: string | null): string {
   if (!dateStr) return '—';
-  const result = formatBirthDateUTC(dateStr);
-  return result || '—';
+  return formatBirthDateUTC(dateStr) || '—';
 }
 
 function SeasonPassRequestsAdmin() {
@@ -281,7 +274,7 @@ function SeasonPassRequestsAdmin() {
       .filter((r) => selectedIds.has(r.id))
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     const rows = selectedRequests.map((r) => [
-      formatDate(r.created_at),
+      formatDateTime(r.created_at),
       r.passholder_first_name,
       r.passholder_last_name,
       formatBirthDateUTC(r.passholder_birth_date),
@@ -347,7 +340,7 @@ function SeasonPassRequestsAdmin() {
                 />
               </TableCell>
               <TableCell className="py-1 text-sm text-muted-foreground whitespace-nowrap">
-                {formatDate(request.created_at)}
+                {formatDateTime(request.created_at)}
                 {request.is_renewal && (
                   <Badge variant="outline" className="ml-2">Renewal</Badge>
                 )}
@@ -375,7 +368,7 @@ function SeasonPassRequestsAdmin() {
                 )}
               </TableCell>
               {!hideExtraColumns && <TableCell className="py-1">{request.user?.name || '—'}</TableCell>}
-              {!hideExtraColumns && <TableCell className="py-1">{formatDate(request.assign_code_date)}</TableCell>}
+              {!hideExtraColumns && <TableCell className="py-1">{formatDateOnly(request.assign_code_date)}</TableCell>}
               {!hideExtraColumns && (
                 <TableCell className="py-1">
                   {request.email_notify_time ? (

@@ -1,6 +1,8 @@
 import currency from 'currency.js';
 import React from 'react';
 
+import { formatDateTime } from '@/lib/dateHelpers';
+
 interface Season {
   id: number;
   pass_name: string;
@@ -24,7 +26,6 @@ interface PassRequest {
 interface RenewalInfoProps {
   request: PassRequest;
   season: Season;
-  formatDate: (date: string) => string;
 }
 
 const formatPrice = (value: number | string | null | undefined): string => {
@@ -32,7 +33,7 @@ const formatPrice = (value: number | string | null | undefined): string => {
   return currency(value).format();
 };
 
-export function RenewalInfo({ request, season, formatDate }: RenewalInfoProps) {
+export function RenewalInfo({ request, season }: RenewalInfoProps) {
   const pt = request.season_pass_type;
   
   return (
@@ -42,7 +43,7 @@ export function RenewalInfo({ request, season, formatDate }: RenewalInfoProps) {
           {request.passholder_first_name}'s {pt?.pass_type_name} — {season.pass_name} {season.pass_year}
         </p>
         <p className="text-muted-foreground">
-          Before <strong>{formatDate(season.early_spring_deadline)}</strong>, 
+          Before <strong>{formatDateTime(season.early_spring_deadline)}</strong>,
           direct renewal is <strong>{formatPrice(pt?.renewal_early_price)}</strong> 
           (vs. <strong>{formatPrice(pt?.group_early_price)}</strong> through the group).
         </p>

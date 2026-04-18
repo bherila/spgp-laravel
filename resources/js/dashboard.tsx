@@ -42,6 +42,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import { formatDateTime } from '@/lib/dateHelpers';
+
 const Questions = React.lazy(() => import('./components/Questions'));
 
 interface SeasonPassType {
@@ -86,19 +88,6 @@ interface Season {
   pass_requests_count: number;
   questions_count: number;
   deleted_at: string | null;
-}
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '—';
-  const date = new Date(dateStr);
-  return date.toLocaleString(undefined, { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZoneName: 'short'
-  });
 }
 
 function getPassTypeName(request: PassRequest): string {
@@ -346,14 +335,14 @@ function Dashboard() {
                     <div>
                       <h2 className="text-2xl font-bold">{season.pass_name}</h2>
                       <p className="text-muted-foreground mt-1">
-                        Final deadline: {formatDate(season.final_deadline)}
+                        Final deadline: {formatDateTime(season.final_deadline)}
                       </p>
                       {season.early_spring_deadline && (
                         (() => {
                           const early = new Date(season.early_spring_deadline);
                           const passed = early < now;
                           return (
-                            <p className={`mt-1 ${passed ? 'text-red-600 line-through' : ''}`}>Early spring deadline: {formatDate(season.early_spring_deadline)}</p>
+                            <p className={`mt-1 ${passed ? 'text-red-600 line-through' : ''}`}>Early spring deadline: {formatDateTime(season.early_spring_deadline)}</p>
                           );
                         })()
                       )}
@@ -654,10 +643,9 @@ function Dashboard() {
               <DialogTitle>Renewal Information</DialogTitle>
             </DialogHeader>
             {infoRequest && (
-              <RenewalInfo 
-                request={infoRequest} 
-                season={infoRequest.season} 
-                formatDate={formatDate} 
+              <RenewalInfo
+                request={infoRequest}
+                season={infoRequest.season}
               />
             )}
             <DialogFooter>

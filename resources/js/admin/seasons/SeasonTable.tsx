@@ -14,8 +14,9 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+import { formatDateTime } from '@/lib/dateHelpers';
+
 import type { Season } from './types';
-import { formatDate } from './utils';
 
 interface SeasonTableProps {
   seasons: Season[];
@@ -91,9 +92,9 @@ export function SeasonTable({
               <TableRow key={season.id} className={season.deleted_at ? 'opacity-60' : ''}>
                 <TableCell className="font-medium">{season.pass_name}</TableCell>
                 <TableCell>{season.pass_year}</TableCell>
-                <TableCell>{formatDate(season.start_date)}</TableCell>
-                <TableCell>{formatDate(season.early_spring_deadline)}</TableCell>
-                <TableCell>{formatDate(season.final_deadline)}</TableCell>
+                <TableCell>{formatDateTime(season.start_date)}</TableCell>
+                <TableCell>{formatDateTime(season.early_spring_deadline)}</TableCell>
+                <TableCell>{formatDateTime(season.final_deadline)}</TableCell>
                 <TableCell>
                   {season.deleted_at ? (
                     <Badge variant="secondary">Archived</Badge>

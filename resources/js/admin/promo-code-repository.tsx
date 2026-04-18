@@ -34,12 +34,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-import { fetchPromoCodes, importCodes,type PromoCode } from './promoCodeRepositoryApi';
+import { formatDateOnly } from '@/lib/dateHelpers';
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString();
-}
+import { fetchPromoCodes, importCodes,type PromoCode } from './promoCodeRepositoryApi';
 
 function PromoCodeRepositoryAdmin() {
   const mount = document.getElementById('admin-promo-code-repository');
@@ -191,8 +188,8 @@ function PromoCodeRepositoryAdmin() {
                 <TableRow key={code.promo_code}>
                   <TableCell className="font-mono text-sm">{code.promo_code}</TableCell>
                   <TableCell>{code.country ?? '—'}</TableCell>
-                  <TableCell>{formatDate(code.start_date)}</TableCell>
-                  <TableCell>{formatDate(code.expiration_date)}</TableCell>
+                  <TableCell>{formatDateOnly(code.start_date)}</TableCell>
+                  <TableCell>{formatDateOnly(code.expiration_date)}</TableCell>
                   <TableCell>
                     {code.is_suspended ? (
                       <Badge variant="destructive">Suspended</Badge>

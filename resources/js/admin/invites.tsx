@@ -32,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { formatDateTime } from '@/lib/dateHelpers';
 
 interface Season {
   id: number;
@@ -343,7 +344,7 @@ function AdminInvites() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {new Date(code.created_at).toLocaleDateString()}
+                      {formatDateTime(code.created_at)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">

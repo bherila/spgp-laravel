@@ -35,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { formatDateTime } from '@/lib/dateHelpers';
 
 interface SeasonPassType {
   id: number;
@@ -62,19 +63,6 @@ interface Season {
 }
 
 type Step = 'type' | 'details';
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return '—';
-  const date = new Date(dateStr);
-  return date.toLocaleString(undefined, { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZoneName: 'short'
-  });
-}
 
 function PassRequestForm() {
   const mount = document.getElementById('request');
@@ -307,7 +295,7 @@ function PassRequestForm() {
                     )}
                     {isEarlyBird && selectedSeason && (
                       <p className="text-sm text-green-600">
-                        🎉 Early bird pricing! Valid until {formatDate(selectedSeason.early_spring_deadline)}
+                        🎉 Early bird pricing! Valid until {formatDateTime(selectedSeason.early_spring_deadline)}
                       </p>
                     )}
                   </div>
