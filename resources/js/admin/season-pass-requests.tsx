@@ -41,7 +41,8 @@ import {
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString();
+  const d = new Date(dateStr);
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`;
 }
 
 /** Format a date string as MM/DD/YYYY (UTC) for table display and Excel pasting */
@@ -86,7 +87,7 @@ function SeasonPassRequestsAdmin() {
   const [sendResultModalOpen, setSendResultModalOpen] = useState(false);
   const [sendResult, setSendResult] = useState<{ succeeded: number; failed: number } | null>(null);
 
-  const loadData = async () => {
+  const loadData = async (): Promise<PassRequest[]> => {
     try {
       setLoading(true);
       const [data, count] = await Promise.all([
@@ -97,8 +98,10 @@ function SeasonPassRequestsAdmin() {
       setPassRequests(data.pass_requests);
       setRepoCount(count);
       setError(null);
+      return data.pass_requests;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -224,10 +227,17 @@ function SeasonPassRequestsAdmin() {
   const handleAutoAssign = async () => {
     setActionLoading(true);
     setActionMessage(null);
+    const preAssignedIds = new Set(passRequests.filter((r) => r.assign_code_date).map((r) => r.id));
     try {
       const data = await autoAssign(seasonId, csrfToken);
       setActionMessage(data.message);
-      void loadData();
+      const updated = await loadData();
+      const newlyAssigned = new Set(
+        updated.filter((r) => r.assign_code_date && !preAssignedIds.has(r.id)).map((r) => r.id),
+      );
+      if (newlyAssigned.size > 0) {
+        setSelectedIds(newlyAssigned);
+      }
     } catch (err) {
       setActionMessage(err instanceof Error ? err.message : 'An error occurred');
     } finally {
