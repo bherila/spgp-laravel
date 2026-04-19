@@ -372,7 +372,7 @@ function SeasonPassRequestsAdmin() {
               {!hideExtraColumns && (
                 <TableCell className="py-1">
                   {request.email_notify_time ? (
-                    <Badge variant="default">Sent</Badge>
+                    <Badge variant="success">Sent</Badge>
                   ) : request.promo_code ? (
                     <Badge variant="secondary">Pending</Badge>
                   ) : (
