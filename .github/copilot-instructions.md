@@ -49,6 +49,12 @@
   - Countdown timers: use `useState(() => new Date())` + `useEffect` with `setInterval(..., 60_000)` and return the cleanup `() => clearInterval(id)`.
 - **Clipboard API**: `navigator.clipboard` is only available in secure contexts. Always guard with `if (navigator.clipboard) { ... }`.
 - **Promo Code Auto-Assign**: `PromoCodeRepositoryController::autoAssign()` assigns codes oldest-request-first per country. Null-country requests are treated as USA. After auto-assign, the frontend auto-selects newly assigned rows using a before/after snapshot of `assign_code_date`.
+- **CI / GitHub Actions**:
+  - Canonical action versions: `actions/checkout@v5`, `actions/cache@v4`, `shivammathur/setup-php@v2`, `pnpm/action-setup@v4`. Use these everywhere — do not mix versions across jobs in the same file.
+  - Always add new PHP dev packages via `composer require --dev <package>` so `composer.lock` stays in sync. Never edit `composer.json` directly and skip `composer update`.
+  - Parallel install pattern: launch both installs with `&`, capture PIDs, `wait` each individually, then assert both exit codes — bare `wait` masks background-process failures.
+  - `shivammathur/setup-php` should always include `coverage: none` in CI (skips Xdebug setup, ~15 s faster). Only omit when coverage reporting is needed.
+  - PHPUnit runs via `vendor/bin/paratest --processes=auto` (parallel). The Vite build must complete before PHPUnit runs (tests assert the manifest exists).
 - **Other Conventions**:
   - Use `import type` for TypeScript interfaces to prevent runtime SyntaxErrors in development.
   - Keep logic in Controllers or Services; minimize logic in Blade views.
