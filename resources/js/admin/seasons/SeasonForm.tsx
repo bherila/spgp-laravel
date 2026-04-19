@@ -74,6 +74,23 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
   const [formGroupRegularPrice, setFormGroupRegularPrice] = useState('');
   const [formSortOrder, setFormSortOrder] = useState('0');
 
+  const fetchPassTypes = async () => {
+    if (!season) return;
+    try {
+      setLoadingPassTypes(true);
+      const response = await fetch(`/api/admin/seasons/${season.id}/pass-types`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to fetch pass types');
+      const data = await response.json();
+      setPassTypes(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingPassTypes(false);
+    }
+  };
+
   useEffect(() => {
     if (season) {
       setPassName(season.pass_name);
@@ -97,23 +114,6 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
     setSeasonError(null);
     setActiveTab('info');
   }, [season, open]);
-
-  const fetchPassTypes = async () => {
-    if (!season) return;
-    try {
-      setLoadingPassTypes(true);
-      const response = await fetch(`/api/admin/seasons/${season.id}/pass-types`, {
-        headers: { 'Accept': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to fetch pass types');
-      const data = await response.json();
-      setPassTypes(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingPassTypes(false);
-    }
-  };
 
   const handleSeasonSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

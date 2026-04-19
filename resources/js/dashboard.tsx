@@ -41,7 +41,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
 import { formatDateTime, getCountdown, THREE_DAYS_MS } from '@/lib/dateHelpers';
 
 const Questions = React.lazy(() => import('./components/Questions'));
