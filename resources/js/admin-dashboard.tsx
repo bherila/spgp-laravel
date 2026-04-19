@@ -40,9 +40,9 @@ function AdminDashboard({ data }: { data: AdminDashboardData }) {
   if (!hasAlerts) return null;
 
   return (
-    <div className="space-y-3 mb-6">
+    <div className="space-y-3 mb-6 max-w-3xl">
       {data.unassigned_requests.map((item) => (
-        <Alert key={`unassigned-${item.season_id}`} variant="destructive">
+        <Alert key={`unassigned-${item.season_id}`} variant="warning">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Unassigned pass requests — {item.season_name}</AlertTitle>
           <AlertDescription className="flex items-center justify-between gap-4">

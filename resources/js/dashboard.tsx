@@ -41,53 +41,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useDashboardData } from '@/hooks/useDashboardData';
 import { formatDateTime, getCountdown, THREE_DAYS_MS } from '@/lib/dateHelpers';
+import type { PassRequest, Season } from '@/types/dashboard';
 
 const Questions = React.lazy(() => import('./components/Questions'));
-
-interface SeasonPassType {
-  id: number;
-  pass_type_name: string;
-  regular_early_price: number | null;
-  regular_regular_price: number | null;
-  renewal_early_price: number | null;
-  renewal_regular_price: number | null;
-  group_early_price: number | null;
-  group_regular_price: number | null;
-}
-
-interface PassRequest {
-  id: string;
-  passholder_email: string;
-  pass_type: string;
-  season_pass_type?: SeasonPassType | null;
-  passholder_first_name: string;
-  passholder_last_name: string;
-  passholder_birth_date: string;
-  is_renewal: boolean;
-  renewal_pass_id: string | null;
-  renewal_order_number: string | null;
-  promo_code: string | null;
-  country: string | null;
-  redemption_date: string | null;
-  assign_code_date: string | null;
-  email_notify_time: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Season {
-  id: number;
-  pass_name: string;
-  pass_year: number;
-  start_date: string;
-  early_spring_deadline: string;
-  final_deadline: string;
-  pass_requests: PassRequest[];
-  pass_requests_count: number;
-  questions_count: number;
-  deleted_at: string | null;
-}
 
 function getPassTypeName(request: PassRequest): string {
   return request.season_pass_type?.pass_type_name ?? request.pass_type ?? 'Unknown';
@@ -127,8 +85,7 @@ function Dashboard() {
   const isQuestionsView = mount?.getAttribute('data-is-questions-view') === '1';
   const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { seasons, loading, error: fetchError, refresh: fetchPassRequests } = useDashboardData();
   const [error, setError] = useState<string | null>(null);
   const [renewalModalOpen, setRenewalModalOpen] = useState(false);
   const [renewalRequest, setRenewalRequest] = useState<PassRequest | null>(null);
@@ -148,36 +105,10 @@ function Dashboard() {
     return () => clearInterval(id);
   }, []);
 
-  const fetchPassRequests = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/dashboard/pass-requests', {
-        headers: { 'Accept': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to fetch pass requests');
-      const data: Season[] = await response.json();
-      setSeasons(data);
-      setError(null);
-
-      // Check if any pass requests are missing a country
-      const hasMissingCountry = data.some(season =>
-        (season.pass_requests || []).some(r => !r.country)
-      );
-      if (hasMissingCountry) {
-        setMissingCountryModalOpen(true);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (!isQuestionsView) {
-      fetchPassRequests();
-    }
-  }, [isQuestionsView]);
+    const hasMissingCountry = seasons.some(s => s.pass_requests?.some(r => !r.country));
+    if (hasMissingCountry) setMissingCountryModalOpen(true);
+  }, [seasons]);
 
   if (isQuestionsView && seasonId) {
     return (
@@ -443,9 +374,9 @@ function Dashboard() {
           </div>
         )}
 
-        {error && (
+        {(error || fetchError) && (
           <div className="mb-4 p-4 bg-destructive/10 border border-destructive rounded-lg text-destructive">
-            {error}
+            {error ?? fetchError}
           </div>
         )}
 

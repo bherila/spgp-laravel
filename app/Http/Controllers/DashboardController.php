@@ -36,10 +36,17 @@ class DashboardController extends Controller
             }
         }
 
+        $seasons = $this->buildSeasonData($user);
+
+        if ($request->wantsJson()) {
+            return response()->json($seasons);
+        }
+
         return view('dashboard', [
             'seasonId' => $seasonId,
             'isQuestionsView' => $request->routeIs('questions.index'),
             'adminData' => $user->isAdmin() ? $this->buildAdminDashboardData() : null,
+            'seasons' => $seasons,
         ]);
     }
 
@@ -98,12 +105,8 @@ class DashboardController extends Controller
         ];
     }
 
-    /**
-     * Get seasons with user's pass requests for the dashboard.
-     */
-    public function passRequests(Request $request)
+    private function buildSeasonData($user): \Illuminate\Database\Eloquent\Collection
     {
-        $user = $request->user();
         $now = now();
         $startOfToday = $now->copy()->startOfDay();
         $threeMonthsFromNow = $now->copy()->addMonths(3);
@@ -146,11 +149,9 @@ class DashboardController extends Controller
             });
         }
 
-        $seasons = $query->orderBy('pass_year', 'desc')
+        return $query->orderBy('pass_year', 'desc')
             ->orderBy('pass_name', 'asc')
             ->get();
-
-        return response()->json($seasons);
     }
 
     /**
