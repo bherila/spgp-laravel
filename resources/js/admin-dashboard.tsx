@@ -40,7 +40,8 @@ function AdminDashboard({ data }: { data: AdminDashboardData }) {
   if (!hasAlerts) return null;
 
   return (
-    <div className="space-y-3 mb-6 max-w-3xl">
+    <div className="max-w-6xl mx-auto px-4">
+    <div className="space-y-3 mb-6">
       {data.unassigned_requests.map((item) => (
         <Alert key={`unassigned-${item.season_id}`} variant="warning">
           <AlertTriangle className="h-4 w-4" />
@@ -88,6 +89,7 @@ function AdminDashboard({ data }: { data: AdminDashboardData }) {
           </AlertDescription>
         </Alert>
       ))}
+    </div>
     </div>
   );
 }
