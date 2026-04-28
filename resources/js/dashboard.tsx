@@ -507,16 +507,17 @@ function Dashboard() {
                               )}
                             </TableCell>
                                                       <TableCell>
-                                                        {request.redemption_date ? (
-                                                          <Badge variant="default">Redeemed</Badge>
-                                                        ) : request.renewal_order_number ? (
-                                                          <Badge variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground border-transparent">Renewed</Badge>
-                                                        ) : request.promo_code ? (
-                                                          <Badge variant="secondary">Code Assigned</Badge>
-                                                        ) : (
-                                                          <Badge variant="outline">Pending</Badge>
-                                                        )}
-                                                      </TableCell>                            <TableCell>
+                              {request.redemption_date ? (
+                                <Badge variant="default">Redeemed</Badge>
+                              ) : request.renewal_order_number ? (
+                                <Badge variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground border-transparent">Renewed</Badge>
+                              ) : request.promo_code ? (
+                                <Badge variant="secondary">Code Assigned</Badge>
+                              ) : (
+                                <Badge variant="outline">Pending</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <div className="flex items-center gap-2">
                                 {request.is_renewal && (
                                   <Button
