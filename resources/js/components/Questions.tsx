@@ -217,7 +217,7 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-primary mb-1">{question.user.name} asked:</span>
                   <div data-color-mode="auto">
-                    <MDEditor.Markdown source={question.content} />
+                    <MDEditor.Markdown source={question.content} skipHtml={true} />
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-2">
@@ -256,7 +256,7 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
                     <div className="flex flex-col flex-1">
                       <span className="text-sm font-semibold mb-2">Answer from {question.answered_by?.name || 'Admin'}:</span>
                       <div data-color-mode="auto">
-                        <MDEditor.Markdown source={question.answer ?? ''} />
+                        <MDEditor.Markdown source={question.answer ?? ''} skipHtml={true} />
                       </div>
                       {isAdmin && (
                         <ShadcnButton variant="ghost" size="sm" className="mt-4 self-start" onClick={() => {
