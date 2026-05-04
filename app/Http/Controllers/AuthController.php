@@ -140,11 +140,14 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+        $passwordless = $request->boolean('passwordless');
+
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', PasswordRule::defaults()],
+            'passwordless' => ['sometimes', 'boolean'],
+            'password' => [$passwordless ? 'nullable' : 'required', 'confirmed', PasswordRule::defaults()],
             'invite_code' => ['required', 'string'],
             // user must agree to confidentially keep program details
             'agreement' => ['accepted'],
@@ -170,13 +173,22 @@ class AuthController extends Controller
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'password' => Hash::make($passwordless ? Str::random(64) : $validated['password']),
         ]);
 
         // Attach invite code to user
         $user->inviteCodes()->attach($inviteCode->id);
 
         Auth::login($user);
+        $request->session()->regenerate();
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'redirect' => '/dashboard',
+                'passwordless' => $passwordless,
+            ]);
+        }
 
         return redirect('/dashboard');
     }
