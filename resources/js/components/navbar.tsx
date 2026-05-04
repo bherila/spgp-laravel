@@ -1,7 +1,9 @@
+import { PasskeySection } from 'bwh-auth';
 import { ChevronDown, Key, Laptop, LogOut, Menu, Moon, Settings, Sun, X } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
+import { getAuthComponents, getCsrfToken } from '@/auth/shared-components';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,7 +35,7 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
   const adminMenuRef = useRef<HTMLLIElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [theme, setTheme] = useState<ThemeMode>(() => (localStorage.getItem('theme') as ThemeMode) || 'system');
@@ -45,6 +47,8 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
+  const [passkeySuccess, setPasskeySuccess] = useState<string | null>(null);
 
   useEffect(() => {
     applyTheme(theme);
@@ -87,7 +91,7 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
     setPasswordLoading(true);
 
     try {
-      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      const csrfToken = getCsrfToken();
       const response = await fetch('/api/change-password', {
         method: 'POST',
         headers: {
@@ -113,7 +117,7 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => {
-        setChangePasswordOpen(false);
+        setAccountSettingsOpen(false);
         setPasswordSuccess(false);
       }, 2000);
     } catch (err) {
@@ -207,12 +211,12 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
                     type='button'
                     onClick={() => {
                       setUserMenuOpen(false);
-                      setChangePasswordOpen(true);
+                      setAccountSettingsOpen(true);
                     }}
                     className='block w-full text-left px-4 py-2 text-sm hover:bg-muted whitespace-nowrap'
                   >
                     <Key className='w-4 h-4 inline mr-2' />
-                    Change Password
+                    Account Settings
                   </button>
                   <form method='POST' action='/logout' className='block'>
                     <input type='hidden' name='_token' value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''} />
@@ -340,17 +344,21 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
         </div>
       )}
 
-      {/* Change Password Dialog */}
-      <Dialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen}>
-        <DialogContent className="max-w-md">
+      {/* Account Settings Dialog */}
+      <Dialog open={accountSettingsOpen} onOpenChange={setAccountSettingsOpen}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Change Password</DialogTitle>
+            <DialogTitle>Account Settings</DialogTitle>
             <DialogDescription>
-              Enter your current password and choose a new password.
+              Manage your password and passkeys.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleChangePassword}>
-            <div className="space-y-4 py-4">
+          <div className="space-y-6 py-4">
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <h3 className="font-medium">Password</h3>
+                <p className="text-sm text-muted-foreground">Enter your current password and choose a new password.</p>
+              </div>
               {passwordError && (
                 <Alert variant="destructive">
                   <AlertDescription>{passwordError}</AlertDescription>
@@ -395,16 +403,41 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
                   required
                 />
               </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setChangePasswordOpen(false)}>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setAccountSettingsOpen(false)}>
                 Cancel
-              </Button>
-              <Button type="submit" disabled={passwordLoading}>
-                {passwordLoading ? 'Changing...' : 'Change Password'}
-              </Button>
-            </DialogFooter>
-          </form>
+                </Button>
+                <Button type="submit" disabled={passwordLoading}>
+                  {passwordLoading ? 'Changing...' : 'Change Password'}
+                </Button>
+              </DialogFooter>
+            </form>
+
+            <div className="space-y-4">
+              {passkeyError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{passkeyError}</AlertDescription>
+                </Alert>
+              )}
+              {passkeySuccess && (
+                <Alert>
+                  <AlertDescription className="text-green-600">{passkeySuccess}</AlertDescription>
+                </Alert>
+              )}
+              <PasskeySection
+                components={getAuthComponents()}
+                endpoints={{ csrfToken: getCsrfToken() }}
+                onSuccess={(message) => {
+                  setPasskeyError(null);
+                  setPasskeySuccess(message);
+                }}
+                onError={(_field, message) => {
+                  setPasskeySuccess(null);
+                  setPasskeyError(message);
+                }}
+              />
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </nav>
