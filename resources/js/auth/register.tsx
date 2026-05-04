@@ -1,6 +1,6 @@
 import '../bootstrap';
 
-import { SignupForm, type AuthSignupField } from 'bwh-auth';
+import { type AuthSignupField,SignupForm } from 'bwh-auth';
 import { createRoot } from 'react-dom/client';
 
 import { getAuthComponents, getCsrfToken } from './shared-components';
