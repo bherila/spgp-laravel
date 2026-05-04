@@ -1,12 +1,15 @@
 import '../bootstrap';
 
-import React, { useState } from 'react';
+import { authenticateWithPasskey, isAbortError, isConditionalMediationAvailable, PasskeyLoginButton } from 'bwh-auth';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+import { getCsrfToken } from './shared-components';
 
 function LoginForm() {
   const mount = document.getElementById('login');
@@ -18,6 +21,44 @@ function LoginForm() {
   const [remember, setRemember] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>(serverErrors);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
+  const [conditionalPasskeyAvailable, setConditionalPasskeyAvailable] = useState(false);
+  const passkeyEndpoints = useMemo(() => ({ csrfToken: getCsrfToken() }), []);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    let active = true;
+
+    async function startConditionalPasskeyLogin() {
+      const available = await isConditionalMediationAvailable();
+      if (!available || !active) return;
+
+      setConditionalPasskeyAvailable(true);
+
+      try {
+        const { redirectUrl } = await authenticateWithPasskey({
+          endpoints: passkeyEndpoints,
+          mediation: 'conditional',
+          signal: abortController.signal,
+        });
+
+        if (active) {
+          window.location.assign(redirectUrl);
+        }
+      } catch (error) {
+        if (!isAbortError(error) && active) {
+          setConditionalPasskeyAvailable(false);
+        }
+      }
+    }
+
+    void startConditionalPasskeyLogin();
+
+    return () => {
+      active = false;
+      abortController.abort();
+    };
+  }, [passkeyEndpoints]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +91,7 @@ function LoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  autoComplete="email"
+                  autoComplete={conditionalPasskeyAvailable ? 'username webauthn' : 'email'}
                   aria-invalid={!!errors.email}
                 />
                 {errors.email && (
@@ -96,6 +137,27 @@ function LoginForm() {
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? 'Signing in...' : 'Sign In'}
               </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              <PasskeyLoginButton
+                components={{ Button }}
+                endpoints={passkeyEndpoints}
+                className="w-full"
+                onError={(message) => setPasskeyError(message)}
+                onSuccess={(redirectUrl) => window.location.assign(redirectUrl)}
+              />
+
+              {passkeyError && (
+                <p className="text-sm text-destructive">{passkeyError}</p>
+              )}
             </div>
           </form>
           
