@@ -7,7 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "bherila/auth-laravel": "dev-main",
+        "bherila/auth-laravel": "^0.1",
         "erusev/parsedown": "^1.7",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
@@ -98,7 +98,7 @@
     "prefer-stable": true,
     "repositories": [{
         "name": "bherila-auth",
-        "type": "path",
-        "url": "../auth"
+        "type": "vcs",
+        "url": "https://github.com/bherila/auth.git"
     }]
 }
