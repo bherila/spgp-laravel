@@ -1,25 +1,18 @@
 import '../bootstrap';
 
-import React, { useState } from 'react';
+import { PasswordResetRequestForm } from 'bwh-auth';
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
-function ForgotPasswordForm() {
+import { getAuthComponents, getCsrfToken } from './shared-components';
+
+function ForgotPasswordPage() {
   const mount = document.getElementById('forgot-password');
-  const serverErrors = JSON.parse(mount?.getAttribute('data-errors') || '{}');
-  const status = mount?.getAttribute('data-status') || '';
-  
-  const [email, setEmail] = useState('');
-  const [errors, setErrors] = useState<Record<string, string[]>>(serverErrors);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    setIsSubmitting(true);
-  };
+  const initialStatus = mount?.getAttribute('data-status') || '';
+  const [status, setStatus] = useState(initialStatus);
+  const [error, setError] = useState('');
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
@@ -27,44 +20,24 @@ function ForgotPasswordForm() {
         <CardHeader>
           <CardTitle>Forgot Password</CardTitle>
           <CardDescription>
-            Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.
+            Forgot your password? No problem. Enter your email address and we will email you a password reset link.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {status && (
-            <div className="mb-4 text-sm font-medium text-green-600 dark:text-green-400">
-              {status}
-            </div>
-          )}
-
-          <form method="POST" action="/forgot-password" onSubmit={handleSubmit}>
-            <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''} />
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoFocus
-                  autoComplete="email"
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email[0]}</p>
-                )}
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? 'Sending link...' : 'Email Password Reset Link'}
-              </Button>
-            </div>
-          </form>
-          
+          {status ? <div className="mb-4 text-sm font-medium text-green-600 dark:text-green-400">{status}</div> : null}
+          {error ? <div className="mb-4 text-sm font-medium text-destructive">{error}</div> : null}
+          <PasswordResetRequestForm
+            components={getAuthComponents()}
+            endpoints={{ csrfToken: getCsrfToken() }}
+            onSuccess={(result) => {
+              setError('');
+              setStatus(result.message || 'If an account exists with this email, a password reset link has been sent.');
+            }}
+            onError={(message) => {
+              setStatus('');
+              setError(message);
+            }}
+          />
           <div className="mt-4 text-center text-sm">
             <a href="/login" className="text-primary underline-offset-4 hover:underline">
               Back to login
@@ -78,5 +51,5 @@ function ForgotPasswordForm() {
 
 const forgotPasswordElement = document.getElementById('forgot-password');
 if (forgotPasswordElement) {
-  createRoot(forgotPasswordElement).render(<ForgotPasswordForm />);
+  createRoot(forgotPasswordElement).render(<ForgotPasswordPage />);
 }

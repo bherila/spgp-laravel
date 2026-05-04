@@ -20,7 +20,6 @@ use Illuminate\Support\Facades\Route;
 // These routes use session-based authentication
 Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::post('/change-password', [AuthController::class, 'changePassword']);
     Route::post('/dashboard/redeem-invite', [DashboardController::class, 'redeemInviteCode']);
     
     // Pass request routes

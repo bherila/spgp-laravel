@@ -193,35 +193,6 @@ class AuthController extends Controller
         return redirect('/');
     }
 
-    /**
-     * Change the user's password.
-     */
-    public function changePassword(Request $request)
-    {
-        $validated = $request->validate([
-            'current_password' => ['required', 'string'],
-            'password' => ['required', 'confirmed', PasswordRule::defaults()],
-        ]);
-
-        $user = $request->user();
-
-        if (!Hash::check($validated['current_password'], $user->password)) {
-            return response()->json([
-                'message' => 'The current password is incorrect.',
-                'errors' => [
-                    'current_password' => ['The current password is incorrect.'],
-                ],
-            ], 422);
-        }
-
-        $user->update([
-            'password' => Hash::make($validated['password']),
-        ]);
-
-        return response()->json([
-            'message' => 'Password changed successfully.',
-        ]);
-    }
 
     /**
      * Impersonate a user (admin only).
