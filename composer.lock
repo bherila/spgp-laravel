@@ -159,16 +159,16 @@
         },
         {
             "name": "bherila/auth-laravel",
-            "version": "v0.1.0",
+            "version": "v0.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bherila/auth.git",
-                "reference": "77ac35ad2757074b5411b78ab67c9b8953ac1ae7"
+                "reference": "f6940a6f4738b51f6f15dca86655b1e3072ee747"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bherila/auth/zipball/77ac35ad2757074b5411b78ab67c9b8953ac1ae7",
-                "reference": "77ac35ad2757074b5411b78ab67c9b8953ac1ae7",
+                "url": "https://api.github.com/repos/bherila/auth/zipball/f6940a6f4738b51f6f15dca86655b1e3072ee747",
+                "reference": "f6940a6f4738b51f6f15dca86655b1e3072ee747",
                 "shasum": ""
             },
             "require": {
@@ -204,10 +204,10 @@
             ],
             "description": "Shared Laravel authentication services for BWH applications.",
             "support": {
-                "source": "https://github.com/bherila/auth/tree/v0.1.0",
+                "source": "https://github.com/bherila/auth/tree/v0.1.1",
                 "issues": "https://github.com/bherila/auth/issues"
             },
-            "time": "2026-05-04T05:11:45+00:00"
+            "time": "2026-05-04T05:56:01+00:00"
         },
         {
             "name": "brick/math",

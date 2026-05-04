@@ -1,21 +1,17 @@
-import { PasskeySection } from 'bwh-auth';
+import { ChangePasswordForm, PasskeySection } from 'bwh-auth';
 import { ChevronDown, Key, Laptop, LogOut, Menu, Moon, Settings, Sun, X } from 'lucide-react';
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 import { getAuthComponents, getCsrfToken } from '@/auth/shared-components';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 type NavbarProps = {
   authenticated: boolean;
@@ -40,13 +36,9 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [theme, setTheme] = useState<ThemeMode>(() => (localStorage.getItem('theme') as ThemeMode) || 'system');
 
-  // Change password form state
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  // Account settings state
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
   const [passkeyError, setPasskeyError] = useState<string | null>(null);
   const [passkeySuccess, setPasskeySuccess] = useState<string | null>(null);
 
@@ -77,55 +69,6 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError(null);
-    setPasswordSuccess(false);
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match.');
-      return;
-    }
-
-    setPasswordLoading(true);
-
-    try {
-      const csrfToken = getCsrfToken();
-      const response = await fetch('/api/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
-          current_password: currentPassword,
-          password: newPassword,
-          password_confirmation: confirmPassword,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to change password');
-      }
-
-      setPasswordSuccess(true);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setTimeout(() => {
-        setAccountSettingsOpen(false);
-        setPasswordSuccess(false);
-      }, 2000);
-    } catch (err) {
-      setPasswordError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setPasswordLoading(false);
-    }
-  };
 
   return (
     <nav className='relative mx-auto max-w-7xl px-4 py-3'>
@@ -354,7 +297,7 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
-            <form onSubmit={handleChangePassword} className="space-y-4">
+            <div className="space-y-4">
               <div>
                 <h3 className="font-medium">Password</h3>
                 <p className="text-sm text-muted-foreground">Enter your current password and choose a new password.</p>
@@ -366,52 +309,26 @@ export default function Navbar({ authenticated, isAdmin }: NavbarProps) {
               )}
               {passwordSuccess && (
                 <Alert>
-                  <AlertDescription className="text-green-600">
-                    Password changed successfully!
-                  </AlertDescription>
+                  <AlertDescription className="text-green-600">{passwordSuccess}</AlertDescription>
                 </Alert>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  minLength={8}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  minLength={8}
-                  required
-                />
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setAccountSettingsOpen(false)}>
-                Cancel
-                </Button>
-                <Button type="submit" disabled={passwordLoading}>
-                  {passwordLoading ? 'Changing...' : 'Change Password'}
-                </Button>
-              </DialogFooter>
-            </form>
+              <ChangePasswordForm
+                components={getAuthComponents()}
+                endpoints={{ csrfToken: getCsrfToken() }}
+                onSuccess={(result) => {
+                  setPasswordError(null);
+                  setPasswordSuccess(result.message || 'Password changed successfully.');
+                  setTimeout(() => {
+                    setAccountSettingsOpen(false);
+                    setPasswordSuccess(null);
+                  }, 2000);
+                }}
+                onError={(message) => {
+                  setPasswordSuccess(null);
+                  setPasswordError(message);
+                }}
+              />
+            </div>
 
             <div className="space-y-4">
               {passkeyError && (
