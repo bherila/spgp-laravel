@@ -50,7 +50,7 @@
 - **Clipboard API**: `navigator.clipboard` is only available in secure contexts. Always guard with `if (navigator.clipboard) { ... }`.
 - **Promo Code Auto-Assign**: `PromoCodeRepositoryController::autoAssign()` assigns codes oldest-request-first per country. Null-country requests are treated as USA. After auto-assign, the frontend auto-selects newly assigned rows using a before/after snapshot of `assign_code_date`.
 - **CI / GitHub Actions**:
-  - Canonical action versions: `actions/checkout@v5`, `actions/cache@v4`, `shivammathur/setup-php@v2`, `pnpm/action-setup@v4`. Use these everywhere — do not mix versions across jobs in the same file.
+  - Canonical action versions: `actions/checkout@v5`, `actions/cache@v4`, `shivammathur/setup-php@v2`, `pnpm/action-setup@v5`. Use these everywhere — do not mix versions across jobs in the same file.
   - Always add new PHP dev packages via `composer require --dev <package>` so `composer.lock` stays in sync. Never edit `composer.json` directly and skip `composer update`.
   - Parallel install pattern: launch both installs with `&`, capture PIDs, `wait` each individually, then assert both exit codes — bare `wait` masks background-process failures.
   - `shivammathur/setup-php` should always include `coverage: none` in CI (skips Xdebug setup, ~15 s faster). Only omit when coverage reporting is needed.

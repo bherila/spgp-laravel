@@ -18,13 +18,13 @@ jobs:
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
           coverage: none
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
-          version: 10
+          version: 11
 
       - name: Cache composer dependencies
         uses: actions/cache@v4
@@ -78,15 +78,15 @@ jobs:
 
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.5'
 
       - name: Install Composer (no dev)
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
-          version: 10
+          version: 11
 
       - name: Build frontend
         run: |
@@ -121,4 +121,4 @@ jobs:
         run: |
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} \
-            "cd ~/laravel-spgp && /opt/cpanel/ea-php83/root/usr/bin/php artisan config:clear && /opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache && /opt/cpanel/ea-php83/root/usr/bin/php artisan migrate --force && cd ~ && rm -rf spgp.vxcv.com && rm -rf web && ln -s laravel-spgp/public spgp.vxcv.com && ln -s laravel-spgp/public web"
+            "cd ~/laravel-spgp && /opt/cpanel/ea-php85/root/usr/bin/php artisan config:clear && /opt/cpanel/ea-php85/root/usr/bin/php artisan config:cache && /opt/cpanel/ea-php85/root/usr/bin/php artisan migrate --force && cd ~ && rm -rf spgp.vxcv.com && rm -rf web && ln -s laravel-spgp/public spgp.vxcv.com && ln -s laravel-spgp/public web"
