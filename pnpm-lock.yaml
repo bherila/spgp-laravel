@@ -2285,7 +2285,7 @@ packages:
     resolution: {integrity: sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==}
 
   bwh-auth@https://github.com/bherila/auth/releases/download/bwh-auth-v0.1.4/bwh-auth-0.1.4.tgz:
-    resolution: {tarball: https://github.com/bherila/auth/releases/download/bwh-auth-v0.1.4/bwh-auth-0.1.4.tgz}
+    resolution: {tarball: https://github.com/bherila/auth/releases/download/bwh-auth-v0.1.4/bwh-auth-0.1.4.tgz, integrity: sha512-4StoO+PWocVd150AefcHECJitpUCyP8OusMZMjwcCrHFfwkr82FhPMVfNPWSFNvyYX6MKAdzH2lXHZf0Hoxt+Q==}
     version: 0.1.4
     peerDependencies:
       '@base-ui/react': ^1.4.1
