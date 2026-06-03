@@ -11,5 +11,6 @@ onlyBuiltDependencies:
 
 allowBuilds:
   '@swc/core': true
+  bwh-auth: true
   esbuild: true
   unrs-resolver: true
