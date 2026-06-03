@@ -15,13 +15,14 @@ class SharedAuthPackageTest extends TestCase
     public function test_passkey_table_has_last_used_at_without_touching_existing_credentials(): void
     {
         $this->assertTrue(Schema::hasColumn('auth_passkeys', 'last_used_at'));
+        $this->assertTrue(Schema::hasColumn('auth_passkeys', 'credential_id_hash'));
     }
 
     public function test_authenticated_user_can_list_passkeys_from_shared_package(): void
     {
         $user = User::factory()->create();
 
-        PasskeyCredential::create([
+        $credential = PasskeyCredential::create([
             'user_id' => $user->id,
             'credential_id' => 'existing-passkey-id',
             'public_key' => base64_encode('existing-public-key'),
@@ -30,6 +31,8 @@ class SharedAuthPackageTest extends TestCase
             'name' => 'Existing Passkey',
             'transports' => ['internal'],
         ]);
+
+        $this->assertSame(hash('sha256', 'existing-passkey-id'), $credential->credential_id_hash);
 
         $response = $this->actingAs($user)->getJson('/api/passkeys');
 
