@@ -2,9 +2,6 @@
 
 namespace App\Providers;
 
-use App\Listeners\UpdateLastLoginDate;
-use Illuminate\Auth\Events\Login;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -30,9 +27,6 @@ class AppServiceProvider extends ServiceProvider
         if (! $this->app->runningInConsole() && config('csp.nonce_enabled', true)) {
             Vite::useCspNonce(app('csp-nonce'));
         }
-
-        // Register login event listener
-        Event::listen(Login::class, UpdateLastLoginDate::class);
 
         // Admin gate - check if user has is_admin flag
         Gate::define('admin', function ($user) {

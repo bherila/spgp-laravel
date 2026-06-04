@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\InviteCode;
 use App\Models\User;
+use BWH\Auth\Models\AuthAuditLog;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -14,7 +16,7 @@ class AuthTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class);
+        $this->withoutMiddleware(ValidateCsrfToken::class);
     }
 
     /**
@@ -185,6 +187,67 @@ class AuthTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_successful_login_writes_package_audit_log(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this
+            ->withServerVariables(['REMOTE_ADDR' => '198.51.100.10'])
+            ->post('/login', [
+                'email' => $user->email,
+                'password' => 'password',
+            ]);
+
+        $response->assertRedirect('/dashboard');
+
+        $log = AuthAuditLog::query()->firstOrFail();
+        $this->assertSame(AuthAuditLog::EVENT_LOGIN_SUCCEEDED, $log->event);
+        $this->assertSame('password', $log->auth_method);
+        $this->assertTrue($log->succeeded);
+        $this->assertSame($user->id, $log->user_id);
+        $this->assertSame($user->email, $log->email);
+        $this->assertSame('198.51.100.10', $log->ip_address);
+    }
+
+    public function test_failed_login_writes_package_audit_log(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this
+            ->withServerVariables(['REMOTE_ADDR' => '198.51.100.11'])
+            ->post('/login', [
+                'email' => $user->email,
+                'password' => 'wrong-password',
+            ]);
+
+        $response->assertSessionHasErrors('email');
+
+        $log = AuthAuditLog::query()->firstOrFail();
+        $this->assertSame(AuthAuditLog::EVENT_LOGIN_FAILED, $log->event);
+        $this->assertSame('password', $log->auth_method);
+        $this->assertFalse($log->succeeded);
+        $this->assertSame($user->id, $log->user_id);
+        $this->assertSame($user->email, $log->email);
+        $this->assertSame('Invalid password', $log->reason);
+        $this->assertSame('198.51.100.11', $log->ip_address);
+    }
+
+    public function test_logout_writes_package_audit_log(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this
+            ->actingAs($user)
+            ->post('/logout');
+
+        $response->assertRedirect('/');
+
+        $log = AuthAuditLog::query()->firstOrFail();
+        $this->assertSame(AuthAuditLog::EVENT_LOGGED_OUT, $log->event);
+        $this->assertTrue($log->succeeded);
+        $this->assertSame($user->id, $log->user_id);
+    }
+
     /**
      * Test that registration requires first_name.
      */
@@ -230,5 +293,4 @@ class AuthTest extends TestCase
         $response->assertSessionHasErrors('last_name');
         $this->assertDatabaseMissing('users', ['email' => 'test@example.com']);
     }
-
 }
