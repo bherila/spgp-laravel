@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use BWH\Auth\Models\AuthAuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -25,6 +26,13 @@ class UserController extends Controller
         $users = User::query()
             ->withCount('passRequests as pass_request_count')
             ->with('inviteCodes:id,invite_code')
+            ->addSelect(['last_login_at' => AuthAuditLog::query()
+                ->select('created_at')
+                ->whereColumn('user_id', 'users.id')
+                ->where('event', AuthAuditLog::EVENT_LOGIN_SUCCEEDED)
+                ->latest()
+                ->limit(1),
+            ])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -67,7 +75,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'first_name' => ['sometimes', 'string', 'max:255'],
             'last_name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,' . $id],
+            'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,'.$id],
             'is_admin' => ['sometimes', 'boolean'],
             'password' => ['sometimes', 'string', 'min:8'],
         ]);
@@ -87,7 +95,7 @@ class UserController extends Controller
     public function destroy(int $id)
     {
         $user = User::findOrFail($id);
-        
+
         // Prevent deleting yourself
         if ($user->id === auth()->id()) {
             return response()->json(['message' => 'Cannot delete yourself'], 403);

@@ -9,6 +9,8 @@ use App\Models\PromoCodeRepository;
 use App\Models\Season;
 use App\Models\SeasonPassType;
 use App\Models\User;
+use BWH\Auth\Models\AuthAuditLog;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,13 +19,15 @@ class AdminTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private User $regularUser;
+
     private Season $season;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class);
+        $this->withoutMiddleware(ValidateCsrfToken::class);
 
         $this->admin = User::factory()->admin()->create();
         $this->regularUser = User::factory()->create();
@@ -75,6 +79,7 @@ class AdminTest extends TestCase
         $this->assertArrayHasKey('is_admin', $adminData);
         $this->assertArrayHasKey('pass_request_count', $adminData);
         $this->assertArrayHasKey('invite_codes', $adminData);
+        $this->assertArrayHasKey('last_login_at', $adminData);
     }
 
     public function test_admin_users_list_includes_invite_codes(): void
@@ -124,6 +129,38 @@ class AdminTest extends TestCase
         $userData = collect($response->json())->firstWhere('id', $this->regularUser->id);
         $this->assertNotNull($userData);
         $this->assertEquals(1, $userData['pass_request_count']);
+    }
+
+    public function test_admin_users_list_reads_last_login_from_package_audit_log(): void
+    {
+        AuthAuditLog::create([
+            'user_id' => $this->regularUser->id,
+            'email' => $this->regularUser->email,
+            'event' => AuthAuditLog::EVENT_LOGIN_FAILED,
+            'auth_method' => 'password',
+            'succeeded' => false,
+            'reason' => 'Invalid password',
+            'created_at' => now()->subDay(),
+            'updated_at' => now()->subDay(),
+        ]);
+
+        AuthAuditLog::create([
+            'user_id' => $this->regularUser->id,
+            'email' => $this->regularUser->email,
+            'event' => AuthAuditLog::EVENT_LOGIN_SUCCEEDED,
+            'auth_method' => 'password',
+            'succeeded' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/api/admin/users/list');
+
+        $response->assertStatus(200);
+        $userData = collect($response->json())->firstWhere('id', $this->regularUser->id);
+
+        $this->assertNotNull($userData);
+        $this->assertNotNull($userData['last_login_at']);
     }
 
     // ============================================================
@@ -190,6 +227,22 @@ class AdminTest extends TestCase
 
         $response->assertStatus(403);
         $this->assertDatabaseHas('users', ['id' => $this->admin->id]);
+    }
+
+    public function test_admin_impersonation_writes_package_audit_log(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->post("/api/admin/users/{$this->regularUser->id}/impersonate");
+
+        $response->assertStatus(200);
+
+        $log = AuthAuditLog::query()->firstOrFail();
+        $this->assertSame(AuthAuditLog::EVENT_LOGIN_SUCCEEDED, $log->event);
+        $this->assertSame('impersonation', $log->auth_method);
+        $this->assertTrue($log->succeeded);
+        $this->assertSame($this->regularUser->id, $log->user_id);
+        $this->assertSame($this->admin->id, $log->acting_user_id);
+        $this->assertSame(['impersonated_by' => $this->admin->email], $log->metadata);
     }
 
     // ============================================================

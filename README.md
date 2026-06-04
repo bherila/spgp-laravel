@@ -106,7 +106,7 @@ The system uses several core tables:
 - `pass_requests`: Individual requests for passes, tracking passholder details and status.
 - `invite_codes`: Codes required for public registration.
 - `email_logs`: History of emails sent to users.
-- `user_logins`: Audit log of user login activity.
+- `auth_audit_log`: Package-owned audit log of authentication activity.
 
 ## Deployment
 

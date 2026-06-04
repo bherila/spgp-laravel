@@ -4,16 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\InviteCode;
 use App\Models\User;
-use App\Models\UserLogin;
+use BWH\Auth\Concerns\LogsAuthEvents;
+use BWH\Auth\Models\AuthAuditLog;
+use BWH\Auth\Support\ClientIp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 
 class AuthController extends Controller
 {
+    use LogsAuthEvents;
+
     /**
      * Show the login form.
      */
@@ -22,6 +27,7 @@ class AuthController extends Controller
         if (Auth::check()) {
             return redirect('/dashboard');
         }
+
         return view('auth.login');
     }
 
@@ -100,23 +106,23 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            
-            // Log successful login
-            UserLogin::logSuccess(
-                Auth::user(),
-                $request->ip(),
-                $request->userAgent()
-            );
-            
+
+            $user = $request->user();
+
+            if ($user !== null) {
+                $this->auditLoginSucceeded($request, $user);
+            }
+
             return redirect()->intended('/dashboard');
         }
 
-        // Log failed login
-        UserLogin::logFailure(
+        $existingUser = User::where('email', $credentials['email'])->first();
+
+        $this->auditLoginFailed(
+            $request,
+            $existingUser,
             $credentials['email'],
-            'Invalid credentials',
-            $request->ip(),
-            $request->userAgent()
+            $existingUser ? 'Invalid password' : 'Unknown email',
         );
 
         return back()->withErrors([
@@ -132,6 +138,7 @@ class AuthController extends Controller
         if (Auth::check()) {
             return redirect('/dashboard');
         }
+
         return view('auth.register');
     }
 
@@ -153,14 +160,15 @@ class AuthController extends Controller
         // Validate invite code
         $inviteCode = InviteCode::where('invite_code', $validated['invite_code'])->first();
 
-        if (!$inviteCode) {
+        if (! $inviteCode) {
             return back()->withErrors([
                 'invite_code' => 'Invalid invite code.',
             ])->withInput();
         }
 
-        if (!$inviteCode->canBeUsed()) {
-            \Illuminate\Support\Facades\Log::info("Invite code {$inviteCode->invite_code} is exhausted. Usage: {$inviteCode->users()->count()}, Max: {$inviteCode->max_number_of_uses}");
+        if (! $inviteCode->canBeUsed()) {
+            Log::info("Invite code {$inviteCode->invite_code} is exhausted. Usage: {$inviteCode->users()->count()}, Max: {$inviteCode->max_number_of_uses}");
+
             return back()->withErrors([
                 'invite_code' => 'This invite code has reached its maximum number of uses.',
             ])->withInput();
@@ -186,6 +194,8 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        $this->auditLoggedOut($request, $request->user());
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -193,35 +203,37 @@ class AuthController extends Controller
         return redirect('/');
     }
 
-
     /**
      * Impersonate a user (admin only).
      */
     public function impersonate(Request $request, $id)
     {
         $admin = $request->user();
-        
-        if (!$admin->isAdmin()) {
+
+        if (! $admin->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
         $user = User::findOrFail($id);
 
-        // Log the impersonation as a login
-        UserLogin::create([
+        AuthAuditLog::create([
             'user_id' => $user->id,
+            'acting_user_id' => $admin->id,
             'email' => $user->email,
-            'ip_address' => $request->ip(),
+            'event' => AuthAuditLog::EVENT_LOGIN_SUCCEEDED,
+            'auth_method' => 'impersonation',
+            'succeeded' => true,
+            'ip_address' => ClientIp::resolve($request),
             'user_agent' => $request->userAgent(),
-            'successful' => true,
-            'failure_reason' => "Impersonated by admin: {$admin->email}",
+            'session_id' => $request->hasSession() ? $request->session()->getId() : null,
+            'metadata' => ['impersonated_by' => $admin->email],
         ]);
 
         Auth::login($user);
         $request->session()->regenerate();
 
         return response()->json([
-            'message' => 'Now logged in as ' . $user->first_name,
+            'message' => 'Now logged in as '.$user->first_name,
             'redirect' => '/dashboard',
         ]);
     }

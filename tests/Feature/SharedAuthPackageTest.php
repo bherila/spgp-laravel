@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use BWH\Auth\Models\AuthAuditLog;
 use BWH\Auth\Models\PasskeyCredential;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -60,5 +63,77 @@ class SharedAuthPackageTest extends TestCase
         $user = User::factory()->create();
 
         $this->assertSame('/dashboard', $user->getLoginRedirectUrl());
+    }
+
+    public function test_legacy_user_logins_are_backfilled_to_package_audit_log(): void
+    {
+        $admin = User::factory()->admin()->create(['email' => 'admin@example.com']);
+        $user = User::factory()->create(['email' => 'member@example.com']);
+
+        Schema::dropIfExists('user_logins');
+        Schema::create('user_logins', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('email')->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->string('user_agent')->nullable();
+            $table->boolean('successful')->default(false);
+            $table->string('failure_reason')->nullable();
+            $table->timestamps();
+        });
+
+        DB::table('user_logins')->insert([
+            [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip_address' => '203.0.113.20',
+                'user_agent' => 'Success Agent',
+                'successful' => true,
+                'failure_reason' => null,
+                'created_at' => now()->subMinutes(3),
+                'updated_at' => now()->subMinutes(3),
+            ],
+            [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip_address' => '203.0.113.21',
+                'user_agent' => 'Failure Agent',
+                'successful' => false,
+                'failure_reason' => 'Invalid credentials',
+                'created_at' => now()->subMinutes(2),
+                'updated_at' => now()->subMinutes(2),
+            ],
+            [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip_address' => '203.0.113.22',
+                'user_agent' => 'Impersonation Agent',
+                'successful' => true,
+                'failure_reason' => 'Impersonated by admin: '.$admin->email,
+                'created_at' => now()->subMinute(),
+                'updated_at' => now()->subMinute(),
+            ],
+        ]);
+
+        $migration = require database_path('migrations/2026_06_04_000001_backfill_user_logins_to_auth_audit_log.php');
+        $migration->up();
+
+        $this->assertFalse(Schema::hasTable('user_logins'));
+        $this->assertSame(3, AuthAuditLog::count());
+
+        $failure = AuthAuditLog::query()
+            ->where('event', AuthAuditLog::EVENT_LOGIN_FAILED)
+            ->firstOrFail();
+
+        $this->assertSame('password', $failure->auth_method);
+        $this->assertSame('Invalid credentials', $failure->reason);
+        $this->assertSame('203.0.113.21', $failure->ip_address);
+
+        $impersonation = AuthAuditLog::query()
+            ->where('auth_method', 'impersonation')
+            ->firstOrFail();
+
+        $this->assertSame($admin->id, $impersonation->acting_user_id);
+        $this->assertSame(['impersonated_by' => $admin->email], $impersonation->metadata);
     }
 }
