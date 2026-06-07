@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a79a1b54edb3e647d69ca8a3e137db02",
+    "content-hash": "179d624181cba0ea7af629fc811709c2",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -159,16 +159,16 @@
         },
         {
             "name": "bherila/auth-laravel",
-            "version": "v0.3.0",
+            "version": "v0.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/bherila/auth.git",
-                "reference": "1b66d3e74c354e8cbe3aca3a1edc54cbf9d110aa"
+                "reference": "da52cd9f9b9c9a05cbc09878ab4488f2a104431a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bherila/auth/zipball/1b66d3e74c354e8cbe3aca3a1edc54cbf9d110aa",
-                "reference": "1b66d3e74c354e8cbe3aca3a1edc54cbf9d110aa",
+                "url": "https://api.github.com/repos/bherila/auth/zipball/da52cd9f9b9c9a05cbc09878ab4488f2a104431a",
+                "reference": "da52cd9f9b9c9a05cbc09878ab4488f2a104431a",
                 "shasum": ""
             },
             "require": {
@@ -217,10 +217,10 @@
             ],
             "description": "Shared Laravel authentication services for BWH applications.",
             "support": {
-                "source": "https://github.com/bherila/auth/tree/v0.3.0",
+                "source": "https://github.com/bherila/auth/tree/v0.4.2",
                 "issues": "https://github.com/bherila/auth/issues"
             },
-            "time": "2026-06-04T03:54:48+00:00"
+            "time": "2026-06-07T00:57:00+00:00"
         },
         {
             "name": "brick/math",
@@ -11175,15 +11175,15 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "platform-overrides": {
         "php": "8.3.0"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
