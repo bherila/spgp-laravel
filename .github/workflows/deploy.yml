@@ -96,13 +96,18 @@ jobs:
       - name: Append to .htaccess
         run: cat htaccess-append.txt >> public/.htaccess
 
-      - name: Install sshpass
-        run: sudo apt-get install -y sshpass
+      - name: Configure SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
 
       - name: Deploy with rsync
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -av --delete --exclude='.env' \
-            -e "ssh -o StrictHostKeyChecking=no" \
+          rsync -av --delete --exclude='.env' \
+            -e "ssh -o StrictHostKeyChecking=yes" \
             app \
             bootstrap \
             config \
@@ -119,6 +124,6 @@ jobs:
 
       - name: Run artisan config clear/cache on server
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no \
+          ssh -o StrictHostKeyChecking=yes \
             ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} \
             "cd ~/laravel-spgp && /opt/cpanel/ea-php83/root/usr/bin/php artisan config:clear && /opt/cpanel/ea-php83/root/usr/bin/php artisan config:cache && /opt/cpanel/ea-php83/root/usr/bin/php artisan migrate --force && cd ~ && rm -rf spgp.vxcv.com && rm -rf web && ln -s laravel-spgp/public spgp.vxcv.com && ln -s laravel-spgp/public web"

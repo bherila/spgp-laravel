@@ -14,7 +14,10 @@ Once the `prod` environment is created, you need to configure the following secr
 2.  `SSH_USERNAME`: The username for SSH login.
     -   Example: `your_user`
 
-3.  `SSH_PASSWORD`: The password for the SSH user.
+3.  `SSH_PRIVATE_KEY`: A dedicated private SSH key for the deployment user (preferably Ed25519).
+
+4.  `SSH_KNOWN_HOSTS`: The pinned host key entry for the deployment host (same format as `~/.ssh/known_hosts`).
+    -   Example generation from a trusted machine: `ssh-keyscan -H your.server.com`
 
 ## Deployment Target
 
