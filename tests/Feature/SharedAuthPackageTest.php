@@ -3,11 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use BWH\Auth\Mail\TwoFactorLoginMail;
 use BWH\Auth\Models\AuthAuditLog;
 use BWH\Auth\Models\PasskeyCredential;
+use BWH\Auth\Services\TwoFactorService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -56,6 +60,33 @@ class SharedAuthPackageTest extends TestCase
         $response->assertJsonPath('rp.id', 'spgp.example.test');
         $response->assertJsonPath('authenticatorSelection.residentKey', 'preferred');
         $response->assertJsonPath('authenticatorSelection.userVerification', 'preferred');
+    }
+
+    public function test_two_factor_email_links_use_app_url_not_spoofed_host(): void
+    {
+        // Regression guard for bherila/auth-laravel >= v0.4.3: the 2FA challenge
+        // email links must be rooted at app.url, never the (attacker-controllable)
+        // request Host header, to prevent host-header injection of the 2FA links.
+        config(['app.url' => 'https://spgp.example.test']);
+        Mail::fake();
+
+        $user = User::factory()->create();
+
+        // Simulate a login request carrying a spoofed Host header.
+        $request = Request::create('https://evil.example.com/login', 'POST');
+        $request->headers->set('Host', 'evil.example.com');
+        $request->setLaravelSession($this->app['session']->driver());
+
+        $this->app->make(TwoFactorService::class)->startChallenge($user, $request);
+
+        Mail::assertSent(TwoFactorLoginMail::class, function (TwoFactorLoginMail $mail): bool {
+            foreach ([$mail->confirmUrl, $mail->reportUrl] as $url) {
+                $this->assertStringStartsWith('https://spgp.example.test/', $url);
+                $this->assertStringNotContainsString('evil.example.com', $url);
+            }
+
+            return true;
+        });
     }
 
     public function test_user_login_redirect_policy_preserves_dashboard_destination(): void
