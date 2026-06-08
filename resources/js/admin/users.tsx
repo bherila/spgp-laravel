@@ -90,15 +90,27 @@ function AdminUsers() {
     fetchUsers();
   }, []);
 
+
+  const sanitizeTSVCell = (value: string | number) => {
+    const normalized = String(value).replace(/[\t\n\r]/g, ' ');
+    return /^[=+\-@]/.test(normalized) ? `'${normalized}` : normalized;
+  };
+
   const handleCopyTSV = async () => {
+    if (!navigator.clipboard) {
+      setError('Clipboard is not available in this browser context.');
+      return;
+    }
+
     const header = ['ID', 'EMAIL', 'FIRSTNAME', 'LASTNAME'].join('\t');
     const rows = users.map((u) => [
-      u.id,
-      u.email,
-      u.first_name ?? '',
-      u.last_name ?? '',
+      sanitizeTSVCell(u.id),
+      sanitizeTSVCell(u.email),
+      sanitizeTSVCell(u.first_name ?? ''),
+      sanitizeTSVCell(u.last_name ?? ''),
     ].join('\t'));
     const tsv = [header, ...rows].join('\n');
+
     try {
       await navigator.clipboard.writeText(tsv);
       setActionMessage(`Copied ${users.length} user${users.length !== 1 ? 's' : ''} to clipboard as TSV.`);
