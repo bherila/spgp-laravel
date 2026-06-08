@@ -268,6 +268,11 @@ function SeasonPassRequestsAdmin() {
       new Set(filteredRequests.filter((r) => r.promo_code && !r.email_notify_time).map((r) => r.id)),
     );
 
+  const escapeTSVCell = (value: string | null | undefined) => {
+    const normalized = String(value ?? '').replace(/[\t\r\n]+/g, ' ');
+    return /^[=+\-@\t\r\n]/.test(normalized) ? `'${normalized}` : normalized;
+  };
+
   const handleCopyTSV = async () => {
     // Sort selected requests oldest-first (by created_at asc) for Excel paste appending
     const selectedRequests = passRequests
@@ -283,7 +288,7 @@ function SeasonPassRequestsAdmin() {
       getAgeGroup(r.passholder_birth_date),
       r.promo_code ?? '',
     ]);
-    const tsv = rows.map((row) => row.join('\t')).join('\n');
+    const tsv = rows.map((row) => row.map((cell) => escapeTSVCell(cell)).join('\t')).join('\n');
     try {
       await navigator.clipboard.writeText(tsv);
       setActionMessage(`Copied ${selectedRequests.length} row${selectedRequests.length !== 1 ? 's' : ''} to clipboard as TSV.`);
