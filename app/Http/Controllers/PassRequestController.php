@@ -16,6 +16,7 @@ class PassRequestController extends Controller
     public function showRequestForm(int $seasonId)
     {
         $season = Season::findOrFail($seasonId);
+
         return view('request', compact('season'));
     }
 
@@ -26,7 +27,7 @@ class PassRequestController extends Controller
     public function list(Request $request)
     {
         $user = $request->user();
-        
+
         // Get active seasons with user's pass requests
         $seasons = Season::query()
             ->whereHas('passRequests', function ($query) use ($user) {
@@ -54,11 +55,11 @@ class PassRequestController extends Controller
         // Get current time in server's local timezone
         $now = now(date_default_timezone_get());
         $threeMonthsFromNow = $now->copy()->addMonths(3);
-        
+
         // We still query in UTC because that's how it's stored
         $nowUtc = $now->copy()->setTimezone('UTC');
         $threeMonthsFromNowUtc = $threeMonthsFromNow->copy()->setTimezone('UTC');
-        
+
         $seasons = Season::query()
             ->where('final_deadline', '>=', $nowUtc)
             ->where(function ($query) use ($nowUtc, $threeMonthsFromNowUtc) {
@@ -84,7 +85,7 @@ class PassRequestController extends Controller
 
             $previousPassTypes = PassRequest::joinSub($latestPerSeason, 'latest', function ($join) {
                 $join->on('pass_requests.season_id', '=', 'latest.season_id')
-                     ->on('pass_requests.created_at', '=', 'latest.latest_at');
+                    ->on('pass_requests.created_at', '=', 'latest.latest_at');
             })
                 ->where('pass_requests.user_id', $user->id)
                 ->pluck('pass_requests.season_pass_type_id', 'pass_requests.season_id');
@@ -115,7 +116,7 @@ class PassRequestController extends Controller
     public function store(Request $request)
     {
         $user = $request->user();
-        
+
         $validated = $request->validate([
             'season_id' => ['required', 'exists:seasons,id'],
             'season_pass_type_id' => ['required', 'exists:season_pass_types,id'],
@@ -135,17 +136,17 @@ class PassRequestController extends Controller
             ['passholder_last_name', '=', $validated['passholder_last_name']],
             ['passholder_email', '=', $validated['passholder_email']],
         ])
-        ->whereDate('passholder_birth_date', $validated['passholder_birth_date'])
-        ->first();
+            ->whereDate('passholder_birth_date', $validated['passholder_birth_date'])
+            ->first();
 
         if ($existingRequest) {
             if ($existingRequest->user_id === $user->id) {
                 return response()->json([
-                    'message' => 'You have already created a pass request for this person. Only one pass request can exist for a Name/Email/DOB per Season.'
+                    'message' => 'You have already created a pass request for this person. Only one pass request can exist for a Name/Email/DOB per Season.',
                 ], 422);
             } else {
                 return response()->json([
-                    'message' => 'Another user has already created a pass request for this person. Please ensure they haven\'t already requested their own pass. Only one pass request can exist for a Name/Email/DOB per Season.'
+                    'message' => 'Another user has already created a pass request for this person. Please ensure they haven\'t already requested their own pass. Only one pass request can exist for a Name/Email/DOB per Season.',
                 ], 422);
             }
         }
@@ -169,7 +170,7 @@ class PassRequestController extends Controller
         $passRequest = PassRequest::findOrFail($id);
 
         // Check ownership or admin
-        if ($passRequest->user_id !== $user->id && !$user->isAdmin()) {
+        if ($passRequest->user_id !== $user->id && ! $user->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -291,7 +292,7 @@ class PassRequestController extends Controller
         }
 
         return response()->json([
-            'message' => 'Country updated for ' . $passRequests->count() . ' pass request(s).',
+            'message' => 'Country updated for '.$passRequests->count().' pass request(s).',
             'updated' => $passRequests->count(),
         ]);
     }

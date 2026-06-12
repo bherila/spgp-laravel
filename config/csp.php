@@ -1,5 +1,8 @@
 <?php
 
+use App\Csp\CloudflareCspPolicy;
+use Spatie\Csp\Nonce\RandomString;
+
 return [
 
     /*
@@ -15,7 +18,7 @@ return [
      * validate the policy before switching to enforced mode.
      */
     'report_only_presets' => [
-        App\Csp\CloudflareCspPolicy::class,
+        CloudflareCspPolicy::class,
     ],
 
     'report_only_directives' => [],
@@ -40,7 +43,7 @@ return [
     /*
      * Generator class for producing a per-request CSP nonce.
      */
-    'nonce_generator' => Spatie\Csp\Nonce\RandomString::class,
+    'nonce_generator' => RandomString::class,
 
     /*
      * Set to false to disable nonce generation (makes policy less secure).

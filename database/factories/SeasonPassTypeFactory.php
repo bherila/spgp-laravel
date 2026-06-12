@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\Season;
+use App\Models\SeasonPassType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SeasonPassType>
+ * @extends Factory<SeasonPassType>
  */
 class SeasonPassTypeFactory extends Factory
 {
@@ -19,7 +20,7 @@ class SeasonPassTypeFactory extends Factory
     {
         return [
             'season_id' => Season::factory(),
-            'pass_type_name' => $this->faker->word() . ' Pass',
+            'pass_type_name' => $this->faker->word().' Pass',
             'regular_early_price' => 500.00,
             'regular_regular_price' => 600.00,
             'renewal_early_price' => 450.00,

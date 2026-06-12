@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class QuestionUpvote extends Model
 {
-    use HasFactory, SoftDeletes, SerializesDatesAsLocal;
+    use HasFactory, SerializesDatesAsLocal, SoftDeletes;
 
     protected $fillable = [
         'question_id',

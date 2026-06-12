@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\SeasonPassType;
 use App\Models\Season;
+use App\Models\SeasonPassType;
 use Illuminate\Http\Request;
 
 class SeasonPassTypeController extends Controller
@@ -42,7 +42,7 @@ class SeasonPassTypeController extends Controller
         $validated['season_id'] = $season->id;
 
         // Auto-increment sort_order if not provided
-        if (!isset($validated['sort_order'])) {
+        if (! isset($validated['sort_order'])) {
             $maxSort = SeasonPassType::where('season_id', $seasonId)->max('sort_order');
             $validated['sort_order'] = ($maxSort ?? -1) + 1;
         }

@@ -30,8 +30,9 @@ class SendPasswordResetLink extends Command
         $email = $this->argument('email');
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             $this->error("User with email {$email} not found.");
+
             return 1;
         }
 
@@ -39,10 +40,12 @@ class SendPasswordResetLink extends Command
 
         if ($status === Password::RESET_LINK_SENT) {
             $this->info("Reset link sent successfully to {$email}.");
+
             return 0;
         }
 
-        $this->error("Failed to send reset link: " . __($status));
+        $this->error('Failed to send reset link: '.__($status));
+
         return 1;
     }
 }

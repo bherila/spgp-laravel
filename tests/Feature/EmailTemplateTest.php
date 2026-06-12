@@ -16,7 +16,9 @@ class EmailTemplateTest extends TestCase
     use RefreshDatabase;
 
     private Season $season;
+
     private User $user;
+
     private SeasonPassType $passType;
 
     protected function setUp(): void

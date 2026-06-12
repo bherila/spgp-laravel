@@ -6,7 +6,7 @@ use App\Models\Season;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Season>
+ * @extends Factory<Season>
  */
 class SeasonFactory extends Factory
 {
@@ -20,7 +20,7 @@ class SeasonFactory extends Factory
     public function definition(): array
     {
         return [
-            'pass_name' => fake()->word() . ' Pass',
+            'pass_name' => fake()->word().' Pass',
             'pass_year' => fake()->year(),
             'start_date' => now(),
             'early_spring_deadline' => now()->addMonth(),

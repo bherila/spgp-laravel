@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\PassRequest;
 use App\Models\PromoCodeRepository;
 use App\Models\Season;
 use Carbon\Carbon;
@@ -16,6 +17,7 @@ class PromoCodeRepositoryController extends Controller
     public function index(int $seasonId)
     {
         $season = Season::findOrFail($seasonId);
+
         return view('admin.promo-code-repository', ['season' => $season]);
     }
 
@@ -33,6 +35,7 @@ class PromoCodeRepositoryController extends Controller
             ->get()
             ->map(function ($code) {
                 $code->is_assigned = $code->pass_requests_count > 0;
+
                 return $code;
             });
 
@@ -95,7 +98,8 @@ class PromoCodeRepositoryController extends Controller
                 try {
                     $startDate = Carbon::parse($startDateRaw);
                 } catch (\Exception $e) {
-                    $errors[] = "Line " . ($lineIndex + 1) . ": invalid date '{$startDateRaw}'";
+                    $errors[] = 'Line '.($lineIndex + 1).": invalid date '{$startDateRaw}'";
+
                     continue;
                 }
             }
@@ -122,7 +126,7 @@ class PromoCodeRepositoryController extends Controller
         }
 
         return response()->json([
-            'message' => "Imported {$imported} promo code(s)." . ($skipped > 0 ? " Skipped {$skipped}." : ''),
+            'message' => "Imported {$imported} promo code(s).".($skipped > 0 ? " Skipped {$skipped}." : ''),
             'imported' => $imported,
             'skipped' => $skipped,
             'errors' => $errors,
@@ -157,7 +161,7 @@ class PromoCodeRepositoryController extends Controller
                 ->orderBy('promo_code')
                 ->get();
 
-            $passRequestsQuery = \App\Models\PassRequest::where('season_id', $seasonId)
+            $passRequestsQuery = PassRequest::where('season_id', $seasonId)
                 ->whereNull('promo_code');
 
             if ($c === 'USA') {

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('pass_requests', function (Blueprint $table) {
             // Add nullable foreign key to season_pass_types
             $table->foreignId('season_pass_type_id')->nullable()->after('pass_type')
-                  ->constrained('season_pass_types')->onDelete('set null');
+                ->constrained('season_pass_types')->onDelete('set null');
         });
     }
 

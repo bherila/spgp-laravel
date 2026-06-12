@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\PassRequest;
 use App\Models\Season;
 use App\Models\SeasonPassType;
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,7 +16,7 @@ class DuplicatePassRequestTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class);
+        $this->withoutMiddleware(ValidateCsrfToken::class);
     }
 
     public function test_cannot_create_duplicate_pass_request_same_user()
@@ -43,7 +43,7 @@ class DuplicatePassRequestTest extends TestCase
         $response = $this->actingAs($user)->postJson('/api/pass-requests', $data);
         $response->assertStatus(422);
         $response->assertJson([
-            'message' => 'You have already created a pass request for this person. Only one pass request can exist for a Name/Email/DOB per Season.'
+            'message' => 'You have already created a pass request for this person. Only one pass request can exist for a Name/Email/DOB per Season.',
         ]);
     }
 
@@ -72,7 +72,7 @@ class DuplicatePassRequestTest extends TestCase
         $response = $this->actingAs($user2)->postJson('/api/pass-requests', $data);
         $response->assertStatus(422);
         $response->assertJson([
-            'message' => 'Another user has already created a pass request for this person. Please ensure they haven\'t already requested their own pass. Only one pass request can exist for a Name/Email/DOB per Season.'
+            'message' => 'Another user has already created a pass request for this person. Please ensure they haven\'t already requested their own pass. Only one pass request can exist for a Name/Email/DOB per Season.',
         ]);
     }
 }
