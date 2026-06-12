@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/block-dangerous-artisan.sh",
+            "timeout": 30,
+            "statusMessage": "Checking Laravel database command safety..."
+          }
+        ]
+      }
+    ]
+  }
+}
