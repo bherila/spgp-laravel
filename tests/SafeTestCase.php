@@ -57,21 +57,21 @@ abstract class SafeTestCase extends BaseTestCase
 
         if ($driverName !== 'sqlite') {
             throw new RuntimeException(
-                "SAFETY ERROR: Tests must use SQLite, but '{$driverName}' connection is active. " .
-                "This could lead to accidentally modifying a production database!\n\n" .
-                "Ensure phpunit.xml contains:\n" .
-                "  <env name=\"DB_CONNECTION\" value=\"sqlite\"/>\n" .
-                "  <env name=\"DB_DATABASE\" value=\":memory:\"/>\n\n" .
-                "And run tests with: composer test (or php artisan test)"
+                "SAFETY ERROR: Tests must use SQLite, but '{$driverName}' connection is active. ".
+                "This could lead to accidentally modifying a production database!\n\n".
+                "Ensure phpunit.xml contains:\n".
+                "  <env name=\"DB_CONNECTION\" value=\"sqlite\"/>\n".
+                "  <env name=\"DB_DATABASE\" value=\":memory:\"/>\n\n".
+                'And run tests with: composer test (or php artisan test)'
             );
         }
 
         if ($database !== ':memory:' && basename($database) !== 'database.sqlite') {
             throw new RuntimeException(
-                "SAFETY ERROR: Tests must use in-memory SQLite (or at least a sqlite file named database.sqlite), but database is '{$database}'.\n\n" .
-                "Using a file-based database could persist test data unexpectedly.\n" .
-                "Ensure phpunit.xml contains:\n" .
-                "  <env name=\"DB_DATABASE\" value=\":memory:\"/>"
+                "SAFETY ERROR: Tests must use in-memory SQLite (or at least a sqlite file named database.sqlite), but database is '{$database}'.\n\n".
+                "Using a file-based database could persist test data unexpectedly.\n".
+                "Ensure phpunit.xml contains:\n".
+                '  <env name="DB_DATABASE" value=":memory:"/>'
             );
         }
     }

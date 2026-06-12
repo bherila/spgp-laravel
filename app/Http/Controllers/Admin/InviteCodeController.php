@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InviteCode;
-use App\Models\Season;
 use Illuminate\Http\Request;
 
 class InviteCodeController extends Controller
@@ -23,13 +22,13 @@ class InviteCodeController extends Controller
     public function list(Request $request)
     {
         $includeArchived = $request->boolean('include_archived', false);
-        
+
         $query = InviteCode::query();
-        
+
         if ($includeArchived) {
             $query->withTrashed();
         }
-        
+
         $inviteCodes = $query->with(['season'])
             ->withCount('users as usage_count')
             ->orderBy('created_at', 'desc')
@@ -63,7 +62,7 @@ class InviteCodeController extends Controller
 
         $validated = $request->validate([
             'season_id' => ['sometimes', 'exists:seasons,id'],
-            'invite_code' => ['sometimes', 'string', 'max:255', 'unique:invite_codes,invite_code,' . $id],
+            'invite_code' => ['sometimes', 'string', 'max:255', 'unique:invite_codes,invite_code,'.$id],
             'max_number_of_uses' => ['sometimes', 'integer', 'min:1'],
         ]);
 

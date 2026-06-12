@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Question extends Model
 {
-    use HasFactory, SoftDeletes, SerializesDatesAsLocal;
+    use HasFactory, SerializesDatesAsLocal, SoftDeletes;
 
     protected $fillable = [
         'user_id',
@@ -66,6 +66,6 @@ class Question extends Model
      */
     public function isAnswered(): bool
     {
-        return !is_null($this->answer);
+        return ! is_null($this->answer);
     }
 }

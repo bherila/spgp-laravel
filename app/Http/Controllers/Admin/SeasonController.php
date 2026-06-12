@@ -8,9 +8,9 @@ use App\Models\EmailLog;
 use App\Models\PassRequest;
 use App\Models\PromoCodeRepository;
 use App\Models\Season;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 
 class SeasonController extends Controller
 {
@@ -28,13 +28,13 @@ class SeasonController extends Controller
     public function list(Request $request)
     {
         $includeArchived = $request->boolean('include_archived', false);
-        
+
         $query = Season::query();
-        
+
         if ($includeArchived) {
             $query->withTrashed();
         }
-        
+
         $seasons = $query->withCount('passRequests as pass_request_count')
             ->orderBy('pass_year', 'desc')
             ->orderBy('created_at', 'desc')
@@ -113,6 +113,7 @@ class SeasonController extends Controller
     public function showPassRequests(int $id)
     {
         $season = Season::findOrFail($id);
+
         return view('admin.season-pass-requests', ['season' => $season]);
     }
 
@@ -122,7 +123,7 @@ class SeasonController extends Controller
     public function listPassRequests(Request $request, int $id)
     {
         $season = Season::findOrFail($id);
-        
+
         $query = PassRequest::where('season_id', $id)
             ->with(['user:id,first_name,last_name,email', 'seasonPassType']);
 
@@ -171,7 +172,7 @@ class SeasonController extends Controller
 
         if (count($codes) < count($passRequestIds)) {
             return response()->json([
-                'message' => 'Not enough codes provided. Need ' . count($passRequestIds) . ' but got ' . count($codes),
+                'message' => 'Not enough codes provided. Need '.count($passRequestIds).' but got '.count($codes),
             ], 422);
         }
 
@@ -183,13 +184,13 @@ class SeasonController extends Controller
 
             if ($passRequest && isset($codes[$index])) {
                 $code = $codes[$index];
-                
+
                 // Ensure the code exists in the PromoCodeRepository for this season
                 $startDate = now()->toDateString();
                 $now = now();
                 $expirationYear = $now->month >= 9 ? $now->year + 1 : $now->year;
-                $expirationDate = \Carbon\Carbon::create($expirationYear, 9, 1)->toDateString();
-                
+                $expirationDate = Carbon::create($expirationYear, 9, 1)->toDateString();
+
                 PromoCodeRepository::firstOrCreate(
                     ['promo_code' => $code],
                     [
@@ -261,7 +262,7 @@ class SeasonController extends Controller
             ->where('season_id', $id)
             ->whereNotNull('promo_code');
 
-        if (!$forceSend) {
+        if (! $forceSend) {
             $query->whereNull('email_notify_time');
         }
 
@@ -300,7 +301,7 @@ class SeasonController extends Controller
                     'email_to' => $passRequest->passholder_email,
                     'email_from' => config('mail.from.address', 'noreply@example.com'),
                     'subject' => "Your {$season->pass_name} {$season->pass_year} Promo Code",
-                    'body' => "Failed: " . $e->getMessage(),
+                    'body' => 'Failed: '.$e->getMessage(),
                     'result' => 'failed',
                     'error_message' => $e->getMessage(),
                 ]);

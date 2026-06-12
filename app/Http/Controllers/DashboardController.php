@@ -6,6 +6,7 @@ use App\Models\InviteCode;
 use App\Models\PassRequest;
 use App\Models\PromoCodeRepository;
 use App\Models\Season;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -105,7 +106,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function buildSeasonData($user): \Illuminate\Database\Eloquent\Collection
+    private function buildSeasonData($user): Collection
     {
         $now = now();
         $startOfToday = $now->copy()->startOfDay();

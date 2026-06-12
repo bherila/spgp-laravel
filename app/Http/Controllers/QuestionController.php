@@ -16,15 +16,15 @@ class QuestionController extends Controller
     public function index(Season $season)
     {
         // Check if user has access to this season
-        if (!Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdmin()) {
             $now = now();
             $threeMonthsFromNow = $now->copy()->addMonths(3);
-            
+
             $isActive = ($season->start_date <= $now && $season->final_deadline >= $now) ||
                         ($season->start_date > $now && $season->start_date <= $threeMonthsFromNow) ||
                         $season->passRequests()->where('user_id', Auth::id())->exists();
 
-            if (!$isActive) {
+            if (! $isActive) {
                 abort(403, 'You do not have access to this season.');
             }
         }
@@ -47,6 +47,7 @@ class QuestionController extends Controller
             ->get()
             ->map(function ($question) {
                 $question->user_has_upvoted = $question->upvotes()->where('user_id', Auth::id())->exists();
+
                 return $question;
             });
 
@@ -62,7 +63,7 @@ class QuestionController extends Controller
             'content' => 'required|string',
         ]);
 
-        $question = new Question();
+        $question = new Question;
         $question->user_id = Auth::id();
         $question->content = $validated['content'];
         $question->save();
@@ -99,7 +100,7 @@ class QuestionController extends Controller
      */
     public function answer(Request $request, Question $question)
     {
-        if (!Auth::user()->isAdmin()) {
+        if (! Auth::user()->isAdmin()) {
             abort(403);
         }
 
@@ -152,7 +153,7 @@ class QuestionController extends Controller
      */
     public function destroy(Question $question)
     {
-        if ($question->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
+        if ($question->user_id !== Auth::id() && ! Auth::user()->isAdmin()) {
             abort(403);
         }
 

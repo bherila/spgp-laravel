@@ -141,7 +141,7 @@ class QuestionTest extends SafeTestCase
             'start_date' => now()->subDay(),
             'final_deadline' => now()->addMonth(),
         ]);
-        $question = \App\Models\Question::factory()->create(['user_id' => $user->id]);
+        $question = Question::factory()->create(['user_id' => $user->id]);
         $question->seasons()->attach($season->id);
 
         $response = $this->actingAs($user)->getJson("/api/season/{$season->id}/questions");
@@ -190,7 +190,7 @@ class QuestionTest extends SafeTestCase
             'first_name' => 'Bob',
             'last_name' => 'Admin',
         ]);
-        $question = \App\Models\Question::factory()->create();
+        $question = Question::factory()->create();
 
         $response = $this->actingAs($admin)->postJson("/api/questions/{$question->id}/answer", [
             'answer' => 'Here is the official answer.',
@@ -243,7 +243,7 @@ class QuestionTest extends SafeTestCase
             'start_date' => now()->subDay(),
             'final_deadline' => now()->addMonth(),
         ]);
-        $question = \App\Models\Question::factory()->create(['user_id' => $user->id]);
+        $question = Question::factory()->create(['user_id' => $user->id]);
         $question->seasons()->attach($season->id);
 
         $response = $this->actingAs($user)->getJson("/api/season/{$season->id}/questions");
@@ -258,7 +258,7 @@ class QuestionTest extends SafeTestCase
     {
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
-        $question = \App\Models\Question::factory()->create(['user_id' => $otherUser->id]);
+        $question = Question::factory()->create(['user_id' => $otherUser->id]);
 
         $response = $this->actingAs($user)->deleteJson("/api/questions/{$question->id}");
         $response->assertStatus(403);
@@ -267,7 +267,7 @@ class QuestionTest extends SafeTestCase
     public function test_admin_can_delete_any_question()
     {
         $admin = User::factory()->create(['is_admin' => true]);
-        $question = \App\Models\Question::factory()->create();
+        $question = Question::factory()->create();
 
         $response = $this->actingAs($admin)->deleteJson("/api/questions/{$question->id}");
         $response->assertStatus(200);
@@ -277,7 +277,7 @@ class QuestionTest extends SafeTestCase
     public function test_user_can_delete_own_question()
     {
         $user = User::factory()->create();
-        $question = \App\Models\Question::factory()->create(['user_id' => $user->id]);
+        $question = Question::factory()->create(['user_id' => $user->id]);
 
         $response = $this->actingAs($user)->deleteJson("/api/questions/{$question->id}");
         $response->assertStatus(200);
@@ -287,7 +287,7 @@ class QuestionTest extends SafeTestCase
     public function test_non_admin_cannot_answer_question()
     {
         $user = User::factory()->create(['is_admin' => false]);
-        $question = \App\Models\Question::factory()->create();
+        $question = Question::factory()->create();
 
         $response = $this->actingAs($user)->postJson("/api/questions/{$question->id}/answer", [
             'answer' => 'Sneaky answer.',

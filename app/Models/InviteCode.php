@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InviteCode extends Model
 {
-    use HasFactory, SoftDeletes, SerializesDatesAsLocal;
+    use HasFactory, SerializesDatesAsLocal, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.

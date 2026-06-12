@@ -5,12 +5,13 @@ namespace App\Models;
 use App\Traits\SerializesDatesAsLocal;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Season extends Model
 {
-    use HasFactory, SoftDeletes, SerializesDatesAsLocal;
+    use HasFactory, SerializesDatesAsLocal, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -70,7 +71,7 @@ class Season extends Model
     /**
      * Get the questions associated with this season.
      */
-    public function questions(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function questions(): BelongsToMany
     {
         return $this->belongsToMany(Question::class);
     }

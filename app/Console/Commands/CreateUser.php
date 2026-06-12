@@ -35,15 +35,15 @@ class CreateUser extends Command
         // Support --name for backward compatibility (split at first space)
         $firstName = $this->option('first-name');
         $lastName = $this->option('last-name');
-        if (!$firstName && $this->option('name')) {
+        if (! $firstName && $this->option('name')) {
             $parts = explode(' ', $this->option('name'), 2);
             $firstName = $parts[0];
             $lastName = $parts[1] ?? null;
         }
-        if (!$firstName) {
+        if (! $firstName) {
             $firstName = $this->ask('First Name');
         }
-        if (!$lastName) {
+        if (! $lastName) {
             $lastName = $this->ask('Last Name');
         }
 
@@ -68,6 +68,7 @@ class CreateUser extends Command
             foreach ($validator->errors()->all() as $error) {
                 $this->error($error);
             }
+
             return 1;
         }
 
@@ -82,9 +83,10 @@ class CreateUser extends Command
 
         $adminText = $user->is_admin ? ' (Admin)' : '';
         $this->info("User {$user->first_name} {$user->last_name} ({$user->email}){$adminText} created successfully.");
-        if (!empty($generated)) {
+        if (! empty($generated)) {
             $this->info("Generated password: {$password}");
         }
+
         return 0;
     }
 }

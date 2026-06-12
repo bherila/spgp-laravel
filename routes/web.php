@@ -1,13 +1,13 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PassRequestController;
 use App\Http\Controllers\Admin\EmailLogController;
 use App\Http\Controllers\Admin\InviteCodeController;
 use App\Http\Controllers\Admin\PromoCodeRepositoryController;
 use App\Http\Controllers\Admin\SeasonController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PassRequestController;
 use Illuminate\Support\Facades\Route;
 
 // Home page - redirect based on auth status
@@ -15,6 +15,7 @@ Route::get('/', function () {
     if (auth()->check()) {
         return redirect('/dashboard');
     }
+
     return redirect('/login');
 });
 
@@ -37,13 +38,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/pass-requests-view', [DashboardController::class, 'index'])->name('dashboard.pass-requests'); // Alias for consistent naming if needed
-    
+
     // New pass request page
     Route::get('/request/{season_id}', [PassRequestController::class, 'showRequestForm'])->name('request');
 
     // Questions (Q&A)
     Route::get('/season/{season_id}/questions', [DashboardController::class, 'index'])->name('questions.index');
-    
+
     // Admin View routes - protected by 'can:admin' gate
     Route::prefix('admin')->middleware('can:admin')->group(function () {
         Route::get('/invites', [InviteCodeController::class, 'index'])->name('admin.invites');
