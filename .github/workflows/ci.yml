@@ -36,6 +36,8 @@ jobs:
               - '**/*.css'
               - 'package.json'
               - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
+              - 'tsconfig*.json'
               - 'vite.config.*'
               - 'jest.config.*'
               - 'resources/**'
