@@ -7,17 +7,17 @@
 # so the agent can retry with the only permitted form:
 #   php artisan migrate --database=sqlite --no-interaction
 #
-# Design: normalize quotes, split the command into segments on shell separators
-# and redirections, then validate EACH artisan segment against its OWN flags.
-# Any migrate:* / schema:d* / db:wi* subcommand (including Symfony command-prefix
-# abbreviations such as migrate:ref, schema:du, db:wi) is treated as destructive
-# and always denied; only a plain `migrate` with --database=sqlite and
-# --no-interaction (and no conflicting --database) is allowed.
+# Design: join line continuations, normalize quotes, split into command segments
+# on shell separators, drop redirections (keeping the surviving args), then check
+# each artisan segment against its OWN flags. Destructive subcommands — migrate:*,
+# schema:dump, db:wipe, and Symfony namespace/command abbreviations of them
+# (migr:f, d:wi, schem:du, ...) — are always denied; only a plain `migrate` with
+# --database=sqlite --no-interaction (no conflicting --database) is allowed.
 #
-# This is defense-in-depth for a cooperative agent, not a sandbox: indirection
-# such as eval, base64, $(...), or env-var assembly can still reach the shell and
-# is intentionally out of scope — the documented rule + human oversight remain
-# the primary guard.
+# This is defense-in-depth for a cooperative agent, not a sandbox: runtime
+# indirection (eval, base64, $(...), env-var assembly) can still reach the shell
+# and is intentionally out of scope — the documented rule + human oversight
+# remain the primary guard.
 set -euo pipefail
 
 payload="$(cat || true)"
@@ -34,41 +34,57 @@ deny() {
   exit 0
 }
 
-# Bash strips quotes before argv reaches artisan; normalize them to spaces so
-# quoted forms ('migrate', --database "mysql") are seen the same as bare ones.
-norm="${command//\'/ }"
+# Join backslash-newline continuations (bash removes them before tokenizing),
+# then normalize quotes so 'migrate' / --database "mysql" are seen like bare forms.
+norm="${command//\\$'\n'/ }"
+norm="${norm//\'/ }"
 norm="${norm//\"/ }"
 
 verdict="$(printf '%s' "$norm" | awk '
   { all = all $0 "\n" }
   END {
-    # Split into command segments on shell separators / redirections / subshells
-    # so each artisan call is validated with only its own options.
+    # Segment on shell separators / subshells (NOT redirections — their trailing
+    # args still belong to the same command and must be validated).
     gsub(/\$\(/, "\n", all)
-    gsub(/[;|&<>()`]/, "\n", all)
+    gsub(/[;|&()`]/, "\n", all)
     nseg = split(all, segs, "\n")
 
     dest = 0; bad_migrate = 0; bad_schema = 0
 
     for (s = 1; s <= nseg; s++) {
       m = split(segs[s], tok, /[ \t]+/)
-      seen = 0; danger = ""; sqlite = 0; nonsqlite = 0; nointer = 0; prune = 0; expectdb = 0
+      seen = 0; danger = ""; sqlite = 0; nonsqlite = 0; nointer = 0; prune = 0
+      expectdb = 0; skipnext = 0
       for (i = 1; i <= m; i++) {
         t = tok[i]
         if (t == "") continue
+        if (skipnext) { skipnext = 0; continue }
+        # Redirections: drop the operator (and a detached target) but keep the rest.
+        if (t ~ /^[0-9]*(>>|<<|>|<)/) {
+          if (t ~ /^[0-9]*(>>|<<|>|<)$/) skipnext = 1
+          continue
+        }
         if (t == "artisan" || t ~ /\/artisan$/) { seen = 1; continue }
         if (!seen) continue
-        if (expectdb) { if (t == "sqlite") sqlite = 1; else nonsqlite = 1; expectdb = 0; continue }
+        # A bare `--database` expects a value, but if the next token is actually a
+        # dangerous subcommand, classify it instead of swallowing it as the value.
+        if (expectdb) {
+          expectdb = 0
+          if (!(t ~ /^mi[a-z]*:/ || t ~ /^d[a-z]*:w/ || t == "migrate" || t ~ /^sc[a-z]*:d/)) {
+            if (t == "sqlite") sqlite = 1; else nonsqlite = 1
+            continue
+          }
+        }
         if (t == "--no-interaction") { nointer = 1; continue }
         if (t == "--prune") { prune = 1; continue }
         if (t ~ /^--database=/) { v = substr(t, 12); if (v == "sqlite") sqlite = 1; else nonsqlite = 1; continue }
         if (t == "--database") { expectdb = 1; continue }
-        # Destructive: any migrate:* subcommand, or db:wipe (and its abbreviations).
-        if (t ~ /^migrate:/ || t ~ /^db:wi/) { danger = "dest"; continue }
-        # Plain migrate (the only form that can be allowed).
+        # Destructive: migrate namespace (migrate:* incl. abbrev migr:f) or db:wipe
+        # (incl. abbrev d:wi / db:w).
+        if (t ~ /^mi[a-z]*:/ || t ~ /^d[a-z]*:w/) { danger = "dest"; continue }
         if (t == "migrate") { if (danger == "") danger = "migrate"; continue }
-        # schema:dump and its abbreviations (schema:d, schema:du, ...).
-        if (t ~ /^schema:d/) { if (danger == "") danger = "schema"; continue }
+        # schema:dump and its abbreviations (schem:du, schema:d, ...).
+        if (t ~ /^sc[a-z]*:d/) { if (danger == "") danger = "schema"; continue }
       }
       if (!seen || danger == "") continue
       if (danger == "dest") dest = 1
@@ -85,7 +101,7 @@ verdict="$(printf '%s' "$norm" | awk '
 
 case "$verdict" in
   DENY_DEST)
-    deny "Blocked destructive migration command (migrate:fresh/refresh/reset/rollback/install, db:wipe, or an abbreviation of one). These drop or rewrite data and are never run automatically here; a human must run it deliberately if truly required." ;;
+    deny "Blocked destructive database command (migrate:* / schema:dump variants / db:wipe, including Symfony abbreviations). These drop or rewrite data and are never run automatically here; a human must run it deliberately if truly required." ;;
   DENY_MIGRATE)
     deny "Blocked unsafe migration. Only run migrations when explicitly requested, against SQLite only and non-interactively: php artisan migrate --database=sqlite --no-interaction. Each chained artisan call must carry the flags itself, and no non-sqlite --database is allowed." ;;
   DENY_SCHEMA)
