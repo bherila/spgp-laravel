@@ -3,62 +3,83 @@
 #
 # Advisory rules live in AGENTS.md/CLAUDE.md; this hook is the enforcement layer
 # for the most dangerous local agent mistakes. It denies the individual Bash
-# tool call (via PreToolUse permissionDecision=deny) rather than halting the
-# whole session, so the agent can retry with the documented safe form.
+# tool call (PreToolUse permissionDecision=deny) rather than halting the session,
+# so the agent can retry with the only permitted form:
+#   php artisan migrate --database=sqlite --no-interaction
+# Destructive variants (migrate:fresh/refresh/reset/rollback, db:wipe) and
+# schema:dump --prune are never allowed here. This is defense-in-depth, not a
+# sandbox: the documented rules + human oversight remain the primary guard.
 set -euo pipefail
 
 payload="$(cat || true)"
 command=""
-
 if command -v jq >/dev/null 2>&1; then
   command="$(printf '%s' "$payload" | jq -r '.tool_input.command // ""' 2>/dev/null || true)"
 fi
-
-# Fallback lets grep catch obvious commands when jq is unavailable.
 if [[ -z "$command" ]]; then
   command="$payload"
 fi
 
 deny() {
-  # PreToolUse denial: deny just this Bash call and return the reason to Claude
-  # (continue:false would instead stop the whole turn and hide the reason).
   printf '%s\n' "{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"$1\"}}"
   exit 0
 }
 
-# Allow global options (e.g. --env=production, -v) to appear between `artisan`
-# and the subcommand, and catch destructive migrate variants + db:wipe.
-opts='([[:space:]]+-{1,2}[A-Za-z0-9][A-Za-z0-9=:._-]*)*'
-migrate_cmds='(migrate|migrate:fresh|migrate:refresh|migrate:reset|migrate:rollback|db:wipe)'
+# Bash strips quotes before argv reaches artisan, so normalize quotes to spaces;
+# this exposes quoted forms like 'migrate' or --database "mysql".
+norm="${command//\'/ }"
+norm="${norm//\"/ }"
 
-migrate_re="artisan${opts}[[:space:]]+${migrate_cmds}([[:space:]]|$)"
-schema_re="artisan${opts}[[:space:]]+schema:dump([[:space:]]|$)"
+# Tokenize and classify any Artisan subcommand that appears after an `artisan`
+# token (resetting at shell separators). Scanning every following token catches
+# space-separated global option values (e.g. `--env production migrate`) that a
+# positional regex misses, and quoted subcommands once quotes are normalized.
+read -r mig dest dump < <(printf '%s\n' "$norm" | awk '
+  BEGIN { seen=0; mig=0; dest=0; dump=0 }
+  {
+    for (i=1; i<=NF; i++) {
+      t=$i
+      if (t=="&&"||t=="||"||t==";"||t=="|"||t=="&") { seen=0; continue }
+      if (t=="artisan" || t ~ /\/artisan$/) { seen=1; continue }
+      if (seen) {
+        if (t=="migrate") mig=1
+        else if (t=="migrate:fresh"||t=="migrate:refresh"||t=="migrate:reset"||t=="migrate:rollback"||t=="db:wipe") dest=1
+        else if (t=="schema:dump") dump=1
+      }
+    }
+  }
+  END { print mig, dest, dump }
+')
 
-is_migrate=false
-is_schema_dump=false
-if grep -Eq "$migrate_re" <<<"$command"; then is_migrate=true; fi
-if grep -Eq "$schema_re" <<<"$command"; then is_schema_dump=true; fi
-
-if ! $is_migrate && ! $is_schema_dump; then
+if [[ "$mig" == 0 && "$dest" == 0 && "$dump" == 0 ]]; then
   exit 0
 fi
 
-# Any --database value (--database=x or --database x) that is not sqlite is
-# disqualifying — this also rejects repeated/conflicting flags such as
-# `--database=sqlite --database=mysql`, where the console uses the last value.
-has_non_sqlite_db=false
-while IFS= read -r dbval; do
-  if [[ -n "$dbval" && "$dbval" != "sqlite" ]]; then has_non_sqlite_db=true; fi
-done < <(grep -oE -- '--database[=[:space:]]+[^[:space:]"]+' <<<"$command" | sed -E 's/^--database[=[:space:]]+//' || true)
+# Destructive subcommands are never allowed via the agent, even on sqlite.
+if [[ "$dest" == 1 ]]; then
+  deny "Blocked destructive migration command (migrate:fresh/refresh/reset/rollback or db:wipe). These drop or rewrite data and are never run automatically here; a human must run it deliberately if it is truly required."
+fi
 
-if $is_migrate; then
-  if [[ "$command" != *"--database=sqlite"* ]] || $has_non_sqlite_db || [[ "$command" != *"--no-interaction"* ]]; then
-    deny "Blocked unsafe migration. Only run migrations when explicitly requested, against SQLite only and non-interactively: php artisan migrate --database=sqlite --no-interaction. Destructive variants (migrate:fresh/refresh/reset/rollback, db:wipe) and any non-sqlite --database are not allowed here."
+# Collect every --database value (handles =value and space value; quotes already
+# normalized) so repeated/conflicting flags cannot smuggle a non-sqlite target.
+has_sqlite_db=false
+has_non_sqlite_db=false
+while IFS= read -r v; do
+  [[ -z "$v" ]] && continue
+  if [[ "$v" == "sqlite" ]]; then has_sqlite_db=true; else has_non_sqlite_db=true; fi
+done < <(printf '%s\n' "$norm" | grep -oE -- '--database[= ]+[^ ]+' | sed -E 's/^--database[= ]+//' || true)
+
+no_interaction=false
+[[ "$norm" == *"--no-interaction"* ]] && no_interaction=true
+
+if [[ "$mig" == 1 ]]; then
+  if ! $has_sqlite_db || $has_non_sqlite_db || ! $no_interaction; then
+    deny "Blocked unsafe migration. Only run migrations when explicitly requested, against SQLite only and non-interactively: php artisan migrate --database=sqlite --no-interaction. No non-sqlite --database is allowed."
   fi
 fi
 
-if $is_schema_dump; then
-  if [[ "$command" != *"--database=sqlite"* ]] || $has_non_sqlite_db || [[ "$command" == *"--prune"* ]]; then
+if [[ "$dump" == 1 ]]; then
+  if ! $has_sqlite_db || $has_non_sqlite_db || [[ "$norm" == *"--prune"* ]]; then
     deny "Blocked unsafe schema dump. Only run when explicitly requested, use --database=sqlite, and never use --prune."
   fi
 fi

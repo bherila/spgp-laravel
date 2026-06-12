@@ -46,6 +46,7 @@ jobs:
               - '**/*.php'
               - 'composer.json'
               - 'composer.lock'
+              - '.env.example'
               - 'phpunit.xml'
               - 'app/**'
               - 'bootstrap/**'
