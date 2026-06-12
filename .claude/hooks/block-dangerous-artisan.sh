@@ -101,7 +101,8 @@ verdict="$(printf '%s' "$norm" | awk '
         if (t == "--no-interaction") { nointer = 1; continue }
         # Short-option cluster: Symfony global -n == --no-interaction (also -qn).
         if (t ~ /^-[A-Za-z]+$/) { if (t ~ /n/) nointer = 1; continue }
-        if (t == "--prune") { prune = 1; continue }
+        # --prune and its Symfony option abbreviations (--prun, --pru).
+        if (t ~ /^--pru/) { prune = 1; continue }
         if (t ~ /^--database=/) { v = substr(t, 12); if (v == "sqlite") sqlite = 1; else nonsqlite = 1; continue }
         if (t == "--database") { expectdb = 1; continue }
         # Destructive: migrate namespace (migrate:* incl. abbrev migr:f) or db:wipe
