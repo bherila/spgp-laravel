@@ -1,87 +1,108 @@
-# Agent / AI Assistant Guide
+# AGENTS.md
 
-This file documents conventions, patterns, and gotchas that are non-obvious from reading the code alone. Read it before making changes.
+For AI coding agents working in `bherila/spgp-laravel`.
+
+## Operating principle
+
+Treat the user's request as the minimum useful outcome, not the ceiling. Solve the underlying problem well, including small adjacent fixes when they are clearly related and low-risk.
+
+Work efficiently: inspect neighboring files before inventing patterns, run targeted validations during iteration, and broaden only when risk or shared code warrants it. Keep changes focused; avoid unrelated refactors, dependency churn, production builds, or broad test runs unless the task requires them.
+
+## Project shape
+
+- Domain: Season Pass Group Purchase, a Laravel application for coordinating ski pass group purchases, promo-code assignment, season Q&A, email notifications, and admin operations.
+- Stack: Laravel 13, PHP 8.2+, React 19, TypeScript, Tailwind CSS v4, shadcn/Radix UI, Vite, MySQL/SQLite, Sentry when configured.
+- Package manager: `pnpm` (`packageManager` is `pnpm@11.5.0`). Do not introduce npm/yarn workflows unless the task is specifically about package tooling.
+- CI/deploy: pushing `main` runs tests and then deploys to production. Treat the local/pre-push gate as higher stakes than a PR-only repo.
 
 ## Commands
 
 ```bash
-# Type-check (run before every commit)
-pnpm type-check
+# Install
+composer install --no-interaction --prefer-dist
+pnpm install --frozen-lockfile
 
-# Lint + auto-fix
-pnpm lint:fix
+# Development
+php artisan serve
+pnpm run dev
 
-# PHP tests
-php artisan test
-
-# Build frontend
+# Frontend checks
 pnpm run build
+pnpm run type-check
+pnpm run lint
+pnpm run test
+
+# Backend checks
+composer test
+php artisan test
+vendor/bin/paratest --processes=auto
+php -l path/to/file.php   # modified PHP files only
 ```
 
-## Date / Time Conventions
+`composer setup` and `composer dev` still contain legacy npm/npx commands. Prefer explicit `pnpm` commands unless the task is to modernize those scripts.
 
-All dates are stored as **UTC** in the database. Laravel is configured with `timezone = UTC` in `config/app.php`. All models use the `SerializesDatesAsLocal` trait (`app/Traits/SerializesDatesAsLocal.php`) which serializes dates as ISO 8601 ATOM strings with timezone offset (e.g. `2026-04-18T14:30:00+00:00`), allowing the browser to interpret them correctly in the user's local timezone.
+## Validation strategy
 
-### Frontend helpers — `resources/js/lib/dateHelpers.ts`
+Use a two-layer loop:
 
-Use these functions for **all** date display. Do not create new local `formatDate()` functions.
+1. **During iteration**: run the smallest command that proves the touched behavior. Examples: a specific Jest file, `php artisan test --filter=...`, `php -l` for changed PHP, or a focused browser/manual check when UI behavior is not test-covered.
+2. **Before push / handoff**: run the affected-stack gate. For changes that could reach `main`, match the deploy workflow's test job:
+   - `pnpm run build`
+   - `pnpm run type-check`
+   - `pnpm run lint`
+   - `pnpm run test`
+   - `vendor/bin/paratest --processes=auto` when dependencies are installed; otherwise `composer test` / `php artisan test` with the limitation called out.
 
-| Function | When to use | Example output |
-|---|---|---|
-| `formatDateOnly(str)` | `DATE` columns (no time): `assign_code_date`, promo code `start_date`/`expiration_date`, `passholder_birth_date` | `4/18/2026` |
-| `formatDateTime(str)` | `DATETIME`/`TIMESTAMP` columns: deadlines, `created_at`, `last_login_at` | `Apr 18, 2026, 02:30 PM PDT` |
-| `getCountdown(str, now)` | Countdown to a future datetime | `2d 4h 37m` or `null` if expired |
-| `THREE_DAYS_MS` | Constant for urgent-deadline detection | `259200000` |
+If a failure is clearly pre-existing and unrelated, document the command and concise output summary. Do not leave a red main-bound branch without calling that out explicitly.
 
-Rules:
-- **DATE-only columns** → `formatDateOnly` (uses UTC components; avoids the midnight-UTC off-by-one for negative-offset timezones)
-- **DATETIME/TIMESTAMP columns** → `formatDateTime` (local timezone with 3-letter TZ abbreviation)
-- **Never** use `toLocaleDateString()` or `toLocaleString()` directly in components
-- **Never** use `new Date(str).toLocaleString()` without timezone name
+## Laravel / PHP conventions
 
-### Backend models
+- Use Laravel idioms first: Form Requests for non-trivial validation, policies/gates/middleware for authorization, services for business workflows, and Eloquent relationships over manual joins unless the query is genuinely complex.
+- Add explicit return types to new PHP methods/functions.
+- Use constructor property promotion when adding injected dependencies.
+- Controllers should orchestrate request/response flow; keep season, pass request, promo-code, email, and Q&A business logic in models/services/actions consistent with existing code.
+- Use Laravel Boost `search-docs` before changing Laravel ecosystem behavior when the tool is available.
 
-Every model must use `SerializesDatesAsLocal`. If you add a new model with date/datetime columns, add `use SerializesDatesAsLocal;` and the corresponding `use App\Traits\SerializesDatesAsLocal;` import.
+## Database safety
 
-## Frontend Architecture
+- Do **not** run production-like migrations, `php artisan migrate --force`, or schema dumps unless the user explicitly asks.
+- If the user asks for a local migration check, prefer `php artisan migrate --database=sqlite --no-interaction`; the README explicitly warns to pass `--database=sqlite` if `.env` may point at production MySQL.
+- Never delete existing migration files. Keep index and foreign-key names short and explicit when names may approach MySQL's identifier limit.
 
-- Entry points are in `resources/js/` — one `.tsx` file per page (e.g. `dashboard.tsx`, `request/index.tsx`)
-- Admin pages live in `resources/js/admin/`
-- Shared UI components: `resources/js/components/` and `resources/js/components/ui/` (shadcn/ui)
-- Shared utilities: `resources/js/lib/` (`dateHelpers.ts`, `passRequestHelpers.ts`, `utils.ts`)
-- Path alias `@/` resolves to `resources/js/`
+## Date / time conventions
 
-## Backend Architecture
+All database dates are stored as UTC. Models with date/datetime columns must use `SerializesDatesAsLocal` from `app/Traits/SerializesDatesAsLocal.php`.
 
-- Controllers under `app/Http/Controllers/` (admin controllers in `/Admin/` subdirectory)
-- Models under `app/Models/`
-- API routes registered in `routes/api.php`; web routes in `routes/web.php`
-- All API responses return JSON; Blade is only used for initial page shells that mount React roots
+Frontend display must use `resources/js/lib/dateHelpers.ts`:
 
-## Clipboard API
+- `formatDateOnly(str)` for `DATE` columns such as `assign_code_date`, promo code dates, and `passholder_birth_date`.
+- `formatDateTime(str)` for `DATETIME` / `TIMESTAMP` columns such as deadlines, `created_at`, and `last_login_at`.
+- `getCountdown(str, now)` for deadline countdowns.
 
-`navigator.clipboard` is only available in secure contexts (HTTPS). Always guard it:
+Never use `toLocaleDateString()`, `toLocaleString()`, or `new Date(str).toLocaleString()` directly in components.
 
-```typescript
-if (navigator.clipboard) {
-  navigator.clipboard.writeText(text);
-}
-```
+## SPGP domain rules
 
-## Country / Promo Code Assignment
+- Preserve the pass request status flow: `submitted -> promo_code assigned -> email_notify_time set -> redemption_date set`.
+- `PromoCodeRepository` stores codes per season and country (`USA` or `Canada`). Auto-assign treats `country IS NULL` as `USA`.
+- `assign_code_date` and `redemption_date` are `DATE` fields; `email_notify_time` is a `DATETIME` field.
+- Invite codes and promo codes are sensitive operational data. Do not print real values in PRs, issues, commit messages, or logs.
+- Email-related changes must preserve email logging and avoid duplicate sends on retries or repeated admin actions.
+- Season deadlines drive dashboard urgency and user expectations; verify countdown/date changes against both admin and user-facing views.
 
-- `PromoCodeRepository` stores codes per season and country (`USA` or `Canada`)
-- Auto-assign treats pass requests with `country IS NULL` as USA
-- The `PromoCodeRepositoryController::autoAssign()` sets `assign_code_date = now()` on each assigned `PassRequest`
+## React / TypeScript conventions
 
-## Pass Request Status Flow
+- Entry points live in `resources/js/`; admin pages live in `resources/js/admin/`.
+- Use existing shared components in `resources/js/components/` and `resources/js/components/ui/` before adding new UI primitives.
+- Use shared utilities in `resources/js/lib/`, especially `dateHelpers.ts`, `passRequestHelpers.ts`, and `utils.ts`.
+- The `@/` alias resolves to `resources/js/`.
+- Guard Clipboard API use with `if (navigator.clipboard)` because it requires a secure context.
+- Prefer `interface` for component props, function declarations for React components, and named exports for shared utilities/components.
+- Use `currency.js` for any money arithmetic involving pass prices, discounts, totals, or refunds.
 
-```
-submitted → promo_code assigned → email_notify_time set → redemption_date set
-```
+## Privacy and repo hygiene
 
-Fields:
-- `promo_code`: null until assigned
-- `assign_code_date`: DATE (no time) set when code is assigned
-- `email_notify_time`: DATETIME set when notification email is sent
-- `redemption_date`: DATE set when user redeems the code
+- Do not include real names, email addresses, passholder birth dates, invite codes, promo codes, Sentry DSNs, access tokens, or production payloads in PR titles/bodies, issue bodies, commit subjects, branch names, or logs.
+- Use database references such as `users#7`, `seasons#3`, `pass_requests#22`, or `promo_code_repository#9` when a durable reference is needed.
+- Strip `[codex]`, `[claude]`, or other tool tags from PR titles and commit subjects.
+- Use the GitHub CLI for local GitHub operations when available; prefer fully qualified refs such as `bherila/spgp-laravel#123`.
