@@ -60,6 +60,22 @@ class BladeViewTest extends ViteTestCase
         $this->get('/forgot-password')->assertStatus(200);
     }
 
+    public function test_privacy_policy_view_loads(): void
+    {
+        $this->get('/privacy')
+            ->assertStatus(200)
+            ->assertSee('Privacy Policy')
+            ->assertSee(config('legal.privacy_contact'));
+    }
+
+    public function test_terms_of_service_view_loads(): void
+    {
+        $this->get('/terms')
+            ->assertStatus(200)
+            ->assertSee('Terms of Service')
+            ->assertSee('Privacy Policy');
+    }
+
     // ============================================================
     // Authenticated user views
     // ============================================================
