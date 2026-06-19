@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "179d624181cba0ea7af629fc811709c2",
+    "content-hash": "2b55e7b449ad4103736fc29daac4cff1",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -202,23 +202,14 @@
                     "BWH\\Auth\\": "laravel/src/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "BWH\\Auth\\Tests\\": "laravel/tests/"
-                }
-            },
-            "scripts": {
-                "test": [
-                    "phpunit"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "description": "Shared Laravel authentication services for BWH applications.",
             "support": {
-                "source": "https://github.com/bherila/auth/tree/v0.4.3",
-                "issues": "https://github.com/bherila/auth/issues"
+                "issues": "https://github.com/bherila/auth/issues",
+                "source": "https://github.com/bherila/auth/tree/v0.4.3"
             },
             "time": "2026-06-08T05:54:47+00:00"
         },

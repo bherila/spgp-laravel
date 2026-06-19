@@ -95,10 +95,5 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true,
-    "repositories": [{
-        "name": "bherila-auth",
-        "type": "vcs",
-        "url": "https://github.com/bherila/auth.git"
-    }]
+    "prefer-stable": true
 }
