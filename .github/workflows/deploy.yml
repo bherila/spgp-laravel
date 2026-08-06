@@ -124,9 +124,12 @@ jobs:
             "${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}" 'bash -se' <<'REMOTE'
           set -eu
           cd "$HOME/laravel-spgp"
-          /opt/cpanel/ea-php85/root/usr/bin/php artisan config:clear
-          /opt/cpanel/ea-php85/root/usr/bin/php artisan config:cache
-          /opt/cpanel/ea-php85/root/usr/bin/php artisan migrate --force
+          PHP_BIN=/opt/cpanel/ea-php85/root/usr/bin/php
+          test -x "$PHP_BIN"
+          test "$("$PHP_BIN" -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')" = "8.5"
+          "$PHP_BIN" artisan config:clear
+          "$PHP_BIN" artisan config:cache
+          "$PHP_BIN" artisan migrate --force
 
           cd "$HOME"
           rm -rf -- spgp.vxcv.com web
@@ -134,6 +137,8 @@ jobs:
           ln -s "$HOME/laravel-spgp/public" "$HOME/web"
           test -L "$HOME/spgp.vxcv.com"
           test -f "$HOME/spgp.vxcv.com/index.php"
+          test -f "$HOME/spgp.vxcv.com/.htaccess"
+          grep -Fq 'AddHandler application/x-httpd-ea-php85 .php .php8 .phtml' "$HOME/spgp.vxcv.com/.htaccess"
           REMOTE
 
       - name: Verify production response
