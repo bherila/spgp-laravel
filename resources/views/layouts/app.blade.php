@@ -36,8 +36,14 @@
       @yield('content')
     </main>
 
-    <footer class="border-t border-gray-200 dark:border-[#3E3E3A] py-6 text-sm text-center text-gray-600 dark:text-[#A1A09A]">
-      © {{ date('Y') }}
+    <footer class="border-t border-gray-200 dark:border-[#3E3E3A] py-6 text-sm text-gray-600 dark:text-[#A1A09A]">
+      <div class="flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-4">
+        <span>© {{ date('Y') }}</span>
+        <nav aria-label="Legal" class="flex items-center gap-4">
+          <a class="hover:text-gray-900 hover:underline dark:hover:text-white" href="{{ route('privacy') }}">Privacy</a>
+          <a class="hover:text-gray-900 hover:underline dark:hover:text-white" href="{{ route('terms') }}">Terms</a>
+        </nav>
+      </div>
     </footer>
 
     @stack('scripts')

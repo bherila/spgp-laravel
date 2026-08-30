@@ -19,6 +19,10 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
+// Public legal pages
+Route::view('/privacy', 'legal.privacy')->name('privacy');
+Route::view('/terms', 'legal.terms')->name('terms');
+
 // Auth routes (guest only)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
