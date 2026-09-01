@@ -6,7 +6,7 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "bherila/auth-laravel": "^0.4",
         "erusev/parsedown": "^1.7",
         "laravel/framework": "^13.0",
@@ -84,7 +84,7 @@
     },
     "config": {
         "platform": {
-            "php": "8.3.0"
+            "php": "8.4.0"
         },
         "optimize-autoloader": true,
         "preferred-install": "dist",
