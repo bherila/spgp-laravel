@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2b55e7b449ad4103736fc29daac4cff1",
+    "content-hash": "9cc4423fb3c63e4ab2dc1daef741f0d8",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -162,12 +162,12 @@
             "version": "v0.4.3",
             "source": {
                 "type": "git",
-                "url": "https://github.com/bherila/auth.git",
+                "url": "https://github.com/bherila/auth-laravel.git",
                 "reference": "d2a78a33685f5e6b35c2b245d3ffc827c682bbb5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bherila/auth/zipball/d2a78a33685f5e6b35c2b245d3ffc827c682bbb5",
+                "url": "https://api.github.com/repos/bherila/auth-laravel/zipball/d2a78a33685f5e6b35c2b245d3ffc827c682bbb5",
                 "reference": "d2a78a33685f5e6b35c2b245d3ffc827c682bbb5",
                 "shasum": ""
             },
@@ -11178,11 +11178,11 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.2"
+        "php": "^8.4"
     },
     "platform-dev": {},
     "platform-overrides": {
-        "php": "8.3.0"
+        "php": "8.4.0"
     },
     "plugin-api-version": "2.9.0"
 }
