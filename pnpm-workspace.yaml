@@ -13,4 +13,5 @@ allowBuilds:
   '@swc/core': true
   bwh-auth: true
   esbuild: true
+  spotlight-noindex: true
   unrs-resolver: true
