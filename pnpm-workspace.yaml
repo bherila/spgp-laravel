@@ -10,6 +10,7 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 allowBuilds:
+  '@parcel/watcher': true
   '@swc/core': true
   bwh-auth: true
   esbuild: true
