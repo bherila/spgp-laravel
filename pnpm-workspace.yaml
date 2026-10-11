@@ -3,11 +3,7 @@ overrides:
 
 minimumReleaseAgeExclude:
   - bwh-auth
-
-onlyBuiltDependencies:
-  - '@swc/core'
-  - esbuild
-  - unrs-resolver
+  - react-hook-form@7.90.0
 
 allowBuilds:
   '@parcel/watcher': true
