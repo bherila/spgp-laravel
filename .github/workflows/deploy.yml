@@ -10,20 +10,31 @@ concurrency:
   group: deploy-main
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
+          extensions: dom, curl, libxml, mbstring, zip, pdo, sqlite, pdo_sqlite, bcmath, intl, gd, exif, iconv
           coverage: none
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: pnpm
 
       - name: Cache composer dependencies
         uses: actions/cache@v5
@@ -32,34 +43,30 @@ jobs:
           key: composer-${{ hashFiles('composer.lock') }}
           restore-keys: composer-
 
-      - name: Get pnpm store path
-        id: pnpm-cache
-        run: echo "store=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm store
-        uses: actions/cache@v5
-        with:
-          path: ${{ steps.pnpm-cache.outputs.store }}
-          key: pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: pnpm-
-
       - name: Install dependencies
+        timeout-minutes: 4
         run: |
           composer install --no-interaction --prefer-dist &
-          PID1=$!
+          composer_pid=$!
           pnpm install --frozen-lockfile &
-          PID2=$!
-          wait $PID1; E1=$?
-          wait $PID2; E2=$?
-          test $E1 -eq 0 -a $E2 -eq 0
+          pnpm_pid=$!
+          composer_status=0
+          pnpm_status=0
+          wait "$composer_pid" || composer_status=$?
+          wait "$pnpm_pid" || pnpm_status=$?
+          test "$composer_status" -eq 0 && test "$pnpm_status" -eq 0
 
       - name: Build frontend
         run: pnpm run build
 
       - name: Prepare PHP environment
-        run: cp .env.example .env && php artisan key:generate
+        run: cp .env.example .env && php artisan key:generate --no-interaction --force
+
+      - name: Check PHP formatting
+        run: ./vendor/bin/pint --test
 
       - name: Run all checks
+        timeout-minutes: 6
         run: |
           pnpm exec concurrently --kill-others-on-fail \
             "pnpm run type-check" \
@@ -71,9 +78,10 @@ jobs:
     runs-on: ubuntu-24.04-arm
     needs: test
     environment: prod
+    timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -83,7 +91,13 @@ jobs:
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: pnpm
 
       - name: Build frontend
         run: |

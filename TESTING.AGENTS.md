@@ -4,7 +4,7 @@ These are the routine checks for AI coding agents. `TESTING.md` remains the deep
 
 ## Full local gate
 
-Because the current GitHub workflow runs on `main` pushes, run the relevant local gate before pushing or merging:
+PR CI runs checks for changed areas; pushes to `main` run the full deployment gate. Run the relevant local gate before pushing or merging:
 
 ```bash
 pnpm run type-check
