@@ -3,6 +3,7 @@
 @section('title', 'Email Log - Admin')
 
 @section('content')
+  <x-page-data :data="$pageData" />
     <div id="email-log"></div>
 @endsection
 

@@ -39,10 +39,7 @@ export interface Season {
 export interface PassRequestsListResponse {
   season: Season;
   pass_requests: PassRequest[];
-}
-
-export interface RepoCode {
-  is_suspended: boolean;
+  repo_count: number;
 }
 
 export async function fetchPassRequests(
@@ -56,15 +53,6 @@ export async function fetchPassRequests(
   });
   if (!response.ok) throw new Error('Failed to fetch data');
   return response.json() as Promise<PassRequestsListResponse>;
-}
-
-export async function fetchRepoCount(seasonId: string): Promise<number> {
-  const response = await fetch(`/api/admin/seasons/${seasonId}/promo-codes/list`, {
-    headers: { Accept: 'application/json' },
-  });
-  if (!response.ok) return 0;
-  const data = (await response.json()) as { promo_codes?: RepoCode[] };
-  return (data.promo_codes ?? []).filter((c) => !c.is_suspended).length;
 }
 
 export async function assignCodes(

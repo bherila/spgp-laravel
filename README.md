@@ -150,6 +150,12 @@ The system uses several core tables:
    php artisan view:cache
    ```
 
+## Initial Page Data
+
+Blade shells embed the data needed for the first render with `<x-page-data :data="$pageData" />`. React reads it with `readPageData<T>()` from `@/lib/pageData`; the component also accepts a custom script ID for pages with multiple roots. JSON is escaped for an inert `application/json` script block, without executable inline assignments or changes to CSP.
+
+Page controllers and refresh endpoints reuse the same queries or services. Initialize React state from the embedded payload and reserve AJAX for user actions, filter changes, pagination, and refreshes after mutations. Keep paginated data bounded and load Q&A details only on the selected season's Q&A page.
+
 ## Date Handling
 
 All dates are stored as **UTC**. The `SerializesDatesAsLocal` trait serializes every model date as an ISO 8601 string with timezone offset so the browser can convert to local time automatically.

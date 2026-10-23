@@ -1,7 +1,7 @@
 import '../bootstrap';
 
 import { Copy, Key, Pencil, Trash2 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import MainTitle from '@/components/MainTitle';
@@ -27,6 +27,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/dateHelpers';
+import { readPageData } from '@/lib/pageData';
 
 interface User {
   id: number;
@@ -45,13 +46,17 @@ interface User {
   updated_at: string;
 }
 
-function AdminUsers() {
+interface AdminUsersProps {
+  initialUsers: User[];
+}
+
+function AdminUsers({ initialUsers }: AdminUsersProps) {
   const mount = document.getElementById('admin-users');
   const csrfToken = mount?.getAttribute('data-csrf-token') || '';
   const currentUserId = parseInt(mount?.getAttribute('data-current-user-id') || '0', 10);
   
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   
@@ -85,11 +90,6 @@ function AdminUsers() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
 
   const sanitizeTSVCell = (value: string | number) => {
     const normalized = String(value).replace(/[\t\n\r]/g, ' ');
@@ -485,5 +485,5 @@ function AdminUsers() {
 
 const adminUsersElement = document.getElementById('admin-users');
 if (adminUsersElement) {
-  createRoot(adminUsersElement).render(<AdminUsers />);
+  createRoot(adminUsersElement).render(<AdminUsers initialUsers={readPageData<{ users: User[] }>().users} />);
 }

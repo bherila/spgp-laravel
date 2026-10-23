@@ -3,6 +3,7 @@
 @section('title', 'Invite Codes - Admin')
 
 @section('content')
+  <x-page-data :data="$pageData" />
   <div id="admin-invites" data-csrf-token="{{ csrf_token() }}"></div>
 @endsection
 

@@ -3,14 +3,64 @@
 namespace Tests\Feature;
 
 use App\Models\Question;
+use App\Models\QuestionUpvote;
 use App\Models\Season;
 use App\Models\User;
+use App\Services\Questions\QuestionQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\SafeTestCase;
 
 class QuestionTest extends SafeTestCase
 {
     use RefreshDatabase;
+
+    public function test_question_data_ranks_votes_and_keeps_each_users_vote_private(): void
+    {
+        $user = User::factory()->create();
+        $other = User::factory()->create();
+        $season = Season::factory()->create();
+        $questions = Question::factory()->count(3)->create(['user_id' => $other->id]);
+        $season->questions()->attach($questions->modelKeys());
+        QuestionUpvote::create(['question_id' => $questions[0]->id, 'user_id' => $user->id]);
+        QuestionUpvote::create(['question_id' => $questions[0]->id, 'user_id' => $other->id]);
+        QuestionUpvote::create(['question_id' => $questions[1]->id, 'user_id' => $other->id]);
+        $deletedVote = QuestionUpvote::create(['question_id' => $questions[2]->id, 'user_id' => $user->id]);
+        $deletedVote->delete();
+
+        $data = $this->actingAs($user)->getJson("/api/season/{$season->id}/questions")
+            ->assertOk()->json();
+
+        $this->assertSame($questions->modelKeys(), array_column($data, 'id'));
+        $this->assertSame([2, 1, 0], array_column($data, 'upvotes_count'));
+        $this->assertSame([true, false, false], array_column($data, 'user_has_upvoted'));
+        $this->assertSame([true, true, false], app(QuestionQuery::class)
+            ->dataForSeason($season, $other)->pluck('user_has_upvoted')->all());
+    }
+
+    public function test_question_query_count_does_not_grow_with_the_number_of_questions(): void
+    {
+        $user = User::factory()->create();
+        $season = Season::factory()->create();
+        $season->questions()->attach(Question::factory()->create(['user_id' => $user->id]));
+        $query = app(QuestionQuery::class);
+
+        DB::enableQueryLog();
+        $query->dataForSeason($season, $user);
+        $singleQuestionQueries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $season->questions()->attach(Question::factory()->count(8)->create(['user_id' => $user->id])->modelKeys());
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $questions = $query->dataForSeason($season, $user);
+        $multipleQuestionQueries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $this->assertCount(9, $questions);
+        $this->assertSame($singleQuestionQueries, $multipleQuestionQueries);
+    }
 
     public function test_user_can_ask_question()
     {

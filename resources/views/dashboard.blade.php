@@ -12,11 +12,15 @@
     data-is-questions-view="{{ ($isQuestionsView ?? false) ? '1' : '0' }}"
   ></div>
 
-  <script id="dashboard-data" type="application/json">{!! json_encode($seasons, JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
+  <x-page-data id="dashboard-data" :data="$seasons" />
+
+  @if($isQuestionsView)
+    <x-page-data id="questions-data" :data="$questions" />
+  @endif
 
   @if($adminData !== null)
     <div id="admin-dashboard"></div>
-    <script id="admin-dashboard-data" type="application/json">{!! json_encode($adminData, JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
+    <x-page-data id="admin-dashboard-data" :data="$adminData" />
   @endif
 @endsection
 

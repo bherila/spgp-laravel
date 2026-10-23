@@ -1,7 +1,7 @@
 import '../bootstrap';
 
 import { ArrowLeft, Download, Upload } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import MainTitle from '@/components/MainTitle';
@@ -34,18 +34,23 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDateOnly } from '@/lib/dateHelpers';
+import { readPageData } from '@/lib/pageData';
 
-import { fetchPromoCodes, importCodes,type PromoCode } from './promoCodeRepositoryApi';
+import { fetchPromoCodes, importCodes, type PromoCode, type PromoCodeListResponse } from './promoCodeRepositoryApi';
 
-function PromoCodeRepositoryAdmin() {
+interface PromoCodeRepositoryAdminProps {
+  initialData: PromoCodeListResponse;
+}
+
+function PromoCodeRepositoryAdmin({ initialData }: PromoCodeRepositoryAdminProps) {
   const mount = document.getElementById('admin-promo-code-repository');
   const csrfToken = mount?.getAttribute('data-csrf-token') ?? '';
   const seasonId = mount?.getAttribute('data-season-id') ?? '';
   const seasonName = mount?.getAttribute('data-season-name') ?? '';
   const seasonYear = mount?.getAttribute('data-season-year') ?? '';
 
-  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>(initialData.promo_codes);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -61,16 +66,13 @@ function PromoCodeRepositoryAdmin() {
       setLoading(true);
       const data = await fetchPromoCodes(seasonId);
       setPromoCodes(data.promo_codes ?? []);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    void loadData();
-  }, []);
 
   const handleImport = async () => {
     if (!importTsv.trim()) return;
@@ -94,7 +96,7 @@ function PromoCodeRepositoryAdmin() {
     }
   };
 
-  const usaCount = promoCodes.filter(c => c.country === 'USA' && !c.is_suspended && !c.is_assigned).length;
+  const usaCount = promoCodes.filter(c => (c.country === 'USA' || c.country === null) && !c.is_suspended && !c.is_assigned).length;
   const canadaCount = promoCodes.filter(c => c.country === 'Canada' && !c.is_suspended && !c.is_assigned).length;
 
   return (
@@ -267,5 +269,5 @@ function PromoCodeRepositoryAdmin() {
 
 const mountEl = document.getElementById('admin-promo-code-repository');
 if (mountEl) {
-  createRoot(mountEl).render(<PromoCodeRepositoryAdmin />);
+  createRoot(mountEl).render(<PromoCodeRepositoryAdmin initialData={readPageData<PromoCodeListResponse>()} />);
 }

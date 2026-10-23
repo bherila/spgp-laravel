@@ -3,6 +3,7 @@
 @section('title', $season->pass_name . ' ' . $season->pass_year . ' Pass Requests - Admin')
 
 @section('content')
+  <x-page-data :data="$pageData" />
   <div id="admin-season-pass-requests" 
        data-csrf-token="{{ csrf_token() }}" 
        data-season-id="{{ $season->id }}"

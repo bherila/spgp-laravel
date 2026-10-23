@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InviteCode;
+use App\Services\PassRequests\AdminPassRequestService;
 use Illuminate\Http\Request;
 
 class InviteCodeController extends Controller
@@ -11,9 +12,12 @@ class InviteCodeController extends Controller
     /**
      * Display the invite codes admin page.
      */
-    public function index()
+    public function index(Request $request, AdminPassRequestService $passRequests)
     {
-        return view('admin.invites');
+        return view('admin.invites', ['pageData' => [
+            'inviteCodes' => $this->inviteCodes(false),
+            'seasons' => $passRequests->seasons($request->user()),
+        ]]);
     }
 
     /**
@@ -21,20 +25,21 @@ class InviteCodeController extends Controller
      */
     public function list(Request $request)
     {
-        $includeArchived = $request->boolean('include_archived', false);
+        return response()->json($this->inviteCodes($request->boolean('include_archived', false)));
+    }
 
+    private function inviteCodes(bool $includeArchived)
+    {
         $query = InviteCode::query();
 
         if ($includeArchived) {
             $query->withTrashed();
         }
 
-        $inviteCodes = $query->with(['season'])
+        return $query->with(['season'])
             ->withCount('users as usage_count')
             ->orderBy('created_at', 'desc')
             ->get();
-
-        return response()->json($inviteCodes);
     }
 
     /**

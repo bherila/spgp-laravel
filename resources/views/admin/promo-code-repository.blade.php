@@ -3,6 +3,7 @@
 @section('title', 'Promo Code Repository - ' . $season->pass_name . ' ' . $season->pass_year . ' - Admin')
 
 @section('content')
+  <x-page-data :data="$pageData" />
   <div id="admin-promo-code-repository"
        data-csrf-token="{{ csrf_token() }}"
        data-season-id="{{ $season->id }}"

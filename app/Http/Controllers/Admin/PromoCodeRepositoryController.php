@@ -6,19 +6,25 @@ use App\Http\Controllers\Controller;
 use App\Models\PromoCodeRepository;
 use App\Models\Season;
 use App\Services\PassRequests\AdminPassRequestService;
+use App\Services\PromoCodeRepositoryData;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class PromoCodeRepositoryController extends Controller
 {
+    public function __construct(private PromoCodeRepositoryData $repositoryData) {}
+
     /**
      * Display the promo code repository page for a season.
      */
     public function index(int $seasonId)
     {
-        $season = Season::findOrFail($seasonId);
+        $pageData = $this->repositoryData->forSeason($seasonId);
 
-        return view('admin.promo-code-repository', ['season' => $season]);
+        return view('admin.promo-code-repository', [
+            'season' => $pageData['season'],
+            'pageData' => $pageData,
+        ]);
     }
 
     /**
@@ -26,23 +32,7 @@ class PromoCodeRepositoryController extends Controller
      */
     public function list(int $seasonId)
     {
-        $season = Season::findOrFail($seasonId);
-
-        $codes = PromoCodeRepository::where('season_id', $seasonId)
-            ->withCount('passRequests')
-            ->orderBy('start_date')
-            ->orderBy('promo_code')
-            ->get()
-            ->map(function ($code) {
-                $code->is_assigned = $code->pass_requests_count > 0;
-
-                return $code;
-            });
-
-        return response()->json([
-            'season' => $season,
-            'promo_codes' => $codes,
-        ]);
+        return response()->json($this->repositoryData->forSeason($seasonId));
     }
 
     /**

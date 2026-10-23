@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { readPageData } from '@/lib/pageData';
 
 interface UnassignedRequest {
   season_id: number;
@@ -96,13 +97,5 @@ function AdminDashboard({ data }: { data: AdminDashboardData }) {
 
 const container = document.getElementById('admin-dashboard');
 if (container) {
-  const dataScript = document.getElementById('admin-dashboard-data');
-  if (dataScript) {
-    try {
-      const data: AdminDashboardData = JSON.parse(dataScript.textContent ?? '{}');
-      createRoot(container).render(<AdminDashboard data={data} />);
-    } catch (e) {
-      console.error('Failed to parse admin dashboard data', e);
-    }
-  }
+  createRoot(container).render(<AdminDashboard data={readPageData<AdminDashboardData>('admin-dashboard-data')} />);
 }

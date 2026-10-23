@@ -15,7 +15,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        return view('admin.users');
+        return view('admin.users', ['pageData' => ['users' => $this->users()]]);
     }
 
     /**
@@ -23,7 +23,12 @@ class UserController extends Controller
      */
     public function list(Request $request)
     {
-        $users = User::query()
+        return response()->json($this->users());
+    }
+
+    private function users()
+    {
+        return User::query()
             ->withCount('passRequests as pass_request_count')
             ->with('inviteCodes:id,invite_code')
             ->addSelect(['last_login_at' => AuthAuditLog::query()
@@ -35,8 +40,6 @@ class UserController extends Controller
             ])
             ->orderBy('created_at', 'desc')
             ->get();
-
-        return response()->json($users);
     }
 
     /**

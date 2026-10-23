@@ -3,6 +3,7 @@
 @section('title', 'Users - Admin')
 
 @section('content')
+  <x-page-data :data="$pageData" />
   <div id="admin-users" data-csrf-token="{{ csrf_token() }}" data-current-user-id="{{ auth()->id() }}"></div>
 @endsection
 

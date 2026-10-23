@@ -1,18 +1,10 @@
 import { useState } from 'react';
 
+import { readPageData } from '@/lib/pageData';
 import type { Season } from '@/types/dashboard';
 
-function readInitialData(): Season[] {
-  try {
-    const el = document.getElementById('dashboard-data');
-    return el ? (JSON.parse(el.textContent ?? '[]') as Season[]) : [];
-  } catch {
-    return [];
-  }
-}
-
 export function useDashboardData() {
-  const [seasons, setSeasons] = useState<Season[]>(readInitialData);
+  const [seasons, setSeasons] = useState<Season[]>(() => readPageData<Season[]>('dashboard-data'));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

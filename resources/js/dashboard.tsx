@@ -43,7 +43,9 @@ import {
 } from '@/components/ui/tooltip';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { formatDateTime, getCountdown, THREE_DAYS_MS } from '@/lib/dateHelpers';
+import { readPageData } from '@/lib/pageData';
 import type { PassRequest, Season } from '@/types/dashboard';
+import type { Question } from '@/types/questions';
 
 const Questions = React.lazy(() => import('./components/Questions'));
 
@@ -113,7 +115,7 @@ function Dashboard() {
   if (isQuestionsView && seasonId) {
     return (
       <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-8">Loading questions…</div>}>
-        <Questions seasonId={parseInt(seasonId)} isAdmin={isAdmin} csrfToken={csrfToken} />
+        <Questions seasonId={parseInt(seasonId)} isAdmin={isAdmin} csrfToken={csrfToken} initialQuestions={readPageData<Question[]>('questions-data')} />
       </Suspense>
     );
   }

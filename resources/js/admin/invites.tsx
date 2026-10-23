@@ -1,7 +1,7 @@
 import '../bootstrap';
 
 import { Archive, Pencil, Plus, RotateCcw } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import MainTitle from '@/components/MainTitle';
@@ -33,6 +33,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/dateHelpers';
+import { readPageData } from '@/lib/pageData';
 
 interface Season {
   id: number;
@@ -52,13 +53,22 @@ interface InviteCode {
   updated_at: string;
 }
 
-function AdminInvites() {
+interface AdminInvitesData {
+  inviteCodes: InviteCode[];
+  seasons: Season[];
+}
+
+interface AdminInvitesProps {
+  initialData: AdminInvitesData;
+}
+
+function AdminInvites({ initialData }: AdminInvitesProps) {
   const mount = document.getElementById('admin-invites');
   const csrfToken = mount?.getAttribute('data-csrf-token') || '';
   
-  const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([]);
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [inviteCodes, setInviteCodes] = useState<InviteCode[]>(initialData.inviteCodes);
+  const seasons = initialData.seasons;
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [includeArchived, setIncludeArchived] = useState(false);
   
@@ -75,10 +85,10 @@ function AdminInvites() {
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const fetchInviteCodes = async () => {
+  const fetchInviteCodes = async (archived = includeArchived) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/invites/list?include_archived=${includeArchived}`, {
+      const response = await fetch(`/api/admin/invites/list?include_archived=${archived}`, {
         headers: {
           'Accept': 'application/json',
         },
@@ -93,24 +103,6 @@ function AdminInvites() {
       setLoading(false);
     }
   };
-
-  const fetchSeasons = async () => {
-    try {
-      const response = await fetch('/api/admin/seasons/list', {
-        headers: { 'Accept': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to fetch seasons');
-      const data = await response.json();
-      setSeasons(data);
-    } catch (err) {
-      console.error('Error fetching seasons:', err);
-    }
-  };
-
-  useEffect(() => {
-    fetchInviteCodes();
-    fetchSeasons();
-  }, [includeArchived]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -288,7 +280,10 @@ function AdminInvites() {
           type="checkbox"
           id="includeArchived"
           checked={includeArchived}
-          onChange={(e) => setIncludeArchived(e.target.checked)}
+          onChange={(e) => {
+            setIncludeArchived(e.target.checked);
+            void fetchInviteCodes(e.target.checked);
+          }}
           className="h-4 w-4 rounded border-gray-300"
         />
         <label htmlFor="includeArchived" className="text-sm">
@@ -552,5 +547,5 @@ function AdminInvites() {
 
 const adminInvitesElement = document.getElementById('admin-invites');
 if (adminInvitesElement) {
-  createRoot(adminInvitesElement).render(<AdminInvites />);
+  createRoot(adminInvitesElement).render(<AdminInvites initialData={readPageData<AdminInvitesData>()} />);
 }

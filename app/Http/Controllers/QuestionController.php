@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Question;
 use App\Models\QuestionUpvote;
 use App\Models\Season;
+use App\Services\Questions\QuestionQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -37,21 +38,9 @@ class QuestionController extends Controller
     /**
      * Get all questions for a season.
      */
-    public function getQuestions(Season $season)
+    public function getQuestions(Request $request, Season $season, QuestionQuery $questions)
     {
-        $questions = $season->questions()
-            ->with(['user:id,first_name,last_name', 'answeredBy:id,first_name,last_name'])
-            ->withCount('upvotes')
-            ->orderBy('upvotes_count', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($question) {
-                $question->user_has_upvoted = $question->upvotes()->where('user_id', Auth::id())->exists();
-
-                return $question;
-            });
-
-        return response()->json($questions);
+        return response()->json($questions->dataForSeason($season, $request->user()));
     }
 
     /**

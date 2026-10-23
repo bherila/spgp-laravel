@@ -1,6 +1,6 @@
 import MDEditor from '@uiw/react-md-editor';
 import { ArrowLeft, CheckCircle2, Edit2, HelpCircle, MessageSquare, Send, ThumbsUp, Trash2 } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import MainTitle from '@/components/MainTitle';
 import { Button as ShadcnButton } from '@/components/ui/button';
@@ -14,36 +14,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface User {
-  id: number;
-  first_name: string | null;
-  last_name: string | null;
-  name: string;
-}
-
-interface Question {
-  id: number;
-  user_id: number;
-  user: User;
-  content: string;
-  answer: string | null;
-  answered_by: User | null;
-  answered_at: string | null;
-  created_at: string;
-  upvotes_count: number;
-  user_has_upvoted: boolean;
-}
+import type { Question } from '@/types/questions';
 
 interface QuestionsProps {
   seasonId: number;
   isAdmin: boolean;
   csrfToken: string;
+  initialQuestions: Question[];
 }
 
-export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsProps) {
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestions }: QuestionsProps) {
+  const [questions, setQuestions] = useState(initialQuestions);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAsking, setIsAsking] = useState(false);
   const [newQuestionContent, setNewQuestionContent] = useState('');
@@ -65,10 +47,6 @@ export default function Questions({ seasonId, isAdmin, csrfToken }: QuestionsPro
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchQuestions();
-  }, [seasonId]);
 
   const handleUpvote = async (question: Question) => {
     const url = `/api/questions/${question.id}/${question.user_has_upvoted ? 'unvote' : 'upvote'}`;
