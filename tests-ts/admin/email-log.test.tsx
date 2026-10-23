@@ -3,6 +3,8 @@ import React from 'react';
 
 import { EmailLogAdmin } from '@/admin/email-log';
 
+import { mockJsonResponse } from '../helpers/http';
+
 jest.mock('../../resources/js/bootstrap', () => ({}));
 
 const initialData = {
@@ -23,10 +25,7 @@ const initialData = {
 };
 
 beforeEach(() => {
-  globalThis.fetch = jest.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({ ...initialData, total: 75, page: 1 }),
-  });
+  globalThis.fetch = jest.fn().mockResolvedValue(mockJsonResponse({ ...initialData, total: 75, page: 1 }));
 });
 
 it('renders the embedded email page without fetching on mount or while typing', () => {

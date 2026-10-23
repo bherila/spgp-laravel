@@ -32,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { apiRequest } from '@/lib/apiClient';
 import { formatDateTime } from '@/lib/dateHelpers';
 import { readPageData } from '@/lib/pageData';
 
@@ -63,8 +64,6 @@ interface AdminInvitesProps {
 }
 
 function AdminInvites({ initialData }: AdminInvitesProps) {
-  const mount = document.getElementById('admin-invites');
-  const csrfToken = mount?.getAttribute('data-csrf-token') || '';
   
   const [inviteCodes, setInviteCodes] = useState<InviteCode[]>(initialData.inviteCodes);
   const seasons = initialData.seasons;
@@ -88,13 +87,10 @@ function AdminInvites({ initialData }: AdminInvitesProps) {
   const fetchInviteCodes = async (archived = includeArchived) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/invites/list?include_archived=${archived}`, {
-        headers: {
-          'Accept': 'application/json',
-        },
+      const data = await apiRequest<InviteCode[]>(`/api/admin/invites/list?include_archived=${archived}`, {
+        errorMessage: 'Failed to fetch invite codes',
       });
-      if (!response.ok) throw new Error('Failed to fetch invite codes');
-      const data = await response.json();
+
       setInviteCodes(data);
       setError(null);
     } catch (err) {
@@ -114,25 +110,16 @@ function AdminInvites({ initialData }: AdminInvitesProps) {
     setFormError(null);
     
     try {
-      const response = await fetch('/api/admin/invites', {
+      await apiRequest<void>('/api/admin/invites', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
+        json: {
           season_id: parseInt(formSeasonId, 10),
           invite_code: formInviteCode,
           max_number_of_uses: parseInt(formMaxUses, 10),
-        }),
+        },
+        errorMessage: 'Failed to create invite code',
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to create invite code');
-      }
-      
+
       setCreateModalOpen(false);
       setFormSeasonId('');
       setFormInviteCode('');
@@ -157,25 +144,16 @@ function AdminInvites({ initialData }: AdminInvitesProps) {
     setFormError(null);
     
     try {
-      const response = await fetch(`/api/admin/invites/${selectedCode.id}`, {
+      await apiRequest<void>(`/api/admin/invites/${selectedCode.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
+        json: {
           season_id: parseInt(formSeasonId, 10),
           invite_code: formInviteCode,
           max_number_of_uses: parseInt(formMaxUses, 10),
-        }),
+        },
+        errorMessage: 'Failed to update invite code',
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to update invite code');
-      }
-      
+
       setEditModalOpen(false);
       setSelectedCode(null);
       fetchInviteCodes();
@@ -193,19 +171,11 @@ function AdminInvites({ initialData }: AdminInvitesProps) {
     setFormError(null);
     
     try {
-      const response = await fetch(`/api/admin/invites/${selectedCode.id}`, {
+      await apiRequest<void>(`/api/admin/invites/${selectedCode.id}`, {
         method: 'DELETE',
-        headers: {
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        errorMessage: 'Failed to archive invite code',
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to archive invite code');
-      }
-      
+
       setArchiveModalOpen(false);
       setSelectedCode(null);
       fetchInviteCodes();
@@ -218,19 +188,11 @@ function AdminInvites({ initialData }: AdminInvitesProps) {
 
   const handleRestore = async (code: InviteCode) => {
     try {
-      const response = await fetch(`/api/admin/invites/${code.id}/restore`, {
+      await apiRequest<void>(`/api/admin/invites/${code.id}/restore`, {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        errorMessage: 'Failed to restore invite code',
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to restore invite code');
-      }
-      
+
       fetchInviteCodes();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

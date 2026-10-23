@@ -34,6 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { apiRequest } from '@/lib/apiClient';
 import { formatDateTime } from '@/lib/dateHelpers';
 import { readPageData } from '@/lib/pageData';
 
@@ -111,14 +112,11 @@ export function PassRequestForm() {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/pass-requests', {
+      await apiRequest('/api/pass-requests', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
+        csrfToken,
+        errorMessage: 'Failed to submit pass request',
+        json: {
           season_id: seasonId,
           season_pass_type_id: passTypeId,
           is_renewal: isRenewal,
@@ -128,13 +126,8 @@ export function PassRequestForm() {
           passholder_birth_date: dateOfBirth,
           renewal_pass_id: isRenewal ? renewalPassId : null,
           country,
-        }),
+        },
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to submit pass request');
-      }
 
       setSubmitting(false);
       window.location.href = '/dashboard';

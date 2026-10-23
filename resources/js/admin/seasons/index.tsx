@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/sonner';
+import { apiRequest } from '@/lib/apiClient';
 import { readPageData } from '@/lib/pageData';
 
 import { SeasonForm } from './SeasonForm';
@@ -44,11 +45,10 @@ function AdminSeasons({ initialSeasons }: AdminSeasonsProps) {
   const fetchSeasons = async (archived = includeArchived) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/seasons/list?include_archived=${archived}`, {
-        headers: { 'Accept': 'application/json' },
+      const data = await apiRequest<Season[]>(`/api/admin/seasons/list?include_archived=${archived}`, {
+        errorMessage: 'Failed to fetch seasons',
       });
-      if (!response.ok) throw new Error('Failed to fetch seasons');
-      const data = await response.json();
+
       setSeasons(data);
       setError(null);
     } catch (err) {
@@ -63,19 +63,12 @@ function AdminSeasons({ initialSeasons }: AdminSeasonsProps) {
     
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/admin/seasons/${selectedSeason.id}`, {
+      await apiRequest<void>(`/api/admin/seasons/${selectedSeason.id}`, {
         method: 'DELETE',
-        headers: {
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        csrfToken,
+        errorMessage: 'Failed to archive season',
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to archive season');
-      }
-      
+
       setArchiveModalOpen(false);
       setSelectedSeason(null);
       fetchSeasons();
@@ -88,19 +81,12 @@ function AdminSeasons({ initialSeasons }: AdminSeasonsProps) {
 
   const handleRestore = async (season: Season) => {
     try {
-      const response = await fetch(`/api/admin/seasons/${season.id}/restore`, {
+      await apiRequest<void>(`/api/admin/seasons/${season.id}/restore`, {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        csrfToken,
+        errorMessage: 'Failed to restore season',
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to restore season');
-      }
-      
+
       fetchSeasons();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

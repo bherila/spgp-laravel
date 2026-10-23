@@ -3,6 +3,8 @@ import { act, renderHook } from '@testing-library/react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import { readPageData } from '@/lib/pageData';
 
+import { mockJsonResponse, mockTextResponse } from './helpers/http';
+
 describe('embedded dashboard data', () => {
   beforeEach(() => {
     document.body.innerHTML = '<script id="dashboard-data" type="application/json">[{"id":1}]</script>';
@@ -23,13 +25,13 @@ describe('embedded dashboard data', () => {
 
   it('keeps the current data after a failed refresh and can recover', async () => {
     const fetchMock = jest.mocked(fetch);
-    fetchMock.mockResolvedValueOnce({ ok: false } as Response);
+    fetchMock.mockResolvedValueOnce(mockJsonResponse({}, 500));
     const { result } = renderHook(() => useDashboardData());
     await act(() => result.current.refresh());
     expect(result.current.seasons).toEqual([{ id: 1 }]);
     expect(result.current.error).toBe('Failed to refresh dashboard data');
 
-    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => [{ id: 2 }] } as Response);
+    fetchMock.mockResolvedValueOnce(mockJsonResponse([{ id: 2 }]));
     await act(() => result.current.refresh());
     expect(result.current.seasons).toEqual([{ id: 2 }]);
     expect(result.current.error).toBeNull();
@@ -40,5 +42,17 @@ describe('embedded dashboard data', () => {
     expect(() => readPageData('missing')).toThrow('Missing page data');
     document.getElementById('dashboard-data')!.textContent = '{broken';
     expect(() => readPageData('dashboard-data')).toThrow(SyntaxError);
+  });
+
+  it('preserves the dashboard list when a refresh has an empty successful response', async () => {
+    jest.mocked(fetch).mockResolvedValue(mockTextResponse(''));
+    const { result } = renderHook(() => useDashboardData());
+
+    await act(() => result.current.refresh());
+
+    expect(result.current.seasons).toEqual([{ id: 1 }]);
+    expect(result.current.error).toMatch(/unexpected response/i);
+    expect(result.current.loading).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

@@ -156,6 +156,10 @@ Blade shells embed the data needed for the first render with `<x-page-data :data
 
 Page controllers and refresh endpoints reuse the same queries or services. Initialize React state from the embedded payload and reserve AJAX for user actions, filter changes, pagination, and refreshes after mutations. Keep paginated data bounded and load Q&A details only on the selected season's Q&A page.
 
+Use `apiRequest<T>()` from `@/lib/apiClient` for application AJAX calls. It sends JSON and same-origin session credentials, attaches CSRF tokens to mutations, and throws `ApiError` with HTTP status and Laravel validation errors. Pass request payloads through `json`, or use `body` for `FormData`; file uploads keep the browser's multipart boundary. Mutations that require a response payload should set `allowEmpty: false`. Requests are never retried automatically; uncertain mutation results ask users to check the outcome before submitting again. Authentication components retain their package-provided client.
+
+Q&A renders Markdown separately from its editor. The editor loads only when an Ask, Edit, or Answer dialog opens; a controlled textarea keeps the draft editable while the editor loads or if its chunk cannot load.
+
 ## Date Handling
 
 All dates are stored as **UTC**. The `SerializesDatesAsLocal` trait serializes every model date as an ISO 8601 string with timezone offset so the browser can convert to local time automatically.

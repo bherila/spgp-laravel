@@ -25,6 +25,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { apiRequest } from '@/lib/apiClient';
 
 import type { Season, SeasonPassType } from './types';
 import { formatDateTimeLocal, toIsoString } from './utils';
@@ -78,11 +79,10 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
     if (!season) return;
     try {
       setLoadingPassTypes(true);
-      const response = await fetch(`/api/admin/seasons/${season.id}/pass-types`, {
-        headers: { 'Accept': 'application/json' },
+      const data = await apiRequest<SeasonPassType[]>(`/api/admin/seasons/${season.id}/pass-types`, {
+        errorMessage: 'Failed to fetch pass types',
       });
-      if (!response.ok) throw new Error('Failed to fetch pass types');
-      const data = await response.json();
+
       setPassTypes(data);
     } catch (err) {
       console.error(err);
@@ -124,14 +124,9 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
       const url = season ? `/api/admin/seasons/${season.id}` : '/api/admin/seasons';
       const method = season ? 'PUT' : 'POST';
       
-      const response = await fetch(url, {
+      await apiRequest<void>(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
+        json: {
           pass_name: passName,
           pass_year: parseInt(passYear, 10),
           start_date: toIsoString(startDate),
@@ -139,14 +134,11 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
           final_deadline: toIsoString(finalDeadline),
           spreadsheet_url: spreadsheetUrl || null,
           allow_renewals: allowRenewals,
-        }),
+        },
+        csrfToken,
+        errorMessage: `Failed to ${season ? 'update' : 'create'} season`,
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || `Failed to ${season ? 'update' : 'create'} season`);
-      }
-      
+
       toast.success(`Season ${season ? 'updated' : 'created'} successfully`);
       if (!season) {
          onOpenChange(false);
@@ -188,14 +180,9 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
       
       const method = editingPt ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
+      await apiRequest<void>(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({
+        json: {
           pass_type_name: formTypeName,
           regular_early_price: parsePrice(formRegularEarlyPrice),
           regular_regular_price: parsePrice(formRegularRegularPrice),
@@ -204,13 +191,10 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
           group_early_price: parsePrice(formGroupEarlyPrice),
           group_regular_price: parsePrice(formGroupRegularPrice),
           sort_order: parseInt(formSortOrder, 10),
-        }),
+        },
+        csrfToken,
+        errorMessage: 'Failed to save pass type',
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to save pass type');
-      }
 
       toast.success(`Pass type ${editingPt ? 'updated' : 'added'} successfully`);
       setPtFormOpen(false);
@@ -227,18 +211,11 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
     if (!confirm('Are you sure you want to delete this pass type?')) return;
 
     try {
-      const response = await fetch(`/api/admin/pass-types/${id}`, {
+      await apiRequest<void>(`/api/admin/pass-types/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        csrfToken,
+        errorMessage: 'Failed to delete pass type',
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to delete pass type');
-      }
 
       toast.success('Pass type deleted');
       fetchPassTypes();

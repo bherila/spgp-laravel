@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { apiRequest } from '@/lib/apiClient';
 import { formatDateTime } from '@/lib/dateHelpers';
 import { readPageData } from '@/lib/pageData';
 
@@ -70,14 +71,10 @@ export function EmailLogAdmin({ initialData }: EmailLogAdminProps) {
       if (filters.to) params.append('to', filters.to);
       if (filters.body) params.append('body', filters.body);
 
-      const response = await fetch(`/api/admin/email-log/list?${params.toString()}`, {
-        headers: { 'Accept': 'application/json' },
+      const data = await apiRequest<EmailLogData>(`/api/admin/email-log/list?${params.toString()}`, {
+        errorMessage: 'Failed to fetch data',
       });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch data');
-      }
-      const data = await response.json();
+
       setEmailLogs(data.emailLogs);
       setTotal(data.total);
       setPage(data.page);

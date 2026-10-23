@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { apiRequest } from '@/lib/apiClient';
 
 interface MissingCountryModalProps {
   open: boolean;
@@ -38,21 +39,12 @@ export function MissingCountryModal({ open, csrfToken, onSuccess }: MissingCount
     setError(null);
 
     try {
-      const response = await fetch('/api/pass-requests/update-country', {
+      await apiRequest('/api/pass-requests/update-country', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({ country }),
+        csrfToken,
+        json: { country },
+        errorMessage: 'Failed to update country',
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to update country');
-      }
 
       onSuccess();
     } catch (err) {

@@ -42,6 +42,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { apiRequest } from '@/lib/apiClient';
 import { formatDateTime, getCountdown, THREE_DAYS_MS } from '@/lib/dateHelpers';
 import { readPageData } from '@/lib/pageData';
 import type { PassRequest, Season } from '@/types/dashboard';
@@ -132,20 +133,12 @@ function Dashboard() {
 
     setRenewalSubmitting(true);
     try {
-      const response = await fetch(`/api/pass-requests/${renewalRequest.id}/renewal-order`, {
+      await apiRequest(`/api/pass-requests/${renewalRequest.id}/renewal-order`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({ renewal_order_number: renewalOrderNumber }),
+        csrfToken,
+        json: { renewal_order_number: renewalOrderNumber },
+        errorMessage: 'Failed to update renewal order',
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to update renewal order');
-      }
 
       setRenewalModalOpen(false);
       setRenewalRequest(null);
@@ -160,18 +153,11 @@ function Dashboard() {
 
   const handleRemoveRenewal = async (requestId: string) => {
     try {
-      const response = await fetch(`/api/pass-requests/${requestId}/renewal-order`, {
+      await apiRequest(`/api/pass-requests/${requestId}/renewal-order`, {
         method: 'DELETE',
-        headers: { 
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        csrfToken,
+        errorMessage: 'Failed to remove renewal order',
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to remove renewal order');
-      }
 
       fetchPassRequests();
     } catch (err) {
@@ -181,18 +167,11 @@ function Dashboard() {
 
   const handleCancelRequest = async (requestId: string) => {
     try {
-      const response = await fetch(`/api/pass-requests/${requestId}`, {
+      await apiRequest(`/api/pass-requests/${requestId}`, {
         method: 'DELETE',
-        headers: { 
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        csrfToken,
+        errorMessage: 'Failed to cancel pass request',
       });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to cancel pass request');
-      }
 
       setCancelConfirmId(null);
       fetchPassRequests();
@@ -218,21 +197,13 @@ function Dashboard() {
     setRedeemSuccess(null);
 
     try {
-      const response = await fetch('/api/dashboard/redeem-invite', {
+      const data = await apiRequest<{ message: string }>('/api/dashboard/redeem-invite', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify({ invite_code: inviteCode }),
+        allowEmpty: false,
+        csrfToken,
+        json: { invite_code: inviteCode },
+        errorMessage: 'Failed to redeem invite code',
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to redeem invite code');
-      }
 
       setRedeemSuccess(data.message);
       setInviteCode('');

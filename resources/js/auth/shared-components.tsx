@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+export { getCsrfToken } from '@/lib/apiClient';
+
 export function getAuthComponents() {
   return {
     Button,
@@ -16,8 +18,4 @@ export function getAuthComponents() {
     Input,
     Label,
   } satisfies AuthComponentInput;
-}
-
-export function getCsrfToken() {
-  return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 }
