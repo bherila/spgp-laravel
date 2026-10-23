@@ -93,4 +93,9 @@ class PageDataTest extends TestCase
         $this->assertSame($refresh, $questions);
         $this->assertSame([$question->id], array_column($questions, 'id'));
     }
+
+    public function test_invalid_question_season_returns_not_found_before_building_page_data(): void
+    {
+        $this->actingAs(User::factory()->create())->get('/season/0/questions')->assertNotFound();
+    }
 }

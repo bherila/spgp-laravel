@@ -21,7 +21,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        if ($seasonId) {
+        if ($seasonId !== null) {
             $season = Season::findOrFail($seasonId);
 
             if (! $user->isAdmin()) {
