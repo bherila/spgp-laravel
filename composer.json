@@ -6,10 +6,11 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "bherila/auth-laravel": "^0.25.0",
         "erusev/parsedown": "^1.7",
         "laravel/framework": "^13.0",
+        "laravel/mcp": "^1.1",
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.0",
         "sentry/sentry-laravel": "^4.23",
@@ -84,7 +85,7 @@
     },
     "config": {
         "platform": {
-            "php": "8.4.0"
+            "php": "8.5.0"
         },
         "optimize-autoloader": true,
         "preferred-install": "dist",

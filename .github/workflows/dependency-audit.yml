@@ -1,0 +1,87 @@
+name: Dependency audit
+
+on:
+  schedule:
+    - cron: '23 7 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  composer:
+    name: Audit Composer lockfile
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+          tools: composer:v2
+
+      - name: Audit all Composer dependencies
+        shell: bash
+        run: composer audit --locked --format=json | tee composer-audit.json
+
+      - name: Upload Composer audit report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: composer-audit
+          path: composer-audit.json
+          retention-days: 30
+          if-no-files-found: warn
+
+  javascript:
+    name: Audit pnpm lockfile
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      # pnpm audits the lockfile without installing dependencies or running scripts.
+      # Keep this check: GitHub's dependency graph does not yet read pnpm 12's
+      # two-document lockfiles, even though Dependabot version updates support them.
+      - name: Report all JavaScript advisories
+        run: |
+          audit_status=0
+          pnpm audit --json --audit-level=low > pnpm-audit.json || audit_status=$?
+          jq -e '(.advisories | type == "object") and (.metadata.vulnerabilities | type == "object") and (has("error") | not)' pnpm-audit.json > /dev/null
+          jq '{advisories: [.advisories[] | {package: .module_name, severity, advisory: .github_advisory_id, fix: .patched_versions, url}], vulnerabilities: .metadata.vulnerabilities}' pnpm-audit.json
+          if [[ "$audit_status" -ne 0 ]]; then
+            test "$audit_status" -eq 1
+            jq -e '.advisories | length > 0' pnpm-audit.json > /dev/null
+            echo '::warning::JavaScript advisories found. See the full audit artifact; production advisories and high/critical development advisories fail the next check.'
+          fi
+
+      - name: Enforce JavaScript audit thresholds
+        run: |
+          # Moderate development advisories remain visible above, including
+          # GHSA-hp3w-g68c-fv3c in Jest's sprintf-js (no published fix).
+          pnpm audit --prod --audit-level=low
+          pnpm audit --audit-level=high
+
+      - name: Upload full JavaScript audit report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pnpm-audit
+          path: pnpm-audit.json
+          retention-days: 30
+          if-no-files-found: warn

@@ -18,7 +18,7 @@ A specialized Laravel application for coordinating group purchases of ski passes
 
 ## Tech Stack
 
-- **Backend**: Laravel 13 (PHP 8.2+)
+- **Backend**: Laravel 13 (PHP 8.5+)
 - **Frontend**: React 19 with TypeScript
 - **UI Components**: shadcn/ui + Radix UI primitives
 - **Styling**: Tailwind CSS v4
@@ -30,9 +30,9 @@ A specialized Laravel application for coordinating group purchases of ski passes
 
 ### Prerequisites
 
-- PHP 8.2 or higher
+- PHP 8.5 or higher
 - Composer
-- Node.js 18+ and pnpm
+- Node.js 24 and the pnpm version pinned in `package.json`
 - MySQL or SQLite
 
 ### Installation

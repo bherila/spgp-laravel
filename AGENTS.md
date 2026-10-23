@@ -10,7 +10,7 @@ Work efficiently: inspect sibling files first, parallelize independent reads/che
 
 ## Project shape
 
-- **Backend**: Laravel 13, PHP 8.2+ runtime target, MySQL in production, SQLite in-memory for tests.
+- **Backend**: Laravel 13, PHP 8.5+ runtime target, MySQL in production, SQLite in-memory for tests.
 - **Frontend**: React 19 + TypeScript, Vite, Tailwind CSS v4, shadcn/Radix-style components.
 - **Auth**: `bherila/auth-laravel`; follow existing middleware/user conventions.
 - **Integrations**: Sentry, CSP, Brevo/Symfony mailer, file/storage services where present.
