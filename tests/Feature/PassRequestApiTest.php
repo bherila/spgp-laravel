@@ -145,6 +145,28 @@ class PassRequestApiTest extends TestCase
         $this->assertSame($owner->id, $own->fresh()->user_id);
     }
 
+    #[DataProvider('renewalUpdateSurfaces')]
+    public function test_generic_renewal_updates_set_and_clear_the_reporting_date(bool $administration): void
+    {
+        $owner = $this->boundUser();
+        $actor = $administration ? $this->boundUser(true) : $owner;
+        $record = $this->record($owner);
+        $path = '/api/v1/'.($administration ? 'admin/' : '').'pass-requests/'.$record->id;
+        $scope = ($administration ? 'admin:' : '').'pass-requests:write';
+        $headers = $this->bearer($actor, [$scope]);
+
+        $this->patchJson($path, ['renewal_order_number' => 'REST-ORDER'], $headers)
+            ->assertOk()->assertJsonPath('data.renewal_order_number', 'REST-ORDER');
+        $this->assertSame(now()->toDateString(), $record->fresh()->assign_code_date?->toDateString());
+        $this->patchJson($path, ['renewal_order_number' => null], $headers)
+            ->assertOk()->assertJsonPath('data.renewal_order_number', null)->assertJsonPath('data.assign_code_date', null);
+    }
+
+    public static function renewalUpdateSurfaces(): array
+    {
+        return ['user endpoint' => [false], 'administrator endpoint' => [true]];
+    }
+
     public function test_admin_action_season_route_cannot_be_overridden_by_the_body(): void
     {
         $owner = $this->boundUser();

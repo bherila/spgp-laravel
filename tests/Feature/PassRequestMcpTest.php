@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\PromoCodeRepository;
 use App\Models\SeasonPassType;
 use App\Models\User;
 use App\Services\PassRequests\UserPassRequestService;
@@ -92,6 +93,46 @@ class PassRequestMcpTest extends TestCase
         $this->rpc('/mcp/user', 'tools/call', ['name' => 'create_pass_request', 'arguments' => $input])
             ->assertOk()->assertJsonPath('result.isError', true);
         $this->assertDatabaseCount('pass_requests', 0);
+    }
+
+    public function test_automatic_assignment_advertises_its_bulk_mutation_and_assigns_codes(): void
+    {
+        $owner = User::factory()->create();
+        $record = app(UserPassRequestService::class)->create($owner, $this->input());
+        PromoCodeRepository::create([
+            'promo_code' => 'MCP-AUTO', 'season_id' => $record->season_id,
+            'start_date' => now()->toDateString(), 'expiration_date' => now()->addYear()->toDateString(),
+            'country' => 'USA', 'is_suspended' => false,
+        ]);
+        $this->principal(['admin:pass-requests:write'], true);
+        $tools = $this->rpc('/mcp/admin', 'tools/list')->assertOk()->json('result.tools');
+        $tool = collect($tools)->firstWhere('name', 'auto_assign_promo_codes');
+        $this->assertFalse($tool['annotations']['readOnlyHint']);
+        $this->assertTrue($tool['annotations']['destructiveHint']);
+
+        $this->rpc('/mcp/admin', 'tools/call', [
+            'name' => 'auto_assign_promo_codes', 'arguments' => ['season_id' => $record->season_id],
+        ])->assertOk()->assertJsonPath('result.structuredContent.assigned', 1);
+        $this->assertSame('MCP-AUTO', $record->fresh()->promo_code);
+        $this->assertNotNull($record->fresh()->assign_code_date);
+    }
+
+    public function test_generic_renewal_tool_edits_keep_reporting_dates_consistent(): void
+    {
+        $owner = $this->principal(['pass-requests:write']);
+        $record = app(UserPassRequestService::class)->create($owner, $this->input());
+
+        $this->rpc('/mcp/user', 'tools/call', [
+            'name' => 'update_pass_request',
+            'arguments' => ['id' => $record->id, 'renewal_order_number' => 'MCP-ORDER'],
+        ])->assertOk()->assertJsonPath('result.structuredContent.data.renewal_order_number', 'MCP-ORDER');
+        $this->assertSame(now()->toDateString(), $record->fresh()->assign_code_date?->toDateString());
+
+        $this->rpc('/mcp/user', 'tools/call', [
+            'name' => 'update_pass_request',
+            'arguments' => ['id' => $record->id, 'renewal_order_number' => null],
+        ])->assertOk()->assertJsonPath('result.structuredContent.data.renewal_order_number', null)
+            ->assertJsonPath('result.structuredContent.data.assign_code_date', null);
     }
 
     public function test_user_tools_do_not_allow_an_admin_to_change_another_users_request(): void

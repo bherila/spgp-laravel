@@ -38,7 +38,7 @@ class PassRequestTool extends Tool
     {
         return [
             'readOnlyHint' => str_ends_with(PassRequestOperations::scope($this->operation, $this->admin), ':read'),
-            'destructiveHint' => in_array($this->operation, ['update_pass_request', 'cancel_pass_request', 'delete_pass_request', 'bulk_delete_pass_requests', 'assign_promo_codes', 'clear_promo_codes', 'set_renewal_order', 'remove_renewal_order', 'set_missing_country', 'send_pass_code_emails'], true),
+            'destructiveHint' => in_array($this->operation, ['update_pass_request', 'cancel_pass_request', 'delete_pass_request', 'bulk_delete_pass_requests', 'assign_promo_codes', 'auto_assign_promo_codes', 'clear_promo_codes', 'set_renewal_order', 'remove_renewal_order', 'set_missing_country', 'send_pass_code_emails'], true),
             'idempotentHint' => in_array($this->operation, ['list_pass_requests', 'get_pass_request', 'list_seasons', 'list_pass_types', 'update_pass_request', 'clear_promo_codes', 'remove_renewal_order'], true),
             'openWorldHint' => $this->operation === 'send_pass_code_emails',
         ];

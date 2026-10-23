@@ -94,7 +94,7 @@ Create payload:
 }
 ```
 
-`renewal_pass_id` is optional. Updates support the four `passholder_*` fields above and nullable `renewal_order_number`. Ownership, season, promo code, admin status and notification/redemption state cannot be set through user payloads. The pass type must belong to the selected season. Duplicate passholder identity within a season returns 422. Existing assignment/notification rules apply to every transport.
+`renewal_pass_id` is optional. Updates support the four `passholder_*` fields above and nullable `renewal_order_number`. Setting or changing the renewal order records its reporting date; clearing it also clears that date. Repeating the same order or editing other details preserves its existing reporting date. Ownership, season, promo code, admin status and notification/redemption state cannot be set through user payloads. The pass type must belong to the selected season. Duplicate passholder identity within a season returns 422. Existing assignment/notification rules apply to every transport.
 
 | Method | Administrator path | Action |
 | --- | --- | --- |

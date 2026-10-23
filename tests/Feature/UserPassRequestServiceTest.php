@@ -98,6 +98,95 @@ class UserPassRequestServiceTest extends TestCase
         $this->service()->create($actor, [...$input, 'passholder_birth_date' => '1990-01-01T00:00:00+00:00']);
     }
 
+    #[DataProvider('genericRenewalOrderTransitions')]
+    public function test_generic_renewal_order_edits_keep_the_reporting_date_in_sync(
+        bool $administrative,
+        ?string $originalNumber,
+        ?string $originalDate,
+        array $changes,
+        ?string $expectedNumber,
+        ?string $expectedDate,
+    ): void {
+        $this->travelTo(now()->setDate(2026, 10, 23)->setTime(12, 0));
+        $owner = User::factory()->create();
+        $actor = $administrative ? User::factory()->admin()->create() : $owner;
+        $record = $this->service()->create($owner, $this->input());
+        $record->update(['renewal_order_number' => $originalNumber, 'assign_code_date' => $originalDate]);
+
+        $updated = $administrative
+            ? $this->service()->updateForAdministration($actor, $record->id, $changes)
+            : $this->service()->update($actor, $record->id, $changes);
+
+        $this->assertSame($expectedNumber, $updated->renewal_order_number);
+        $this->assertSame($expectedDate, $updated->assign_code_date?->toDateString());
+        $this->assertSame($expectedNumber, $record->fresh()->renewal_order_number);
+        $this->assertSame($expectedDate, $record->fresh()->assign_code_date?->toDateString());
+    }
+
+    public static function genericRenewalOrderTransitions(): array
+    {
+        $transitions = [
+            'set' => [null, null, ['renewal_order_number' => 'ORDER-123'], 'ORDER-123', '2026-10-23'],
+            'replace' => ['ORDER-123', '2026-10-20', ['renewal_order_number' => 'ORDER-456'], 'ORDER-456', '2026-10-23'],
+            'clear' => ['ORDER-123', '2026-10-20', ['renewal_order_number' => null], null, null],
+            'empty string clears' => ['ORDER-123', '2026-10-20', ['renewal_order_number' => ''], null, null],
+            'unchanged' => ['ORDER-123', '2026-10-20', ['renewal_order_number' => 'ORDER-123'], 'ORDER-123', '2026-10-20'],
+            'backfill missing date' => ['ORDER-123', null, ['renewal_order_number' => 'ORDER-123'], 'ORDER-123', '2026-10-23'],
+            'profile only' => ['ORDER-123', '2026-10-20', ['passholder_first_name' => 'Updated'], 'ORDER-123', '2026-10-20'],
+            'profile preserves assigned code date' => [null, '2026-10-20', ['passholder_first_name' => 'Updated'], null, '2026-10-20'],
+            'unchanged null preserves assigned code date' => [null, '2026-10-20', ['renewal_order_number' => null], null, '2026-10-20'],
+        ];
+        $cases = [];
+        foreach ([false, true] as $administrative) {
+            foreach ($transitions as $name => $transition) {
+                $cases[($administrative ? 'admin ' : 'owner ').$name] = [$administrative, ...$transition];
+            }
+        }
+
+        return $cases;
+    }
+
+    public function test_dedicated_renewal_order_actions_share_the_reporting_date_transition_rules(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 20)->setTime(12, 0));
+        $actor = User::factory()->create();
+        $record = $this->service()->create($actor, $this->input());
+
+        $this->service()->setRenewalOrder($actor, $record->id, ['renewal_order_number' => 'ORDER-123']);
+        $this->assertSame('2026-10-20', $record->fresh()->assign_code_date->toDateString());
+        $this->travelTo(now()->setDate(2026, 10, 23)->setTime(12, 0));
+        $this->service()->setRenewalOrder($actor, $record->id, ['renewal_order_number' => 'ORDER-123']);
+        $this->assertSame('2026-10-20', $record->fresh()->assign_code_date->toDateString());
+
+        $this->service()->setRenewalOrder($actor, $record->id, ['renewal_order_number' => 'ORDER-456']);
+        $this->assertSame('ORDER-456', $record->fresh()->renewal_order_number);
+        $this->assertSame('2026-10-23', $record->fresh()->assign_code_date->toDateString());
+        $record->refresh()->update(['assign_code_date' => null]);
+        $this->service()->setRenewalOrder($actor, $record->id, ['renewal_order_number' => 'ORDER-456']);
+        $this->assertSame('2026-10-23', $record->fresh()->assign_code_date->toDateString());
+
+        $this->service()->removeRenewalOrder($actor, $record->id);
+        $this->assertNull($record->fresh()->renewal_order_number);
+        $this->assertNull($record->fresh()->assign_code_date);
+    }
+
+    public function test_clearing_an_absent_renewal_order_preserves_the_promo_code_assignment_date(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 23)->setTime(12, 0));
+        $actor = User::factory()->create();
+        $record = $this->service()->create($actor, $this->input());
+        $record->update(['promo_code' => 'ASSIGNED', 'assign_code_date' => '2026-10-20']);
+
+        $this->service()->update($actor, $record->id, ['renewal_order_number' => null, 'passholder_first_name' => 'Updated']);
+        $this->assertSame('2026-10-20', $record->fresh()->assign_code_date->toDateString());
+        $this->service()->removeRenewalOrder($actor, $record->id);
+        $record->refresh();
+
+        $this->assertNull($record->renewal_order_number);
+        $this->assertSame('ASSIGNED', $record->promo_code);
+        $this->assertSame('2026-10-20', $record->assign_code_date->toDateString());
+    }
+
     #[DataProvider('ownerOnlyOperations')]
     public function test_administrators_cannot_access_other_users_requests_through_user_operations(string $operation): void
     {

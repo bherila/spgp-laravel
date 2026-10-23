@@ -152,10 +152,7 @@ class UserPassRequestService
             'renewal_order_number' => ['required', 'string', 'max:30'],
         ])->validate();
 
-        $passRequest->update([
-            'renewal_order_number' => $validated['renewal_order_number'],
-            'assign_code_date' => now(),
-        ]);
+        $passRequest->update($this->renewalOrderAttributes($passRequest, $validated['renewal_order_number']));
 
         return $passRequest;
     }
@@ -164,7 +161,7 @@ class UserPassRequestService
     {
         $passRequest = PassRequest::findOrFail($id);
         $this->authorizeOwner($actor, $passRequest);
-        $passRequest->update(['renewal_order_number' => null, 'assign_code_date' => null]);
+        $passRequest->update($this->renewalOrderAttributes($passRequest, null));
 
         return $passRequest;
     }
@@ -241,10 +238,33 @@ class UserPassRequestService
                 ...$validated,
             ];
             $this->ensureUniqueIdentity($actor, $identity, $passRequest->id);
+
+            if (array_key_exists('renewal_order_number', $validated)) {
+                $validated = array_replace($validated, $this->renewalOrderAttributes($passRequest, $validated['renewal_order_number']));
+            }
+
             $passRequest->update($validated);
 
             return $passRequest;
         });
+    }
+
+    private function renewalOrderAttributes(PassRequest $passRequest, ?string $number): array
+    {
+        $number = $number === '' ? null : $number;
+
+        if ($number === null && $passRequest->renewal_order_number === null) {
+            return ['renewal_order_number' => null];
+        }
+
+        return [
+            'renewal_order_number' => $number,
+            'assign_code_date' => $number === null ? null : (
+                $number === $passRequest->renewal_order_number && $passRequest->assign_code_date !== null
+                    ? $passRequest->assign_code_date
+                    : now()
+            ),
+        ];
     }
 
     private function ensureUniqueIdentity(User $actor, array $identity, ?string $exceptId = null): void
