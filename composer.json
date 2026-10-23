@@ -7,7 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.5",
-        "bherila/auth-laravel": "^0.25.0",
+        "bherila/auth-laravel": "^0.26.0",
         "erusev/parsedown": "^1.7",
         "laravel/framework": "^13.0",
         "laravel/mcp": "^1.1",
