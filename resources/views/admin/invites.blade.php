@@ -4,7 +4,7 @@
 
 @section('content')
   <x-page-data :data="$pageData" />
-  <div id="admin-invites" data-csrf-token="{{ csrf_token() }}"></div>
+  <div id="admin-invites"></div>
 @endsection
 
 @push('scripts')

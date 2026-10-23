@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { apiRequest } from '@/lib/apiClient';
 import { formatDateTime } from '@/lib/dateHelpers';
 import { readPageData } from '@/lib/pageData';
 
@@ -46,13 +47,16 @@ interface User {
   updated_at: string;
 }
 
+interface ImpersonationResponse {
+  redirect?: string;
+}
+
 interface AdminUsersProps {
   initialUsers: User[];
 }
 
-function AdminUsers({ initialUsers }: AdminUsersProps) {
+export function AdminUsers({ initialUsers }: AdminUsersProps) {
   const mount = document.getElementById('admin-users');
-  const csrfToken = mount?.getAttribute('data-csrf-token') || '';
   const currentUserId = parseInt(mount?.getAttribute('data-current-user-id') || '0', 10);
   
   const [users, setUsers] = useState<User[]>(initialUsers);
@@ -77,11 +81,10 @@ function AdminUsers({ initialUsers }: AdminUsersProps) {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/users/list', {
-        headers: { 'Accept': 'application/json' },
+      const data = await apiRequest<User[]>('/api/admin/users/list', {
+        errorMessage: 'Failed to fetch users',
       });
-      if (!response.ok) throw new Error('Failed to fetch users');
-      const data = await response.json();
+
       setUsers(data);
       setError(null);
     } catch (err) {
@@ -138,21 +141,12 @@ function AdminUsers({ initialUsers }: AdminUsersProps) {
         body.password = formPassword;
       }
       
-      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+      await apiRequest<void>(`/api/admin/users/${selectedUser.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
-        body: JSON.stringify(body),
+        json: body,
+        errorMessage: 'Failed to update user',
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to update user');
-      }
-      
+
       setEditModalOpen(false);
       setSelectedUser(null);
       fetchUsers();
@@ -169,19 +163,11 @@ function AdminUsers({ initialUsers }: AdminUsersProps) {
     setFormSubmitting(true);
     
     try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+      await apiRequest<void>(`/api/admin/users/${selectedUser.id}`, {
         method: 'DELETE',
-        headers: {
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        errorMessage: 'Failed to delete user',
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to delete user');
-      }
-      
+
       setDeleteModalOpen(false);
       setSelectedUser(null);
       fetchUsers();
@@ -215,18 +201,11 @@ function AdminUsers({ initialUsers }: AdminUsersProps) {
     }
 
     try {
-      const response = await fetch(`/api/admin/users/${user.id}/impersonate`, {
+      const data = await apiRequest<ImpersonationResponse>(`/api/admin/users/${user.id}/impersonate`, {
         method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-        },
+        allowEmpty: false,
+        errorMessage: 'Failed to impersonate user',
       });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to impersonate user');
-      }
 
       // Redirect to dashboard as the impersonated user
       window.location.href = data.redirect || '/dashboard';
@@ -328,6 +307,7 @@ function AdminUsers({ initialUsers }: AdminUsersProps) {
                           variant="outline"
                           size="sm"
                           onClick={() => openEditModal(user)}
+                          aria-label={`Edit ${user.email}`}
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
@@ -345,6 +325,7 @@ function AdminUsers({ initialUsers }: AdminUsersProps) {
                               variant="outline"
                               size="sm"
                               onClick={() => openDeleteModal(user)}
+                              aria-label={`Delete ${user.email}`}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>

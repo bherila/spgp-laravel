@@ -1,5 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 
+import { mockJsonResponse } from '../helpers/http';
+
 jest.mock('@/bootstrap', () => ({}));
 
 function setupPage(mountId: string, data: unknown) {
@@ -43,10 +45,7 @@ it('shows embedded requests and fetches once when the recent filter changes', as
 
   expect(screen.getByRole('button', { name: 'Auto Assign from Repository' })).toBeDisabled();
   expect(globalThis.fetch).not.toHaveBeenCalled();
-  (globalThis.fetch as jest.Mock).mockResolvedValue({
-    ok: true,
-    json: async () => ({ season: { id: 1 }, pass_requests: [], repo_count: 2 }),
-  });
+  (globalThis.fetch as jest.Mock).mockResolvedValue(mockJsonResponse({ season: { id: 1 }, pass_requests: [], repo_count: 2 }));
   await act(async () => {
     fireEvent.click(screen.getByLabelText('Show Recently Assigned Only'));
   });

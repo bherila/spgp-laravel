@@ -1,3 +1,5 @@
+import { apiRequest } from '@/lib/apiClient';
+
 export interface PassRequestUser {
   id: number;
   name: string;
@@ -42,110 +44,73 @@ export interface PassRequestsListResponse {
   repo_count: number;
 }
 
-export async function fetchPassRequests(
+export function fetchPassRequests(
   seasonId: string,
   showRecentOnly: boolean,
 ): Promise<PassRequestsListResponse> {
   const params = new URLSearchParams();
   if (showRecentOnly) params.set('recent_only', 'true');
-  const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/list?${params}`, {
-    headers: { Accept: 'application/json' },
+  return apiRequest<PassRequestsListResponse>(`/api/admin/seasons/${seasonId}/pass-requests/list?${params}`, {
+    errorMessage: 'Failed to fetch data',
   });
-  if (!response.ok) throw new Error('Failed to fetch data');
-  return response.json() as Promise<PassRequestsListResponse>;
 }
 
-export async function assignCodes(
+export function assignCodes(
   seasonId: string,
   passRequestIds: string[],
   codes: string,
   csrfToken: string,
 ): Promise<{ message: string }> {
-  const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/assign-codes`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'X-CSRF-TOKEN': csrfToken,
-    },
-    body: JSON.stringify({ pass_request_ids: passRequestIds, codes }),
+  return apiRequest(`/api/admin/seasons/${seasonId}/pass-requests/assign-codes`, {
+    method: 'POST', csrfToken, allowEmpty: false,
+    json: { pass_request_ids: passRequestIds, codes },
+    errorMessage: 'Failed to assign codes',
   });
-  const data = (await response.json()) as { message?: string };
-  if (!response.ok) throw new Error(data.message ?? 'Failed to assign codes');
-  return data as { message: string };
 }
 
-export async function clearCodes(
+export function clearCodes(
   seasonId: string,
   passRequestIds: string[],
   csrfToken: string,
 ): Promise<{ message: string }> {
-  const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/clear-codes`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'X-CSRF-TOKEN': csrfToken,
-    },
-    body: JSON.stringify({ pass_request_ids: passRequestIds }),
+  return apiRequest(`/api/admin/seasons/${seasonId}/pass-requests/clear-codes`, {
+    method: 'POST', csrfToken, allowEmpty: false,
+    json: { pass_request_ids: passRequestIds },
+    errorMessage: 'Failed to unassign codes',
   });
-  const data = (await response.json()) as { message?: string };
-  if (!response.ok) throw new Error(data.message ?? 'Failed to unassign codes');
-  return data as { message: string };
 }
 
-export async function sendEmail(
+export function sendEmail(
   seasonId: string,
   passRequestId: string,
   forceSend: boolean,
   csrfToken: string,
 ): Promise<{ sent?: number }> {
-  const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/send-emails`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'X-CSRF-TOKEN': csrfToken,
-    },
-    body: JSON.stringify({ pass_request_ids: [passRequestId], force_send: forceSend }),
+  return apiRequest(`/api/admin/seasons/${seasonId}/pass-requests/send-emails`, {
+    method: 'POST', csrfToken, allowEmpty: false,
+    json: { pass_request_ids: [passRequestId], force_send: forceSend },
+    errorMessage: 'Failed to send email',
   });
-  if (!response.ok) throw new Error('Failed to send email');
-  return response.json() as Promise<{ sent?: number }>;
 }
 
-export async function autoAssign(
+export function autoAssign(
   seasonId: string,
   csrfToken: string,
 ): Promise<{ message: string }> {
-  const response = await fetch(`/api/admin/seasons/${seasonId}/promo-codes/auto-assign`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'X-CSRF-TOKEN': csrfToken,
-    },
-    body: JSON.stringify({}),
+  return apiRequest(`/api/admin/seasons/${seasonId}/promo-codes/auto-assign`, {
+    method: 'POST', csrfToken, allowEmpty: false, json: {},
+    errorMessage: 'Failed to auto-assign codes',
   });
-  const data = (await response.json()) as { message?: string };
-  if (!response.ok) throw new Error(data.message ?? 'Failed to auto-assign codes');
-  return data as { message: string };
 }
 
-export async function bulkDeletePassRequests(
+export function bulkDeletePassRequests(
   seasonId: string,
   passRequestIds: string[],
   csrfToken: string,
 ): Promise<{ message: string }> {
-  const response = await fetch(`/api/admin/seasons/${seasonId}/pass-requests/bulk-delete`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'X-CSRF-TOKEN': csrfToken,
-    },
-    body: JSON.stringify({ pass_request_ids: passRequestIds }),
+  return apiRequest(`/api/admin/seasons/${seasonId}/pass-requests/bulk-delete`, {
+    method: 'POST', csrfToken, allowEmpty: false,
+    json: { pass_request_ids: passRequestIds },
+    errorMessage: 'Failed to delete pass requests',
   });
-  const data = (await response.json()) as { message?: string };
-  if (!response.ok) throw new Error(data.message ?? 'Failed to delete pass requests');
-  return data as { message: string };
 }

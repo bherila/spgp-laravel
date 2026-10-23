@@ -1,3 +1,5 @@
+import { apiRequest } from '@/lib/apiClient';
+
 export interface PromoCode {
   promo_code: string;
   season_id: number;
@@ -21,30 +23,21 @@ export interface ImportCodesResult {
   errors: string[];
 }
 
-export async function fetchPromoCodes(seasonId: string): Promise<PromoCodeListResponse> {
-  const response = await fetch(`/api/admin/seasons/${seasonId}/promo-codes/list`, {
-    headers: { Accept: 'application/json' },
+export function fetchPromoCodes(seasonId: string): Promise<PromoCodeListResponse> {
+  return apiRequest(`/api/admin/seasons/${seasonId}/promo-codes/list`, {
+    errorMessage: 'Failed to fetch promo codes',
   });
-  if (!response.ok) throw new Error('Failed to fetch promo codes');
-  return response.json() as Promise<PromoCodeListResponse>;
 }
 
-export async function importCodes(
+export function importCodes(
   seasonId: string,
   tsv: string,
   country: 'USA' | 'Canada',
   csrfToken: string,
 ): Promise<ImportCodesResult> {
-  const response = await fetch(`/api/admin/seasons/${seasonId}/promo-codes/import`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-      'X-CSRF-TOKEN': csrfToken,
-    },
-    body: JSON.stringify({ tsv, country }),
+  return apiRequest(`/api/admin/seasons/${seasonId}/promo-codes/import`, {
+    method: 'POST', csrfToken, allowEmpty: false,
+    json: { tsv, country },
+    errorMessage: 'Import failed',
   });
-  const data = (await response.json()) as ImportCodesResult & { message?: string };
-  if (!response.ok) throw new Error(data.message ?? 'Import failed');
-  return data;
 }

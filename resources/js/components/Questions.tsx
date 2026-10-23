@@ -1,8 +1,9 @@
-import MDEditor from '@uiw/react-md-editor';
 import { ArrowLeft, CheckCircle2, Edit2, HelpCircle, MessageSquare, Send, ThumbsUp, Trash2 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 import MainTitle from '@/components/MainTitle';
+import { Markdown } from '@/components/Markdown';
+import { MarkdownEditor } from '@/components/MarkdownEditor';
 import { Button as ShadcnButton } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import {
@@ -14,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { apiRequest } from '@/lib/apiClient';
 import type { Question } from '@/types/questions';
 
 interface QuestionsProps {
@@ -33,14 +35,31 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
   const [answeringQuestion, setAnsweringQuestion] = useState<Question | null>(null);
   const [editContent, setEditContent] = useState('');
   const [answerContent, setAnswerContent] = useState('');
+  const voteRequests = useRef(new Set<number>());
+  const [pendingVotes, setPendingVotes] = useState<Set<number>>(() => new Set());
+
+  const changeAskDialog = (open: boolean) => {
+    setError(null);
+    setIsAsking(open);
+  };
+
+  const changeEditDialog = (question: Question | null) => {
+    setError(null);
+    setEditingQuestion(question);
+  };
+
+  const changeAnswerDialog = (question: Question | null) => {
+    setError(null);
+    setAnsweringQuestion(question);
+  };
 
   const fetchQuestions = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/season/${seasonId}/questions`);
-      if (!response.ok) throw new Error('Failed to fetch questions');
-      const data = await response.json();
-      setQuestions(data);
+      setError(null);
+      setQuestions(await apiRequest<Question[]>(`/api/season/${seasonId}/questions`, {
+        errorMessage: 'Failed to fetch questions',
+      }));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -49,111 +68,78 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
   };
 
   const handleUpvote = async (question: Question) => {
-    const url = `/api/questions/${question.id}/${question.user_has_upvoted ? 'unvote' : 'upvote'}`;
+    if (voteRequests.current.has(question.id)) return;
+    voteRequests.current.add(question.id);
+    setPendingVotes(new Set(voteRequests.current));
+    const shouldUpvote = !question.user_has_upvoted;
+    const url = `/api/questions/${question.id}/${shouldUpvote ? 'upvote' : 'unvote'}`;
     try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'X-CSRF-TOKEN': csrfToken,
-          'Accept': 'application/json',
-        },
-      });
-      if (response.ok) {
-        setQuestions(questions.map(q => {
-          if (q.id === question.id) {
-            return {
-              ...q,
-              user_has_upvoted: !q.user_has_upvoted,
-              upvotes_count: q.user_has_upvoted ? q.upvotes_count - 1 : q.upvotes_count + 1
-            };
-          }
-          return q;
-        }));
-      }
+      setError(null);
+      await apiRequest(url, { method: 'POST', csrfToken, errorMessage: 'Failed to update vote' });
+      setQuestions((current) => current.map(q => q.id === question.id && q.user_has_upvoted !== shouldUpvote ? {
+        ...q,
+        user_has_upvoted: shouldUpvote,
+        upvotes_count: q.upvotes_count + (shouldUpvote ? 1 : -1),
+      } : q));
     } catch (err) {
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      voteRequests.current.delete(question.id);
+      setPendingVotes(new Set(voteRequests.current));
     }
   };
 
   const handleStoreQuestion = async () => {
     if (!newQuestionContent.trim()) return;
     try {
-      const response = await fetch(`/api/season/${seasonId}/questions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ content: newQuestionContent }),
+      setError(null);
+      await apiRequest(`/api/season/${seasonId}/questions`, {
+        method: 'POST', csrfToken, json: { content: newQuestionContent }, errorMessage: 'Failed to post question',
       });
-      if (response.ok) {
-        setIsAsking(false);
-        setNewQuestionContent('');
-        fetchQuestions();
-      }
+      changeAskDialog(false);
+      setNewQuestionContent('');
+      await fetchQuestions();
     } catch (err) {
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
   const handleUpdateQuestion = async () => {
     if (!editingQuestion || !editContent.trim()) return;
     try {
-      const response = await fetch(`/api/questions/${editingQuestion.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ content: editContent }),
+      setError(null);
+      await apiRequest(`/api/questions/${editingQuestion.id}`, {
+        method: 'PATCH', csrfToken, json: { content: editContent }, errorMessage: 'Failed to update question',
       });
-      if (response.ok) {
-        setEditingQuestion(null);
-        fetchQuestions();
-      }
+      changeEditDialog(null);
+      await fetchQuestions();
     } catch (err) {
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
   const handleAnswerQuestion = async () => {
     if (!answeringQuestion || !answerContent.trim()) return;
     try {
-      const response = await fetch(`/api/questions/${answeringQuestion.id}/answer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': csrfToken,
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ answer: answerContent }),
+      setError(null);
+      await apiRequest(`/api/questions/${answeringQuestion.id}/answer`, {
+        method: 'POST', csrfToken, json: { answer: answerContent }, errorMessage: 'Failed to post answer',
       });
-      if (response.ok) {
-        setAnsweringQuestion(null);
-        fetchQuestions();
-      }
+      changeAnswerDialog(null);
+      await fetchQuestions();
     } catch (err) {
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
   const handleDeleteQuestion = async (id: number) => {
     if (!confirm('Are you sure you want to delete this question?')) return;
     try {
-      const response = await fetch(`/api/questions/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'X-CSRF-TOKEN': csrfToken,
-          'Accept': 'application/json',
-        },
-      });
-      if (response.ok) {
-        fetchQuestions();
-      }
+      setError(null);
+      await apiRequest(`/api/questions/${id}`, { method: 'DELETE', csrfToken, errorMessage: 'Failed to delete question' });
+      await fetchQuestions();
     } catch (err) {
-      console.error(err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
@@ -168,11 +154,13 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
           </ShadcnButton>
           <MainTitle>Q&A</MainTitle>
         </div>
-        <ShadcnButton onClick={() => setIsAsking(true)}>
+        <ShadcnButton onClick={() => changeAskDialog(true)}>
           <MessageSquare className="w-4 h-4 mr-2" />
           Ask a Question
         </ShadcnButton>
       </div>
+
+      {error && !isAsking && !editingQuestion && !answeringQuestion && <p role="alert" className="mb-4 text-destructive">{error}</p>}
 
       {loading ? (
         <div className="space-y-6">
@@ -195,7 +183,7 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
                 <div className="flex flex-col">
                   <span className="text-sm font-medium text-primary mb-1">{question.user.name} asked:</span>
                   <div data-color-mode="auto">
-                    <MDEditor.Markdown source={question.content} skipHtml={true} />
+                    <Markdown source={question.content} />
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-2">
@@ -204,6 +192,8 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
                     size="sm" 
                     className="h-9 px-3"
                     onClick={() => handleUpvote(question)}
+                    disabled={pendingVotes.has(question.id)}
+                    aria-pressed={question.user_has_upvoted}
                   >
                     <ThumbsUp className={`w-4 h-4 mr-2 ${question.user_has_upvoted ? 'fill-current' : ''}`} />
                     {question.upvotes_count}
@@ -212,8 +202,8 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
                   {(!question.answer && (isAdmin || question.user_id === Number(document.getElementById('dashboard')?.getAttribute('data-user-id')))) && (
                     <div className="flex gap-1 mt-2">
                          {question.user_id === Number(document.getElementById('dashboard')?.getAttribute('data-user-id')) && (
-                            <ShadcnButton variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
-                                setEditingQuestion(question);
+                            <ShadcnButton variant="ghost" size="icon" className="h-8 w-8" aria-label="Edit question" onClick={() => {
+                                changeEditDialog(question);
                                 setEditContent(question.content);
                             }}>
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -234,11 +224,11 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
                     <div className="flex flex-col flex-1">
                       <span className="text-sm font-semibold mb-2">Answer from {question.answered_by?.name || 'Admin'}:</span>
                       <div data-color-mode="auto">
-                        <MDEditor.Markdown source={question.answer ?? ''} skipHtml={true} />
+                        <Markdown source={question.answer ?? ''} />
                       </div>
                       {isAdmin && (
                         <ShadcnButton variant="ghost" size="sm" className="mt-4 self-start" onClick={() => {
-                            setAnsweringQuestion(question);
+                            changeAnswerDialog(question);
                             setAnswerContent(question.answer || '');
                         }}>
                             <Edit2 className="w-3 h-3 mr-2" />
@@ -253,7 +243,7 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
               {!question.answer && isAdmin && (
                 <CardFooter className="pt-4 border-t">
                   <ShadcnButton variant="outline" size="sm" onClick={() => {
-                    setAnsweringQuestion(question);
+                    changeAnswerDialog(question);
                     setAnswerContent('');
                   }}>
                     <MessageSquare className="w-4 h-4 mr-2" />
@@ -267,7 +257,7 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
       )}
 
       {/* Ask Question Dialog */}
-      <Dialog open={isAsking} onOpenChange={setIsAsking}>
+      <Dialog open={isAsking} onOpenChange={changeAskDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Ask a Question</DialogTitle>
@@ -276,14 +266,11 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4" data-color-mode="auto">
-            <MDEditor
-                value={newQuestionContent}
-                onChange={(val) => setNewQuestionContent(val ?? '')}
-                height={200}
-            />
+            {isAsking && <MarkdownEditor value={newQuestionContent} onChange={setNewQuestionContent} label="Question content" />}
           </div>
+          {error && <p role="alert" className="text-destructive">{error}</p>}
           <DialogFooter>
-            <ShadcnButton variant="outline" onClick={() => setIsAsking(false)}>Cancel</ShadcnButton>
+            <ShadcnButton variant="outline" onClick={() => changeAskDialog(false)}>Cancel</ShadcnButton>
             <ShadcnButton onClick={handleStoreQuestion}>
                 <Send className="w-4 h-4 mr-2" />
                 Post Question
@@ -293,40 +280,36 @@ export default function Questions({ seasonId, isAdmin, csrfToken, initialQuestio
       </Dialog>
 
       {/* Edit Question Dialog */}
-      <Dialog open={!!editingQuestion} onOpenChange={() => setEditingQuestion(null)}>
+      <Dialog open={!!editingQuestion} onOpenChange={() => changeEditDialog(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Question</DialogTitle>
+            <DialogDescription>Update your question using Markdown.</DialogDescription>
           </DialogHeader>
           <div className="mt-4" data-color-mode="auto">
-            <MDEditor
-                value={editContent}
-                onChange={(val) => setEditContent(val ?? '')}
-                height={200}
-            />
+            {editingQuestion && <MarkdownEditor value={editContent} onChange={setEditContent} label="Question content" />}
           </div>
+          {error && <p role="alert" className="text-destructive">{error}</p>}
           <DialogFooter>
-            <ShadcnButton variant="outline" onClick={() => setEditingQuestion(null)}>Cancel</ShadcnButton>
+            <ShadcnButton variant="outline" onClick={() => changeEditDialog(null)}>Cancel</ShadcnButton>
             <ShadcnButton onClick={handleUpdateQuestion}>Save Changes</ShadcnButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Answer Question Dialog */}
-      <Dialog open={!!answeringQuestion} onOpenChange={() => setAnsweringQuestion(null)}>
+      <Dialog open={!!answeringQuestion} onOpenChange={() => changeAnswerDialog(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{answeringQuestion?.answer ? 'Edit Answer' : 'Post Answer'}</DialogTitle>
+            <DialogDescription>Write your answer using Markdown.</DialogDescription>
           </DialogHeader>
           <div className="mt-4" data-color-mode="auto">
-            <MDEditor
-                value={answerContent}
-                onChange={(val) => setAnswerContent(val ?? '')}
-                height={200}
-            />
+            {answeringQuestion && <MarkdownEditor value={answerContent} onChange={setAnswerContent} label="Answer content" />}
           </div>
+          {error && <p role="alert" className="text-destructive">{error}</p>}
           <DialogFooter>
-            <ShadcnButton variant="outline" onClick={() => setAnsweringQuestion(null)}>Cancel</ShadcnButton>
+            <ShadcnButton variant="outline" onClick={() => changeAnswerDialog(null)}>Cancel</ShadcnButton>
             <ShadcnButton onClick={handleAnswerQuestion}>
                 <Send className="w-4 h-4 mr-2" />
                 Post Answer

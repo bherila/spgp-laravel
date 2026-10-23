@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { apiRequest } from '@/lib/apiClient';
 import { readPageData } from '@/lib/pageData';
 import type { Season } from '@/types/dashboard';
 
@@ -11,11 +12,9 @@ export function useDashboardData() {
   const refresh = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/dashboard', {
-        headers: { Accept: 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to refresh dashboard data');
-      setSeasons((await response.json()) as Season[]);
+      setSeasons(await apiRequest<Season[]>('/dashboard', {
+        errorMessage: 'Failed to refresh dashboard data',
+      }));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

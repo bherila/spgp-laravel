@@ -1,82 +1,46 @@
 import { fetchPromoCodes, importCodes } from '@/admin/promoCodeRepositoryApi';
 
+import { mockJsonResponse } from '../helpers/http';
+
 describe('promoCodeRepositoryApi', () => {
-  beforeEach(() => {
-    globalThis.fetch = jest.fn();
+  beforeEach(() => { globalThis.fetch = jest.fn(); });
+  afterEach(() => { jest.resetAllMocks(); });
+
+  it('returns promo codes', async () => {
+    const payload = { season: { id: 1 }, promo_codes: [{ promo_code: 'CODE1', country: 'USA', is_suspended: false, is_assigned: false }] };
+    (globalThis.fetch as jest.Mock).mockResolvedValue(mockJsonResponse(payload));
+    expect((await fetchPromoCodes('1')).promo_codes[0]?.promo_code).toBe('CODE1');
   });
 
-  afterEach(() => {
-    jest.resetAllMocks();
+  it('provides context when a repository refresh fails', async () => {
+    (globalThis.fetch as jest.Mock).mockResolvedValue(mockJsonResponse({}, 500));
+    await expect(fetchPromoCodes('1')).rejects.toThrow('Failed to fetch promo codes');
   });
 
-  describe('fetchPromoCodes', () => {
-    it('returns promo_codes list on success', async () => {
-      const payload = {
-        season: { id: 1 },
-        promo_codes: [{ promo_code: 'CODE1', country: 'USA', is_suspended: false, is_assigned: false }],
-      };
-      (globalThis.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => payload,
-      });
-
-      const result = await fetchPromoCodes('1');
-      expect(result.promo_codes).toHaveLength(1);
-      expect(result.promo_codes[0]?.promo_code).toBe('CODE1');
-    });
-
-    it('throws when response is not ok', async () => {
-      (globalThis.fetch as jest.Mock).mockResolvedValue({ ok: false, json: async () => ({}) });
-      await expect(fetchPromoCodes('1')).rejects.toThrow('Failed to fetch promo codes');
-    });
-
-    it('calls the correct URL', async () => {
-      (globalThis.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => ({ season: {}, promo_codes: [] }),
-      });
-      await fetchPromoCodes('42');
-      expect(globalThis.fetch).toHaveBeenCalledWith(
-        '/api/admin/seasons/42/promo-codes/list',
-        expect.objectContaining({ headers: { Accept: 'application/json' } }),
-      );
-    });
+  it('requests the selected season repository', async () => {
+    (globalThis.fetch as jest.Mock).mockResolvedValue(mockJsonResponse({ season: {}, promo_codes: [] }));
+    await fetchPromoCodes('42');
+    expect(globalThis.fetch).toHaveBeenCalledWith('/api/admin/seasons/42/promo-codes/list', expect.objectContaining({ headers: expect.any(Headers) }));
   });
 
-  describe('importCodes', () => {
-    it('returns import result on success', async () => {
-      const payload = { message: 'Imported 3 promo code(s).', imported: 3, skipped: 0, errors: [] };
-      (globalThis.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => payload,
-      });
+  it('returns import counts and warnings', async () => {
+    const payload = { message: 'Imported 3 promo code(s).', imported: 3, skipped: 0, errors: [] };
+    (globalThis.fetch as jest.Mock).mockResolvedValue(mockJsonResponse(payload));
+    await expect(importCodes('1', 'CODE1\nCODE2\nCODE3', 'USA', 'csrf')).resolves.toEqual(payload);
+  });
 
-      const result = await importCodes('1', 'CODE1\nCODE2\nCODE3', 'USA', 'csrf');
-      expect(result.imported).toBe(3);
-      expect(result.errors).toHaveLength(0);
-    });
+  it('sends the pasted codes and selected country', async () => {
+    (globalThis.fetch as jest.Mock).mockResolvedValue(mockJsonResponse({ message: 'ok', imported: 1, skipped: 0, errors: [] }));
+    await importCodes('5', 'MYCODE', 'Canada', 'my-csrf');
+    const [url, options] = (globalThis.fetch as jest.Mock).mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/admin/seasons/5/promo-codes/import');
+    expect(options.method).toBe('POST');
+    expect(JSON.parse(options.body as string)).toEqual({ tsv: 'MYCODE', country: 'Canada' });
+    expect(new Headers(options.headers).get('X-CSRF-TOKEN')).toBe('my-csrf');
+  });
 
-    it('sends correct body to the API', async () => {
-      (globalThis.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => ({ message: 'ok', imported: 1, skipped: 0, errors: [] }),
-      });
-
-      await importCodes('5', 'MYCODE', 'Canada', 'my-csrf');
-      const [url, options] = (globalThis.fetch as jest.Mock).mock.calls[0] as [string, RequestInit];
-      expect(url).toBe('/api/admin/seasons/5/promo-codes/import');
-      expect(options.method).toBe('POST');
-      const body = JSON.parse(options.body as string) as { tsv: string; country: string };
-      expect(body.tsv).toBe('MYCODE');
-      expect(body.country).toBe('Canada');
-    });
-
-    it('throws with server message on failure', async () => {
-      (globalThis.fetch as jest.Mock).mockResolvedValue({
-        ok: false,
-        json: async () => ({ message: 'Invalid TSV data' }),
-      });
-      await expect(importCodes('1', 'bad data', 'USA', 'csrf')).rejects.toThrow('Invalid TSV data');
-    });
+  it('preserves import validation messages', async () => {
+    (globalThis.fetch as jest.Mock).mockResolvedValue(mockJsonResponse({ message: 'Invalid TSV data' }, 422));
+    await expect(importCodes('1', 'bad data', 'USA', 'csrf')).rejects.toThrow('Invalid TSV data');
   });
 });
