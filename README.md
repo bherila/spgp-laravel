@@ -28,6 +28,8 @@ A specialized Laravel application for coordinating group purchases of ski passes
 
 ## Getting Started
 
+The [pass request REST API and MCP guide](docs/pass-request-api.md) covers user/admin endpoints, OAuth setup, and client examples.
+
 ### Prerequisites
 
 - PHP 8.5 or higher

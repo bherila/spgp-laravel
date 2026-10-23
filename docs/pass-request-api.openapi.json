@@ -1,0 +1,1273 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "SPGP Pass Request API",
+        "version": "1.0.0",
+        "description": "Bearer-only user and administrator interfaces. See pass-request-api.md for external OAuth resource configuration and explicit account linking."
+    },
+    "servers": [
+        {
+            "url": "https://spgp.example.test",
+            "description": "Replace with the configured SPGP resource origin"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "paths": {
+        "/api/v1/admin/pass-requests": {
+            "get": {
+                "operationId": "admin_list_pass_requests",
+                "tags": [
+                    "Administrator"
+                ],
+                "summary": "List pass requests with bounded pagination. User access always lists only your own requests.",
+                "description": "Requires admin:pass-requests:read. The linked local account must also be an SPGP administrator.",
+                "x-required-scope": "admin:pass-requests:read",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "minimum": 1,
+                            "maximum": 100,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "season_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "description": "Season ID from list_seasons.",
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "is_renewal",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "has_promo_code",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "recent_only",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "country",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "enum": [
+                                "USA",
+                                "Canada",
+                                "Other"
+                            ],
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/pass-requests/{id}": {
+            "get": {
+                "operationId": "admin_get_pass_request",
+                "tags": [
+                    "Administrator"
+                ],
+                "summary": "Get one pass request and its assignment, notification, and redemption status.",
+                "description": "Requires admin:pass-requests:read. The linked local account must also be an SPGP administrator.",
+                "x-required-scope": "admin:pass-requests:read",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "SPGP pass request ID.",
+                            "maxLength": 255,
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "admin_update_pass_request",
+                "tags": [
+                    "Administrator"
+                ],
+                "summary": "Update passholder contact details, birth date, or the renewal order number.",
+                "description": "Requires admin:pass-requests:write. The linked local account must also be an SPGP administrator.",
+                "x-required-scope": "admin:pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "passholder_first_name": {
+                                        "maxLength": 255,
+                                        "type": "string"
+                                    },
+                                    "passholder_last_name": {
+                                        "maxLength": 255,
+                                        "type": "string"
+                                    },
+                                    "passholder_email": {
+                                        "maxLength": 255,
+                                        "format": "email",
+                                        "type": "string"
+                                    },
+                                    "passholder_birth_date": {
+                                        "description": "Birth date as YYYY-MM-DD.",
+                                        "format": "date",
+                                        "type": "string"
+                                    },
+                                    "renewal_order_number": {
+                                        "maxLength": 30,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "SPGP pass request ID.",
+                            "maxLength": 255,
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "admin_delete_pass_request",
+                "tags": [
+                    "Administrator"
+                ],
+                "summary": "Administratively delete a pass request. This can release its assigned promo code.",
+                "description": "Requires admin:pass-requests:write. The linked local account must also be an SPGP administrator.",
+                "x-required-scope": "admin:pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "SPGP pass request ID.",
+                            "maxLength": 255,
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/seasons": {
+            "get": {
+                "operationId": "admin_list_seasons",
+                "tags": [
+                    "Administrator"
+                ],
+                "summary": "List seasons and available pass types.",
+                "description": "Requires admin:pass-requests:read. The linked local account must also be an SPGP administrator.",
+                "x-required-scope": "admin:pass-requests:read",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "include_archived",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/seasons/{season_id}/pass-requests/assign-codes": {
+            "post": {
+                "operationId": "admin_assign_promo_codes",
+                "tags": [
+                    "Administrator"
+                ],
+                "summary": "Assign one newline-separated promo code per selected request, in selection order.",
+                "description": "Requires admin:pass-requests:write. The linked local account must also be an SPGP administrator.",
+                "x-required-scope": "admin:pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "pass_request_ids": {
+                                        "minItems": 1,
+                                        "maxItems": 1000,
+                                        "items": {
+                                            "maxLength": 255,
+                                            "type": "string"
+                                        },
+                                        "uniqueItems": true,
+                                        "type": "array"
+                                    },
+                                    "codes": {
+                                        "description": "One promo code per line, matching pass_request_ids order.",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "pass_request_ids",
+                                    "codes"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "season_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "Season ID from list_seasons.",
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/seasons/{season_id}/pass-requests/auto-assign-codes": {
+            "post": {
+                "operationId": "admin_auto_assign_promo_codes",
+                "tags": [
+                    "Administrator"
+                ],
+                "summary": "Assign available repository codes to pending requests in a season, matching country.",
+                "description": "Requires admin:pass-requests:write. The linked local account must also be an SPGP administrator.",
+                "x-required-scope": "admin:pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "season_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "Season ID from list_seasons.",
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/seasons/{season_id}/pass-requests/bulk-delete": {
+            "post": {
+                "operationId": "admin_bulk_delete_pass_requests",
+                "tags": [
+                    "Administrator"
+                ],
+                "summary": "Delete selected requests in one season. Assigned promo codes must be cleared first.",
+                "description": "Requires admin:pass-requests:write. The linked local account must also be an SPGP administrator.",
+                "x-required-scope": "admin:pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "pass_request_ids": {
+                                        "minItems": 1,
+                                        "maxItems": 1000,
+                                        "items": {
+                                            "maxLength": 255,
+                                            "type": "string"
+                                        },
+                                        "uniqueItems": true,
+                                        "type": "array"
+                                    }
+                                },
+                                "required": [
+                                    "pass_request_ids"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "season_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "Season ID from list_seasons.",
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/seasons/{season_id}/pass-requests/clear-codes": {
+            "post": {
+                "operationId": "admin_clear_promo_codes",
+                "tags": [
+                    "Administrator"
+                ],
+                "summary": "Clear selected promo codes and their notification and redemption state.",
+                "description": "Requires admin:pass-requests:write. The linked local account must also be an SPGP administrator.",
+                "x-required-scope": "admin:pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "pass_request_ids": {
+                                        "minItems": 1,
+                                        "maxItems": 1000,
+                                        "items": {
+                                            "maxLength": 255,
+                                            "type": "string"
+                                        },
+                                        "uniqueItems": true,
+                                        "type": "array"
+                                    }
+                                },
+                                "required": [
+                                    "pass_request_ids"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "season_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "Season ID from list_seasons.",
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/seasons/{season_id}/pass-requests/send-emails": {
+            "post": {
+                "operationId": "admin_send_pass_code_emails",
+                "tags": [
+                    "Administrator"
+                ],
+                "summary": "Email assigned pass codes. Already-notified requests are skipped unless force_send is true.",
+                "description": "Requires admin:pass-requests:write. The linked local account must also be an SPGP administrator.",
+                "x-required-scope": "admin:pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "pass_request_ids": {
+                                        "minItems": 1,
+                                        "maxItems": 1000,
+                                        "items": {
+                                            "maxLength": 255,
+                                            "type": "string"
+                                        },
+                                        "uniqueItems": true,
+                                        "type": "array"
+                                    },
+                                    "force_send": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "required": [
+                                    "pass_request_ids"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "season_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "Season ID from list_seasons.",
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/pass-requests": {
+            "get": {
+                "operationId": "user_list_pass_requests",
+                "tags": [
+                    "User"
+                ],
+                "summary": "List pass requests with bounded pagination. User access always lists only your own requests.",
+                "description": "Requires pass-requests:read. Access remains limited to the linked local account.",
+                "x-required-scope": "pass-requests:read",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "minimum": 1,
+                            "maximum": 100,
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "season_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "description": "Season ID from list_seasons.",
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "operationId": "user_create_pass_request",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Create a pass request for a passholder under your SPGP account.",
+                "description": "Requires pass-requests:write. Access remains limited to the linked local account.",
+                "x-required-scope": "pass-requests:write",
+                "responses": {
+                    "201": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "passholder_first_name": {
+                                        "maxLength": 255,
+                                        "type": "string"
+                                    },
+                                    "passholder_last_name": {
+                                        "maxLength": 255,
+                                        "type": "string"
+                                    },
+                                    "passholder_email": {
+                                        "maxLength": 255,
+                                        "format": "email",
+                                        "type": "string"
+                                    },
+                                    "passholder_birth_date": {
+                                        "description": "Birth date as YYYY-MM-DD.",
+                                        "format": "date",
+                                        "type": "string"
+                                    },
+                                    "season_id": {
+                                        "description": "Season ID from list_seasons.",
+                                        "minimum": 1,
+                                        "type": "integer"
+                                    },
+                                    "season_pass_type_id": {
+                                        "minimum": 1,
+                                        "type": "integer"
+                                    },
+                                    "country": {
+                                        "enum": [
+                                            "USA",
+                                            "Canada",
+                                            "Other"
+                                        ],
+                                        "type": "string"
+                                    },
+                                    "is_renewal": {
+                                        "type": "boolean"
+                                    },
+                                    "renewal_pass_id": {
+                                        "maxLength": 255,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "passholder_first_name",
+                                    "passholder_last_name",
+                                    "passholder_email",
+                                    "passholder_birth_date",
+                                    "season_id",
+                                    "season_pass_type_id",
+                                    "country"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pass-requests/missing-country": {
+            "patch": {
+                "operationId": "user_set_missing_country",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Set USA or Canada on your requests missing a country. Canada releases previously assigned USA codes.",
+                "description": "Requires pass-requests:write. Access remains limited to the linked local account.",
+                "x-required-scope": "pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "country": {
+                                        "enum": [
+                                            "USA",
+                                            "Canada"
+                                        ],
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "country"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/pass-requests/{id}": {
+            "get": {
+                "operationId": "user_get_pass_request",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get one pass request and its assignment, notification, and redemption status.",
+                "description": "Requires pass-requests:read. Access remains limited to the linked local account.",
+                "x-required-scope": "pass-requests:read",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "SPGP pass request ID.",
+                            "maxLength": 255,
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "patch": {
+                "operationId": "user_update_pass_request",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Update passholder contact details, birth date, or the renewal order number.",
+                "description": "Requires pass-requests:write. Access remains limited to the linked local account.",
+                "x-required-scope": "pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "passholder_first_name": {
+                                        "maxLength": 255,
+                                        "type": "string"
+                                    },
+                                    "passholder_last_name": {
+                                        "maxLength": 255,
+                                        "type": "string"
+                                    },
+                                    "passholder_email": {
+                                        "maxLength": 255,
+                                        "format": "email",
+                                        "type": "string"
+                                    },
+                                    "passholder_birth_date": {
+                                        "description": "Birth date as YYYY-MM-DD.",
+                                        "format": "date",
+                                        "type": "string"
+                                    },
+                                    "renewal_order_number": {
+                                        "maxLength": 30,
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "SPGP pass request ID.",
+                            "maxLength": 255,
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "user_cancel_pass_request",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Cancel your own pass request before a promo code has been assigned.",
+                "description": "Requires pass-requests:write. Access remains limited to the linked local account.",
+                "x-required-scope": "pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "SPGP pass request ID.",
+                            "maxLength": 255,
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/pass-requests/{id}/renewal-order": {
+            "put": {
+                "operationId": "user_set_renewal_order",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Record your renewal order number and its reporting date.",
+                "description": "Requires pass-requests:write. Access remains limited to the linked local account.",
+                "x-required-scope": "pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "renewal_order_number": {
+                                        "maxLength": 30,
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "renewal_order_number"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "SPGP pass request ID.",
+                            "maxLength": 255,
+                            "type": "string"
+                        }
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "user_remove_renewal_order",
+                "tags": [
+                    "User"
+                ],
+                "summary": "Remove your renewal order number and its reporting date.",
+                "description": "Requires pass-requests:write. Access remains limited to the linked local account.",
+                "x-required-scope": "pass-requests:write",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "SPGP pass request ID.",
+                            "maxLength": 255,
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/api/v1/seasons": {
+            "get": {
+                "operationId": "user_list_seasons",
+                "tags": [
+                    "User"
+                ],
+                "summary": "List seasons and available pass types.",
+                "description": "Requires pass-requests:read. Access remains limited to the linked local account.",
+                "x-required-scope": "pass-requests:read",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                }
+            }
+        },
+        "/api/v1/seasons/{season_id}/pass-types": {
+            "get": {
+                "operationId": "user_list_pass_types",
+                "tags": [
+                    "User"
+                ],
+                "summary": "List pass types and prices for a season.",
+                "description": "Requires pass-requests:read. Access remains limited to the linked local account.",
+                "x-required-scope": "pass-requests:read",
+                "responses": {
+                    "200": {
+                        "description": "Operation completed; records use a data envelope, lists include pagination meta, and bulk actions return a count."
+                    },
+                    "401": {
+                        "description": "Missing, invalid, revoked, expired, or unlinked bearer token. WWW-Authenticate identifies protected-resource metadata."
+                    },
+                    "403": {
+                        "description": "Insufficient OAuth scope, ownership, administrator permission, or disallowed browser origin."
+                    },
+                    "404": {
+                        "description": "Record missing or API disabled."
+                    },
+                    "422": {
+                        "description": "Input validation or business-rule failure."
+                    },
+                    "429": {
+                        "description": "IP request limit exceeded."
+                    },
+                    "503": {
+                        "description": "OAuth configuration or introspection unavailable."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "season_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "description": "Season ID from list_seasons.",
+                            "minimum": 1,
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "OAuth access token for the exact SPGP resource. Scopes are listed per operation; discover the external issuer at /.well-known/oauth-protected-resource."
+            }
+        }
+    }
+}
