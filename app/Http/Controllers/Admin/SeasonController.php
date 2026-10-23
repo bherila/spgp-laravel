@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Season;
 use App\Services\PassRequests\AdminPassRequestService;
+use App\Services\PromoCodeRepositoryData;
 use Illuminate\Http\Request;
 
 class SeasonController extends Controller
@@ -14,9 +15,11 @@ class SeasonController extends Controller
     /**
      * Display the seasons admin page.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view('admin.seasons');
+        return view('admin.seasons', ['pageData' => [
+            'seasons' => $this->passRequests->seasons($request->user()),
+        ]]);
     }
 
     /**
@@ -94,11 +97,14 @@ class SeasonController extends Controller
     /**
      * Display the pass requests admin page for a season.
      */
-    public function showPassRequests(int $id)
+    public function showPassRequests(Request $request, int $id)
     {
-        $season = Season::findOrFail($id);
+        $pageData = $this->passRequestPageData($request, $id);
 
-        return view('admin.season-pass-requests', ['season' => $season]);
+        return view('admin.season-pass-requests', [
+            'season' => $pageData['season'],
+            'pageData' => $pageData,
+        ]);
     }
 
     /**
@@ -106,7 +112,15 @@ class SeasonController extends Controller
      */
     public function listPassRequests(Request $request, int $id)
     {
-        return response()->json($this->passRequests->listForSeason($request->user(), $id, $request->query()));
+        return response()->json($this->passRequestPageData($request, $id, $request->query()));
+    }
+
+    private function passRequestPageData(Request $request, int $id, array $filters = []): array
+    {
+        return [
+            ...$this->passRequests->listForSeason($request->user(), $id, $filters),
+            'repo_count' => app(PromoCodeRepositoryData::class)->availableCount($id),
+        ];
     }
 
     public function assignCodes(Request $request, int $id)

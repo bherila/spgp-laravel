@@ -13,13 +13,18 @@ class EmailLogController extends Controller
      */
     public function index()
     {
-        return view('admin.email-log');
+        return view('admin.email-log', ['pageData' => $this->emailLogs(new Request)]);
     }
 
     /**
      * Get paginated email logs with optional filtering.
      */
     public function list(Request $request)
+    {
+        return response()->json($this->emailLogs($request));
+    }
+
+    private function emailLogs(Request $request): array
     {
         $page = $request->input('page', 1);
         $limit = min($request->input('limit', 50), 100); // Max 100 per page
@@ -43,11 +48,11 @@ class EmailLogController extends Controller
             ->limit($limit)
             ->get();
 
-        return response()->json([
+        return [
             'emailLogs' => $emailLogs,
             'total' => $total,
             'page' => (int) $page,
             'limit' => (int) $limit,
-        ]);
+        ];
     }
 }

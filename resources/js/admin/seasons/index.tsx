@@ -1,7 +1,7 @@
 import '../../bootstrap';
 
 import { Plus } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import MainTitle from '@/components/MainTitle';
@@ -16,17 +16,22 @@ import {
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/sonner';
+import { readPageData } from '@/lib/pageData';
 
 import { SeasonForm } from './SeasonForm';
 import { SeasonTable } from './SeasonTable';
 import type { Season } from './types';
 
-function AdminSeasons() {
+interface AdminSeasonsProps {
+  initialSeasons: Season[];
+}
+
+function AdminSeasons({ initialSeasons }: AdminSeasonsProps) {
   const mount = document.getElementById('admin-seasons');
   const csrfToken = mount?.getAttribute('data-csrf-token') || '';
   
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [seasons, setSeasons] = useState<Season[]>(initialSeasons);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [includeArchived, setIncludeArchived] = useState(false);
   
@@ -36,10 +41,10 @@ function AdminSeasons() {
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchSeasons = async () => {
+  const fetchSeasons = async (archived = includeArchived) => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/seasons/list?include_archived=${includeArchived}`, {
+      const response = await fetch(`/api/admin/seasons/list?include_archived=${archived}`, {
         headers: { 'Accept': 'application/json' },
       });
       if (!response.ok) throw new Error('Failed to fetch seasons');
@@ -52,10 +57,6 @@ function AdminSeasons() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchSeasons();
-  }, [includeArchived]);
 
   const handleArchive = async () => {
     if (!selectedSeason) return;
@@ -130,7 +131,10 @@ function AdminSeasons() {
               type="checkbox"
               id="includeArchived"
               checked={includeArchived}
-              onChange={(e) => setIncludeArchived(e.target.checked)}
+              onChange={(e) => {
+                setIncludeArchived(e.target.checked);
+                void fetchSeasons(e.target.checked);
+              }}
               className="h-4 w-4 rounded border-gray-300"
             />
             <label htmlFor="includeArchived" className="text-sm">
@@ -159,7 +163,7 @@ function AdminSeasons() {
         onOpenChange={setSeasonFormOpen}
         season={selectedSeason}
         csrfToken={csrfToken}
-        onSuccess={fetchSeasons}
+        onSuccess={() => { void fetchSeasons(); }}
       />
 
       <Toaster />
@@ -200,5 +204,5 @@ function AdminSeasons() {
 
 const adminSeasonsElement = document.getElementById('admin-seasons');
 if (adminSeasonsElement) {
-  createRoot(adminSeasonsElement).render(<AdminSeasons />);
+  createRoot(adminSeasonsElement).render(<AdminSeasons initialSeasons={readPageData<{ seasons: Season[] }>().seasons} />);
 }

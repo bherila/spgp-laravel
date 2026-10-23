@@ -10,11 +10,14 @@ class PassRequestController extends Controller
 {
     public function __construct(private readonly UserPassRequestService $passRequests) {}
 
-    public function showRequestForm(int $seasonId)
+    public function showRequestForm(Request $request, int $seasonId)
     {
         $season = Season::findOrFail($seasonId);
 
-        return view('request', compact('season'));
+        return view('request', [
+            'season' => $season,
+            'pageData' => ['seasons' => $this->passRequests->activeSeasons($request->user())],
+        ]);
     }
 
     public function list(Request $request)

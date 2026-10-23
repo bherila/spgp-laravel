@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -36,6 +35,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/dateHelpers';
+import { readPageData } from '@/lib/pageData';
 
 interface SeasonPassType {
   id: number;
@@ -64,20 +64,19 @@ interface Season {
 
 type Step = 'type' | 'details';
 
-function PassRequestForm() {
+export function PassRequestForm() {
   const mount = document.getElementById('request');
   const csrfToken = mount?.getAttribute('data-csrf-token') || '';
   const initialSeasonId = mount?.getAttribute('data-season-id') ? Number(mount.getAttribute('data-season-id')) : null;
   const userEmail = mount?.getAttribute('data-user-email') || '';
 
   const [step, setStep] = useState<Step>('type');
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [seasons] = useState(() => readPageData<{ seasons: Season[] }>().seasons);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
-  const [seasonId, setSeasonId] = useState<number | null>(initialSeasonId);
+  const [seasonId, setSeasonId] = useState<number | null>(initialSeasonId ?? seasons[0]?.id ?? null);
   const [passTypeId, setPassTypeId] = useState<number | null>(null);
   const [isRenewal, setIsRenewal] = useState(false);
   const [firstName, setFirstName] = useState('');
@@ -87,31 +86,6 @@ function PassRequestForm() {
   const [renewalPassId, setRenewalPassId] = useState('');
   const [country, setCountry] = useState<'USA' | 'Canada' | 'Other' | ''>('');
   const [otherCountryModalOpen, setOtherCountryModalOpen] = useState(false);
-
-  useEffect(() => {
-    const fetchSeasons = async () => {
-      try {
-        setLoading(true);
-        // If we have an initialSeasonId, we might still want to fetch it to get its details
-        const response = await fetch('/api/pass-requests/seasons', {
-          headers: { 'Accept': 'application/json' },
-        });
-        if (!response.ok) throw new Error('Failed to fetch seasons');
-        const data = await response.json();
-        setSeasons(data);
-        
-        if (!seasonId && data.length > 0) {
-          setSeasonId(data[0].id);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSeasons();
-  }, []);
 
   // Pre-select the user's last requested pass type when season or seasons data changes
   useEffect(() => {
@@ -191,19 +165,7 @@ function PassRequestForm() {
         </p>
       </div>
 
-      {loading ? (
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-4 w-60 mt-2" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-          </CardContent>
-        </Card>
-      ) : seasons.length === 0 ? (
+      {seasons.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <Alert>

@@ -4,7 +4,6 @@ import {
   bulkDeletePassRequests,
   clearCodes,
   fetchPassRequests,
-  fetchRepoCount,
   sendEmail,
 } from '@/admin/passRequestsAdminApi';
 
@@ -19,7 +18,7 @@ describe('passRequestsAdminApi', () => {
 
   describe('fetchPassRequests', () => {
     it('returns season and pass_requests on success', async () => {
-      const payload = { season: { id: 1 }, pass_requests: [{ id: 'abc' }] };
+      const payload = { season: { id: 1 }, pass_requests: [{ id: 'abc' }], repo_count: 2 };
       (globalThis.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         json: async () => payload,
@@ -46,29 +45,6 @@ describe('passRequestsAdminApi', () => {
     it('throws when response is not ok', async () => {
       (globalThis.fetch as jest.Mock).mockResolvedValue({ ok: false, json: async () => ({}) });
       await expect(fetchPassRequests('1', false)).rejects.toThrow('Failed to fetch data');
-    });
-  });
-
-  describe('fetchRepoCount', () => {
-    it('returns count of non-suspended codes', async () => {
-      (globalThis.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          promo_codes: [
-            { is_suspended: false },
-            { is_suspended: true },
-            { is_suspended: false },
-          ],
-        }),
-      });
-      const count = await fetchRepoCount('1');
-      expect(count).toBe(2);
-    });
-
-    it('returns 0 when response is not ok', async () => {
-      (globalThis.fetch as jest.Mock).mockResolvedValue({ ok: false });
-      const count = await fetchRepoCount('1');
-      expect(count).toBe(0);
     });
   });
 

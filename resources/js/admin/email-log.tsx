@@ -1,6 +1,6 @@
 import '../bootstrap';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import MainTitle from '@/components/MainTitle';
@@ -23,6 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/dateHelpers';
+import { readPageData } from '@/lib/pageData';
 
 interface EmailLog {
   id: number;
@@ -36,26 +37,38 @@ interface EmailLog {
   created_at: string;
 }
 
-function EmailLogAdmin() {
-  const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
-  const [loading, setLoading] = useState(true);
+interface EmailLogData {
+  emailLogs: EmailLog[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface EmailLogAdminProps {
+  initialData: EmailLogData;
+}
+
+export function EmailLogAdmin({ initialData }: EmailLogAdminProps) {
+  const [emailLogs, setEmailLogs] = useState<EmailLog[]>(initialData.emailLogs);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [limit] = useState(50);
-  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(initialData.page);
+  const limit = initialData.limit;
+  const [total, setTotal] = useState(initialData.total);
   const [toFilter, setToFilter] = useState('');
   const [bodyFilter, setBodyFilter] = useState('');
+  const [appliedFilters, setAppliedFilters] = useState({ to: '', body: '' });
 
-  const fetchData = useCallback(async () => {
+  const fetchData = async (nextPage: number, filters = appliedFilters) => {
     setLoading(true);
     setError(null);
     try {
       const params = new URLSearchParams({
-        page: page.toString(),
+        page: nextPage.toString(),
         limit: limit.toString(),
       });
-      if (toFilter) params.append('to', toFilter);
-      if (bodyFilter) params.append('body', bodyFilter);
+      if (filters.to) params.append('to', filters.to);
+      if (filters.body) params.append('body', filters.body);
 
       const response = await fetch(`/api/admin/email-log/list?${params.toString()}`, {
         headers: { 'Accept': 'application/json' },
@@ -67,22 +80,20 @@ function EmailLogAdmin() {
       const data = await response.json();
       setEmailLogs(data.emailLogs);
       setTotal(data.total);
+      setPage(data.page);
     } catch (err) {
       console.error('Error fetching email log data:', err);
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
     }
-  }, [page, limit, toFilter, bodyFilter]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(1);
-    fetchData();
+    const filters = { to: toFilter, body: bodyFilter };
+    setAppliedFilters(filters);
+    void fetchData(1, filters);
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -193,7 +204,7 @@ function EmailLogAdmin() {
 
           <div className="flex justify-between items-center mt-4">
             <Button
-              onClick={() => setPage(page - 1)}
+              onClick={() => { void fetchData(page - 1); }}
               disabled={page === 1}
               variant="outline"
             >
@@ -203,7 +214,7 @@ function EmailLogAdmin() {
               Page {page} of {totalPages || 1} ({total} total)
             </span>
             <Button
-              onClick={() => setPage(page + 1)}
+              onClick={() => { void fetchData(page + 1); }}
               disabled={page >= totalPages}
               variant="outline"
             >
@@ -218,5 +229,5 @@ function EmailLogAdmin() {
 
 const element = document.getElementById('email-log');
 if (element) {
-  createRoot(element).render(<EmailLogAdmin />);
+  createRoot(element).render(<EmailLogAdmin initialData={readPageData<EmailLogData>()} />);
 }

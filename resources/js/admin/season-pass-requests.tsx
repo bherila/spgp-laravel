@@ -1,7 +1,7 @@
 import '../bootstrap';
 
 import { ArrowLeft, Copy, FileSpreadsheet, Send, Tag, Trash2, XCircle } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import MainTitle from '@/components/MainTitle';
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDateOnly, formatDateTime } from '@/lib/dateHelpers';
+import { readPageData } from '@/lib/pageData';
 import { formatBirthDateUTC, getAgeGroup } from '@/lib/passRequestHelpers';
 
 import {
@@ -27,8 +28,8 @@ import {
   bulkDeletePassRequests,
   clearCodes,
   fetchPassRequests,
-  fetchRepoCount,
   type PassRequest,
+  type PassRequestsListResponse,
   type Season,
   sendEmail,
 } from './passRequestsAdminApi';
@@ -45,16 +46,20 @@ function formatBirthDateLocal(dateStr: string | null): string {
   return formatBirthDateUTC(dateStr) || '—';
 }
 
-function SeasonPassRequestsAdmin() {
+interface SeasonPassRequestsAdminProps {
+  initialData: PassRequestsListResponse;
+}
+
+function SeasonPassRequestsAdmin({ initialData }: SeasonPassRequestsAdminProps) {
   const mount = document.getElementById('admin-season-pass-requests');
   const csrfToken = mount?.getAttribute('data-csrf-token') ?? '';
   const seasonId = mount?.getAttribute('data-season-id') ?? '';
   const seasonName = mount?.getAttribute('data-season-name') ?? '';
   const seasonYear = mount?.getAttribute('data-season-year') ?? '';
 
-  const [season, setSeason] = useState<Season | null>(null);
-  const [passRequests, setPassRequests] = useState<PassRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [season, setSeason] = useState<Season | null>(initialData.season);
+  const [passRequests, setPassRequests] = useState<PassRequest[]>(initialData.pass_requests);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null);
@@ -72,7 +77,7 @@ function SeasonPassRequestsAdmin() {
   const [codes, setCodes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [repoCount, setRepoCount] = useState<number | null>(null);
+  const [repoCount, setRepoCount] = useState(initialData.repo_count);
 
   // Send emails state
   const [forceSend, setForceSend] = useState(false);
@@ -80,16 +85,13 @@ function SeasonPassRequestsAdmin() {
   const [sendResultModalOpen, setSendResultModalOpen] = useState(false);
   const [sendResult, setSendResult] = useState<{ succeeded: number; failed: number } | null>(null);
 
-  const loadData = async (): Promise<PassRequest[]> => {
+  const loadData = async (recentOnly = showRecentOnly): Promise<PassRequest[]> => {
     try {
       setLoading(true);
-      const [data, count] = await Promise.all([
-        fetchPassRequests(seasonId, showRecentOnly),
-        fetchRepoCount(seasonId),
-      ]);
+      const data = await fetchPassRequests(seasonId, recentOnly);
       setSeason(data.season);
       setPassRequests(data.pass_requests);
-      setRepoCount(count);
+      setRepoCount(data.repo_count);
       setError(null);
       return data.pass_requests;
     } catch (err) {
@@ -99,10 +101,6 @@ function SeasonPassRequestsAdmin() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    void loadData();
-  }, [showRecentOnly]);
 
   const shiftKeyRef = React.useRef(false);
 
@@ -471,7 +469,10 @@ function SeasonPassRequestsAdmin() {
             <input
               type="checkbox"
               checked={showRecentOnly}
-              onChange={(e) => setShowRecentOnly(e.target.checked)}
+              onChange={(e) => {
+                setShowRecentOnly(e.target.checked);
+                void loadData(e.target.checked);
+              }}
               className="h-4 w-4 rounded border-input"
             />
             Show Recently Assigned Only
@@ -668,5 +669,5 @@ function SeasonPassRequestsAdmin() {
 
 const adminSeasonPassRequestsElement = document.getElementById('admin-season-pass-requests');
 if (adminSeasonPassRequestsElement) {
-  createRoot(adminSeasonPassRequestsElement).render(<SeasonPassRequestsAdmin />);
+  createRoot(adminSeasonPassRequestsElement).render(<SeasonPassRequestsAdmin initialData={readPageData<PassRequestsListResponse>()} />);
 }

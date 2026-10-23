@@ -6,6 +6,7 @@ use App\Models\InviteCode;
 use App\Models\PassRequest;
 use App\Models\PromoCodeRepository;
 use App\Models\Season;
+use App\Services\Questions\QuestionQuery;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
@@ -20,7 +21,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        if ($seasonId) {
+        if ($seasonId !== null) {
             $season = Season::findOrFail($seasonId);
 
             if (! $user->isAdmin()) {
@@ -48,6 +49,9 @@ class DashboardController extends Controller
             'isQuestionsView' => $request->routeIs('questions.index'),
             'adminData' => $user->isAdmin() ? $this->buildAdminDashboardData() : null,
             'seasons' => $seasons,
+            'questions' => $request->routeIs('questions.index')
+                ? app(QuestionQuery::class)->dataForSeason($season, $user)
+                : null,
         ]);
     }
 
