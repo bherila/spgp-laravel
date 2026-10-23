@@ -62,4 +62,13 @@ return [
         'email_attribute' => 'email',
         'force_change_password_attribute' => null,
     ],
+
+    'oauth_resource_server' => [
+        'introspection_endpoint' => env('OAUTH_INTROSPECTION_ENDPOINT'),
+        'client_id' => env('OAUTH_INTROSPECTION_CLIENT_ID'),
+        'client_secret' => env('OAUTH_INTROSPECTION_CLIENT_SECRET'),
+        'issuer' => env('OAUTH_RESOURCE_ISSUER'),
+        'resource' => env('OAUTH_RESOURCE_URI'),
+        'timeout_seconds' => (int) env('OAUTH_INTROSPECTION_TIMEOUT_SECONDS', 5),
+    ],
 ];

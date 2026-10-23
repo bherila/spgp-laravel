@@ -6,11 +6,53 @@ use App\Http\Controllers\Admin\PromoCodeRepositoryController;
 use App\Http\Controllers\Admin\SeasonController;
 use App\Http\Controllers\Admin\SeasonPassTypeController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Api\V1\AdminPassRequestController as AdminApi;
+use App\Http\Controllers\Api\V1\UserPassRequestController as UserApi;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PassRequestController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Middleware\AuthenticatePassRequestApi;
+use App\Http\Middleware\RequireApiAdministrator;
+use App\Http\Middleware\RequirePassRequestScope;
+use App\Http\Middleware\ValidatePassRequestOrigin;
+use App\Services\PassRequests\PassRequestOperations;
 use Illuminate\Support\Facades\Route;
+
+// Bearer-only public interfaces are independent of the browser's session/CSRF routes.
+Route::prefix('v1')->middleware(['throttle:pass-request-api', AuthenticatePassRequestApi::class, ValidatePassRequestOrigin::class])->group(function () {
+    $endpoint = function (string $method, string $uri, string $operation, bool $admin = false): void {
+        Route::match([$method], $uri, $admin ? AdminApi::class : UserApi::class)
+            ->defaults('operation', $operation)
+            ->middleware(RequirePassRequestScope::class.':'.PassRequestOperations::scope($operation, $admin));
+    };
+
+    $endpoint('GET', 'seasons', 'list_seasons');
+    $endpoint('GET', 'seasons/{season_id}/pass-types', 'list_pass_types');
+    $endpoint('GET', 'pass-requests', 'list_pass_requests');
+    $endpoint('POST', 'pass-requests', 'create_pass_request');
+    $endpoint('PATCH', 'pass-requests/missing-country', 'set_missing_country');
+    $endpoint('GET', 'pass-requests/{id}', 'get_pass_request');
+    $endpoint('PATCH', 'pass-requests/{id}', 'update_pass_request');
+    $endpoint('DELETE', 'pass-requests/{id}', 'cancel_pass_request');
+    $endpoint('PUT', 'pass-requests/{id}/renewal-order', 'set_renewal_order');
+    $endpoint('DELETE', 'pass-requests/{id}/renewal-order', 'remove_renewal_order');
+
+    Route::prefix('admin')->middleware(RequireApiAdministrator::class)->group(function () use ($endpoint) {
+        $endpoint('GET', 'seasons', 'list_seasons', true);
+        $endpoint('GET', 'pass-requests', 'list_pass_requests', true);
+        $endpoint('GET', 'pass-requests/{id}', 'get_pass_request', true);
+        $endpoint('PATCH', 'pass-requests/{id}', 'update_pass_request', true);
+        $endpoint('DELETE', 'pass-requests/{id}', 'delete_pass_request', true);
+        foreach ([
+            'assign-codes' => 'assign_promo_codes', 'auto-assign-codes' => 'auto_assign_promo_codes',
+            'clear-codes' => 'clear_promo_codes', 'send-emails' => 'send_pass_code_emails',
+            'bulk-delete' => 'bulk_delete_pass_requests',
+        ] as $path => $operation) {
+            $endpoint('POST', 'seasons/{season_id}/pass-requests/'.$path, $operation, true);
+        }
+    });
+});
 
 /*
 |--------------------------------------------------------------------------

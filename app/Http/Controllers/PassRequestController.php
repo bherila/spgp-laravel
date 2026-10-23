@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PassRequest;
-use App\Models\PromoCodeRepository;
 use App\Models\Season;
-use App\Models\SeasonPassType;
+use App\Services\PassRequests\UserPassRequestService;
 use Illuminate\Http\Request;
 
 class PassRequestController extends Controller
 {
-    /**
-     * Show the pass request form.
-     */
+    public function __construct(private readonly UserPassRequestService $passRequests) {}
+
     public function showRequestForm(int $seasonId)
     {
         $season = Season::findOrFail($seasonId);
@@ -20,280 +17,60 @@ class PassRequestController extends Controller
         return view('request', compact('season'));
     }
 
-    /**
-     * Get pass requests for the authenticated user, grouped by season.
-     * Only returns non-archived seasons.
-     */
     public function list(Request $request)
     {
-        $user = $request->user();
-
-        // Get active seasons with user's pass requests
-        $seasons = Season::query()
-            ->whereHas('passRequests', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
-            ->with(['passRequests' => function ($query) use ($user) {
-                $query->where('user_id', $user->id)
-                    ->with('seasonPassType')
-                    ->orderBy('created_at', 'desc');
-            }])
-            ->orderBy('pass_year', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return response()->json($seasons);
+        return response()->json($this->passRequests->grouped($request->user()));
     }
 
-    /**
-     * Get all active seasons for the request form.
-     */
     public function getActiveSeasons(Request $request)
     {
-        $user = $request->user();
-
-        // Get current time in server's local timezone
-        $now = now(date_default_timezone_get());
-        $threeMonthsFromNow = $now->copy()->addMonths(3);
-
-        // We still query in UTC because that's how it's stored
-        $nowUtc = $now->copy()->setTimezone('UTC');
-        $threeMonthsFromNowUtc = $threeMonthsFromNow->copy()->setTimezone('UTC');
-
-        $seasons = Season::query()
-            ->where('final_deadline', '>=', $nowUtc)
-            ->where(function ($query) use ($nowUtc, $threeMonthsFromNowUtc) {
-                // Currently active
-                $query->where('start_date', '<=', $nowUtc)
-                    // Upcoming but within 3 months
-                    ->orWhere('start_date', '<=', $threeMonthsFromNowUtc);
-            })
-            ->with(['passTypes' => function ($query) {
-                $query->orderBy('sort_order');
-            }])
-            ->orderBy('pass_year', 'desc')
-            ->get();
-
-        // Attach the user's most recently requested pass type ID for each season.
-        // Uses a subquery to find the latest created_at per season, then joins to
-        // retrieve the corresponding season_pass_type_id — all at the DB level.
-        if ($user) {
-            $latestPerSeason = PassRequest::selectRaw('MAX(created_at) as latest_at, season_id')
-                ->where('user_id', $user->id)
-                ->whereIn('season_id', $seasons->pluck('id'))
-                ->groupBy('season_id');
-
-            $previousPassTypes = PassRequest::joinSub($latestPerSeason, 'latest', function ($join) {
-                $join->on('pass_requests.season_id', '=', 'latest.season_id')
-                    ->on('pass_requests.created_at', '=', 'latest.latest_at');
-            })
-                ->where('pass_requests.user_id', $user->id)
-                ->pluck('pass_requests.season_pass_type_id', 'pass_requests.season_id');
-
-            $seasons->each(function ($season) use ($previousPassTypes) {
-                $season->user_previous_pass_type_id = $previousPassTypes->get($season->id);
-            });
-        }
-
-        return response()->json($seasons);
+        return response()->json($this->passRequests->activeSeasons($request->user()));
     }
 
-    /**
-     * Get pass types for a specific season.
-     */
     public function getPassTypes(int $seasonId)
     {
-        $passTypes = SeasonPassType::where('season_id', $seasonId)
-            ->orderBy('sort_order')
-            ->get();
-
-        return response()->json($passTypes);
+        return response()->json($this->passRequests->passTypes($seasonId));
     }
 
-    /**
-     * Store a new pass request for the authenticated user.
-     */
     public function store(Request $request)
     {
-        $user = $request->user();
-
-        $validated = $request->validate([
-            'season_id' => ['required', 'exists:seasons,id'],
-            'season_pass_type_id' => ['required', 'exists:season_pass_types,id'],
-            'passholder_email' => ['required', 'email', 'max:255'],
-            'passholder_first_name' => ['required', 'string', 'max:255'],
-            'passholder_last_name' => ['required', 'string', 'max:255'],
-            'passholder_birth_date' => ['required', 'date'],
-            'is_renewal' => ['sometimes', 'boolean'],
-            'renewal_pass_id' => ['nullable', 'string', 'max:255'],
-            'country' => ['required', 'string', 'in:USA,Canada,Other'],
-        ]);
-
-        // Check for duplicates
-        $existingRequest = PassRequest::where([
-            ['season_id', '=', $validated['season_id']],
-            ['passholder_first_name', '=', $validated['passholder_first_name']],
-            ['passholder_last_name', '=', $validated['passholder_last_name']],
-            ['passholder_email', '=', $validated['passholder_email']],
-        ])
-            ->whereDate('passholder_birth_date', $validated['passholder_birth_date'])
-            ->first();
-
-        if ($existingRequest) {
-            if ($existingRequest->user_id === $user->id) {
-                return response()->json([
-                    'message' => 'You have already created a pass request for this person. Only one pass request can exist for a Name/Email/DOB per Season.',
-                ], 422);
-            } else {
-                return response()->json([
-                    'message' => 'Another user has already created a pass request for this person. Please ensure they haven\'t already requested their own pass. Only one pass request can exist for a Name/Email/DOB per Season.',
-                ], 422);
-            }
-        }
-
-        // Get the pass type name for legacy compatibility
-        $passType = SeasonPassType::find($validated['season_pass_type_id']);
-        $validated['pass_type'] = $passType?->pass_type_name ?? '';
-        $validated['user_id'] = $user->id;
-
-        $passRequest = PassRequest::create($validated);
-
-        return response()->json($passRequest, 201);
+        return response()->json($this->passRequests->create($request->user(), $request->all()), 201);
     }
 
-    /**
-     * Update a pass request (only by owner or admin).
-     */
     public function update(Request $request, string $id)
     {
-        $user = $request->user();
-        $passRequest = PassRequest::findOrFail($id);
-
-        // Check ownership or admin
-        if ($passRequest->user_id !== $user->id && ! $user->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'renewal_order_number' => ['nullable', 'string', 'max:30'],
-            'passholder_email' => ['sometimes', 'email', 'max:255'],
-            'passholder_first_name' => ['sometimes', 'string', 'max:255'],
-            'passholder_last_name' => ['sometimes', 'string', 'max:255'],
-            'passholder_birth_date' => ['sometimes', 'date'],
-        ]);
-
-        $passRequest->update($validated);
+        $actor = $request->user();
+        $passRequest = $actor->isAdmin()
+            ? $this->passRequests->updateForAdministration($actor, $id, $request->all())
+            : $this->passRequests->update($actor, $id, $request->all());
 
         return response()->json($passRequest);
     }
 
-    /**
-     * Update the renewal order number for a pass request (self-reported).
-     */
     public function updateRenewalOrder(Request $request, string $id)
     {
-        $user = $request->user();
-        $passRequest = PassRequest::findOrFail($id);
-
-        // Check ownership
-        if ($passRequest->user_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'renewal_order_number' => ['required', 'string', 'max:30'],
-        ]);
-
-        $passRequest->update([
-            'renewal_order_number' => $validated['renewal_order_number'],
-            'assign_code_date' => now(),
-        ]);
-
-        return response()->json($passRequest);
+        return response()->json($this->passRequests->setRenewalOrder($request->user(), $id, $request->all()));
     }
 
-    /**
-     * Remove the renewal order number from a pass request.
-     */
     public function removeRenewalOrder(Request $request, string $id)
     {
-        $user = $request->user();
-        $passRequest = PassRequest::findOrFail($id);
-
-        // Check ownership
-        if ($passRequest->user_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $passRequest->update([
-            'renewal_order_number' => null,
-            'assign_code_date' => null,
-        ]);
-
-        return response()->json($passRequest);
+        return response()->json($this->passRequests->removeRenewalOrder($request->user(), $id));
     }
 
-    /**
-     * Delete a pass request owned by the authenticated user.
-     * Requests with an assigned promo code cannot be deleted.
-     */
     public function destroy(Request $request, string $id)
     {
-        $user = $request->user();
-        $passRequest = PassRequest::findOrFail($id);
-
-        if ($passRequest->user_id !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        if ($passRequest->promo_code) {
-            return response()->json([
-                'message' => 'This pass request cannot be cancelled because a promo code has already been assigned.',
-            ], 422);
-        }
-
-        $passRequest->delete();
+        $this->passRequests->cancel($request->user(), $id);
 
         return response()->json(['message' => 'Pass request cancelled successfully']);
     }
 
-    /**
-     * Bulk-update the country on all of the user's pass requests that are missing a country.
-     * If the selected country is not USA and a promo code is assigned, the promo code is
-     * unassigned and returned to the PromoCodeRepository so it can be reused.
-     */
     public function updateCountry(Request $request)
     {
-        $user = $request->user();
-
-        $validated = $request->validate([
-            'country' => ['required', 'string', 'in:USA,Canada'],
-        ]);
-
-        $passRequests = PassRequest::where('user_id', $user->id)
-            ->whereNull('country')
-            ->get();
-
-        foreach ($passRequests as $passRequest) {
-            // If changing away from USA and a promo code is assigned, unassign it
-            // so the promo code becomes available for reassignment to another request.
-            // Also clear the emailed flag so the user will get a new email when a
-            // replacement promo code is assigned.
-            if ($validated['country'] !== 'USA' && $passRequest->promo_code) {
-                $passRequest->update([
-                    'promo_code' => null,
-                    'assign_code_date' => null,
-                    'email_notify_time' => null,
-                    'country' => $validated['country'],
-                ]);
-            } else {
-                $passRequest->update(['country' => $validated['country']]);
-            }
-        }
+        $updated = $this->passRequests->updateCountry($request->user(), $request->all());
 
         return response()->json([
-            'message' => 'Country updated for '.$passRequests->count().' pass request(s).',
-            'updated' => $passRequests->count(),
+            'message' => 'Country updated for '.$updated.' pass request(s).',
+            'updated' => $updated,
         ]);
     }
 }

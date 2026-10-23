@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Sentry\Laravel\Integration;
 
 $app = Application::configure(basePath: dirname(__DIR__))
@@ -19,6 +20,10 @@ $app = Application::configure(basePath: dirname(__DIR__))
         // Use default CSRF validation for session-authenticated routes.
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->shouldRenderJsonWhen(fn (Request $request, Throwable $exception): bool => $request->is('api/v1/*', 'mcp/*')
+            || ($request->is('api/*') && $exception instanceof ValidationException)
+            || $request->expectsJson()
+        );
         Integration::handles($exceptions);
     })->create();
 

@@ -78,6 +78,7 @@ Use these functions for **all** date display. Do not create new local `formatDat
 - Controllers live under `app/Http/Controllers/`, admin controllers under `app/Http/Controllers/Admin/` when applicable.
 - API routes live in `routes/api.php`; web routes live in `routes/web.php`.
 - Blade should remain an initial page shell that mounts React roots.
+- Pass-request business rules live in `app/Services/PassRequests/`; browser routes, versioned REST endpoints, and MCP tools must reuse them.
 
 ## Critical rules
 
