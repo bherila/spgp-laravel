@@ -143,7 +143,7 @@ function Dashboard() {
       setRenewalModalOpen(false);
       setRenewalRequest(null);
       setRenewalOrderNumber('');
-      fetchPassRequests();
+      void fetchPassRequests();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -159,7 +159,7 @@ function Dashboard() {
         errorMessage: 'Failed to remove renewal order',
       });
 
-      fetchPassRequests();
+      void fetchPassRequests();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
@@ -174,7 +174,7 @@ function Dashboard() {
       });
 
       setCancelConfirmId(null);
-      fetchPassRequests();
+      void fetchPassRequests();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
@@ -182,7 +182,7 @@ function Dashboard() {
 
   const handleCopyPromoCode = (code: string, requestId: string) => {
     if (navigator.clipboard) {
-      navigator.clipboard.writeText(code);
+      void navigator.clipboard.writeText(code);
     }
     setCopiedId(requestId);
     setTimeout(() => setCopiedId(null), 2000);
@@ -207,7 +207,7 @@ function Dashboard() {
 
       setRedeemSuccess(data.message);
       setInviteCode('');
-      fetchPassRequests();
+      void fetchPassRequests();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -609,7 +609,7 @@ function Dashboard() {
           csrfToken={csrfToken}
           onSuccess={() => {
             setMissingCountryModalOpen(false);
-            fetchPassRequests();
+            void fetchPassRequests();
           }}
         />
       </div>

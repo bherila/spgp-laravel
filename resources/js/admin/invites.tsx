@@ -124,7 +124,7 @@ function AdminInvites({ initialData }: AdminInvitesProps) {
       setFormSeasonId('');
       setFormInviteCode('');
       setFormMaxUses('1');
-      fetchInviteCodes();
+      void fetchInviteCodes();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -156,7 +156,7 @@ function AdminInvites({ initialData }: AdminInvitesProps) {
 
       setEditModalOpen(false);
       setSelectedCode(null);
-      fetchInviteCodes();
+      void fetchInviteCodes();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -178,7 +178,7 @@ function AdminInvites({ initialData }: AdminInvitesProps) {
 
       setArchiveModalOpen(false);
       setSelectedCode(null);
-      fetchInviteCodes();
+      void fetchInviteCodes();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -193,7 +193,7 @@ function AdminInvites({ initialData }: AdminInvitesProps) {
         errorMessage: 'Failed to restore invite code',
       });
 
-      fetchInviteCodes();
+      void fetchInviteCodes();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }

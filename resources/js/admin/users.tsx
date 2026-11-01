@@ -149,7 +149,7 @@ export function AdminUsers({ initialUsers }: AdminUsersProps) {
 
       setEditModalOpen(false);
       setSelectedUser(null);
-      fetchUsers();
+      void fetchUsers();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -170,7 +170,7 @@ export function AdminUsers({ initialUsers }: AdminUsersProps) {
 
       setDeleteModalOpen(false);
       setSelectedUser(null);
-      fetchUsers();
+      void fetchUsers();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'An error occurred');
     } finally {

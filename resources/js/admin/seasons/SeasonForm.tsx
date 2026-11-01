@@ -48,7 +48,7 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
   
   // Season Info State
   const [passName, setPassName] = useState('');
-  const [passYear, setPassYear] = useState(new Date().getFullYear().toString());
+  const [passYear, setPassYear] = useState(() => new Date().getFullYear().toString());
   const [startDate, setStartDate] = useState('');
   const [earlySpringDeadline, setEarlySpringDeadline] = useState('');
   const [finalDeadline, setFinalDeadline] = useState('');
@@ -100,7 +100,7 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
       setFinalDeadline(formatDateTimeLocal(season.final_deadline));
       setSpreadsheetUrl(season.spreadsheet_url || '');
       setAllowRenewals(season.allow_renewals);
-      fetchPassTypes();
+      void fetchPassTypes();
     } else {
       setPassName('');
       setPassYear(new Date().getFullYear().toString());
@@ -199,7 +199,7 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
       toast.success(`Pass type ${editingPt ? 'updated' : 'added'} successfully`);
       setPtFormOpen(false);
       resetPtForm();
-      fetchPassTypes();
+      void fetchPassTypes();
     } catch (err) {
       setPtError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -218,7 +218,7 @@ export function SeasonForm({ open, onOpenChange, season, csrfToken, onSuccess }:
       });
 
       toast.success('Pass type deleted');
-      fetchPassTypes();
+      void fetchPassTypes();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'An error occurred');
     }

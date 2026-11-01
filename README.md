@@ -191,10 +191,10 @@ pnpm test
 ### Linting
 
 ```bash
-# Run ESLint linter
+# Run oxlint (type-aware)
 pnpm lint
 
-# Run ESLint linter and auto-fix issues
+# Run oxlint (type-aware) and auto-fix issues
 pnpm lint:fix
 
 # Run TypeScript type-check

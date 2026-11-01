@@ -10,7 +10,6 @@ const markdownEsmPackages = [
 ].join('|');
 
 const config = {
-  preset: 'ts-jest',
   testEnvironment: 'jsdom',
   testMatch: ['<rootDir>/resources/js/**/*.test.ts?(x)', '<rootDir>/tests-ts/**/*.test.ts?(x)'],
   setupFilesAfterEnv: ['<rootDir>/tests-ts/jest.setup.ts'],
@@ -22,8 +21,19 @@ const config = {
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
-    '^.+\\.m?js$': ['ts-jest', { tsconfig: { allowJs: true, module: 'commonjs', target: 'es2022' }, diagnostics: false }],
+    '^.+\\.(ts|tsx)$': ['@swc/jest', {
+      jsc: {
+        parser: { syntax: 'typescript', tsx: true },
+        transform: { react: { runtime: 'automatic' } },
+        target: 'es2022',
+      },
+    }],
+    '^.+\\.m?js$': ['@swc/jest', {
+      jsc: {
+        parser: { syntax: 'ecmascript' },
+        target: 'es2022',
+      },
+    }],
   },
 };
 

@@ -9,7 +9,7 @@ The workflows use PHP 8.5 and Node.js 24 where needed. pnpm uses the version pin
 
 ## Dependency monitoring
 
-Dependabot checks Composer, JavaScript, and GitHub Actions every Monday. Composer and JavaScript minor/patch updates are grouped by ecosystem; major updates get separate PRs so compatibility changes can be reviewed independently. TypeScript 7 and ESLint 10 currently exceed the supported peer ranges of `ts-jest` and `eslint-plugin-react`, respectively.
+Dependabot checks Composer, JavaScript, and GitHub Actions every Monday. Composer and JavaScript minor/patch updates are grouped by ecosystem; major updates get separate PRs so compatibility changes can be reviewed independently.
 
 The audit workflow reads lockfiles without installing project dependencies or running their scripts. Composer advisories fail the workflow. JavaScript production advisories at any severity and development advisories at high/critical severity also fail. Lower-severity development advisories appear in the log summary and as a warning; full JSON reports are retained as artifacts for 30 days. Registry failures and invalid reports fail rather than being treated as clean audits. The current moderate `sprintf-js` advisory, `GHSA-hp3w-g68c-fv3c`, is transitive through Jest and has no published fix.
 
