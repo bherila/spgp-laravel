@@ -16,6 +16,13 @@ class ApiIdentityLinksMigrationTest extends TestCase
         return require database_path('migrations/2026_11_01_000000_create_api_identity_links_table.php');
     }
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // The drop migration has already run; restore the legacy columns these tests seed.
+        (require database_path('migrations/2026_11_01_000001_drop_legacy_oauth_columns_from_users.php'))->down();
+    }
+
     private function user(string $email, ?string $provider, ?string $subject): int
     {
         return DB::table('users')->insertGetId([
