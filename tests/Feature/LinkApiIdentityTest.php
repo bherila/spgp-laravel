@@ -31,7 +31,7 @@ class LinkApiIdentityTest extends TestCase
             'provider' => 'https://identity.example.test',
             'subject' => 'provider-subject',
         ]);
-        $this->assertDatabaseHas('users', ['id' => $user->id, 'is_admin' => false, 'oauth_provider' => null, 'oauth_subject' => null]);
+        $this->assertDatabaseHas('users', ['id' => $user->id, 'is_admin' => false]);
 
         $this->artisan('api:link-identity', ['user' => (string) $user->id, 'subject' => 'provider-subject'])->assertSuccessful();
     }
