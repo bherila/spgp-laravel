@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ApiIdentityLink;
 use App\Models\EmailLog;
 use App\Models\InviteCode;
 use App\Models\Season;
@@ -17,7 +18,8 @@ class AdminPageDataTest extends TestCase
     public function test_user_page_embeds_the_same_data_as_its_refresh_endpoint_without_secrets(): void
     {
         $admin = User::factory()->admin()->create();
-        User::factory()->create(['oauth_provider' => 'https://identity.example.test', 'oauth_subject' => 'opaque-subject']);
+        $linked = User::factory()->create();
+        ApiIdentityLink::query()->create(['user_id' => $linked->id, 'provider' => 'https://identity.example.test', 'subject' => 'opaque-subject']);
         $this->actingAs($admin);
 
         $data = $this->pageData('/admin/users');
@@ -27,6 +29,8 @@ class AdminPageDataTest extends TestCase
             $this->assertArrayNotHasKey('password', $user);
             $this->assertArrayNotHasKey('oauth_subject', $user);
             $this->assertArrayNotHasKey('oauth_provider', $user);
+            $this->assertArrayNotHasKey('api_identity_link', $user);
+            $this->assertStringNotContainsString('opaque-subject', json_encode($user));
         }
     }
 

@@ -44,7 +44,7 @@ Use one canonical resource URI for REST and both MCP servers: the application's 
 
 **Auth Manager prerequisite:** its current resource profile has a fixed scope catalog (`identity:read`, `mcp:use`, `offers:read`). Add the four SPGP scopes above to the provider's permitted and resource-bound scope catalog before enabling this application. Its current profile also pins a single resource; use an SPGP-specific resource-profile instance, or extend the provider to support the additional resource. Do not repurpose another application's configured resource. Ordinary sign-in grants alone are insufficient for these API tokens. Auth Manager's `docs/deployment-profiles.md` describes that profile.
 
-The new `2026_10_22_000000_add_api_identity_binding_to_users_table.php` migration adds nullable identity-binding columns and a uniqueness constraint. It must be included in the normal reviewed deployment before enabling API access. No migration is run as part of this change's implementation.
+API identity links live in the `api_identity_links` table (`user_id`, `provider`, `subject`; unique per user and per provider/subject; binary collation on MySQL). The `2026_11_01_000000_create_api_identity_links_table.php` migration creates it and copies any links from the legacy `users.oauth_provider`/`oauth_subject` columns (added by `2026_10_22_000000_add_api_identity_binding_to_users_table.php`). Those legacy columns are now unused and are reserved for auth-laravel provider sign-in; a follow-up migration will drop them. It must be included in the normal reviewed deployment before enabling API access.
 
 An operator then links each existing local account to a verified OAuth subject:
 

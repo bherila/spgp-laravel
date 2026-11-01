@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\ApiIdentityLink;
 use App\Models\User;
 use App\Services\PassRequests\ApiAccess;
 use BWH\Auth\OAuth\Introspection\OAuthIntrospectionException;
@@ -43,8 +44,9 @@ class LinkApiIdentity extends Command
                     return self::FAILURE;
                 }
 
-                if ($user->oauth_provider !== null || $user->oauth_subject !== null) {
-                    if ($user->oauth_provider === $configuration['issuer'] && $user->oauth_subject === $subject) {
+                $existing = ApiIdentityLink::query()->where('user_id', $user->id)->first();
+                if ($existing !== null) {
+                    if ($existing->provider === $configuration['issuer'] && $existing->subject === $subject) {
                         $this->info('The local user already has this identity binding.');
 
                         return self::SUCCESS;
@@ -54,13 +56,13 @@ class LinkApiIdentity extends Command
                     return self::FAILURE;
                 }
 
-                if (User::query()->where('oauth_provider', $configuration['issuer'])->where('oauth_subject', $subject)->exists()) {
+                if (ApiIdentityLink::query()->where('provider', $configuration['issuer'])->where('subject', $subject)->exists()) {
                     $this->error('This identity is already linked to another local user.');
 
                     return self::FAILURE;
                 }
 
-                $user->forceFill(['oauth_provider' => $configuration['issuer'], 'oauth_subject' => $subject])->save();
+                ApiIdentityLink::query()->create(['user_id' => $user->id, 'provider' => $configuration['issuer'], 'subject' => $subject]);
                 $this->info('The identity was linked to the existing local user.');
 
                 return self::SUCCESS;

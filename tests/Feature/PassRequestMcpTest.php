@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\ApiIdentityLink;
 use App\Models\PromoCodeRepository;
 use App\Models\SeasonPassType;
 use App\Models\User;
@@ -183,7 +184,7 @@ class PassRequestMcpTest extends TestCase
     {
         $user = User::factory()->create(['is_admin' => $admin]);
         $subject = 'subject-'.$user->id;
-        $user->forceFill(['oauth_provider' => self::ISSUER, 'oauth_subject' => $subject])->save();
+        ApiIdentityLink::query()->create(['user_id' => $user->id, 'provider' => self::ISSUER, 'subject' => $subject]);
         $token = new IntrospectedToken(
             active: true, issuer: self::ISSUER, subject: $subject, clientId: 'mcp-client',
             scopes: $scopes, audiences: [self::RESOURCE], resource: self::RESOURCE,

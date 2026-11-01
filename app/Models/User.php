@@ -6,6 +6,7 @@ use App\Traits\SerializesDatesAsLocal;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -81,6 +82,14 @@ class User extends Authenticatable
     public function getLoginRedirectUrl(): string
     {
         return '/dashboard';
+    }
+
+    /**
+     * The API identity link (not the provider sign-in binding on oauth_provider/oauth_subject).
+     */
+    public function apiIdentityLink(): HasOne
+    {
+        return $this->hasOne(ApiIdentityLink::class);
     }
 
     /**
