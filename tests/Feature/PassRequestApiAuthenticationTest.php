@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Http\Controllers\Api\V1\OAuthMetadataController;
 use App\Http\Middleware\AuthenticatePassRequestApi;
 use App\Http\Middleware\RequirePassRequestScope;
+use App\Models\ApiIdentityLink;
 use App\Models\User;
 use App\Services\PassRequests\ApiAccess;
 use BWH\Auth\OAuth\Introspection\IntrospectedToken;
@@ -129,7 +130,7 @@ class PassRequestApiAuthenticationTest extends TestCase
     public function test_an_existing_binding_to_another_issuer_does_not_grant_access(): void
     {
         $user = $this->linkedUser();
-        $user->forceFill(['oauth_provider' => 'https://other.example.test'])->save();
+        $user->apiIdentityLink()->update(['provider' => 'https://other.example.test']);
         $this->fakeToken($this->token());
 
         $this->withToken('valid-bearer')->getJson('/testing/pass-request-api')->assertUnauthorized();
@@ -265,7 +266,7 @@ class PassRequestApiAuthenticationTest extends TestCase
     private function linkedUser(): User
     {
         $user = User::factory()->create();
-        $user->forceFill(['oauth_provider' => 'https://identity.example.test', 'oauth_subject' => 'opaque-subject'])->save();
+        ApiIdentityLink::query()->create(['user_id' => $user->id, 'provider' => 'https://identity.example.test', 'subject' => 'opaque-subject']);
 
         return $user;
     }

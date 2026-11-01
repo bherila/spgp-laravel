@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\User;
+use App\Models\ApiIdentityLink;
 use App\Services\PassRequests\ApiAccess;
 use BWH\Auth\OAuth\Introspection\IntrospectedToken;
 use BWH\Auth\OAuth\Introspection\OAuthIntrospectionException;
@@ -44,12 +44,13 @@ class AuthenticatePassRequestApi
             return ApiAccess::unavailableResponse();
         }
 
-        $user = User::query()
-            ->where('oauth_provider', $configuration['issuer'])
-            ->where('oauth_subject', $token->subject)
+        $link = ApiIdentityLink::query()
+            ->where('provider', $configuration['issuer'])
+            ->where('subject', $token->subject)
             ->first();
         // Compare exact opaque identifiers even if the production collation is case insensitive.
-        if ($user === null || $user->oauth_provider !== $configuration['issuer'] || $user->oauth_subject !== $token->subject) {
+        $user = $link?->user;
+        if ($user === null || $link->provider !== $configuration['issuer'] || $link->subject !== $token->subject) {
             return ApiAccess::challengeResponse(error: 'invalid_token');
         }
 
