@@ -61,19 +61,33 @@ return new class extends Migration
             }
         });
 
+        if (Schema::hasTable('api_identity_links')) {
+            $this->copyLinksBack();
+        }
+
         if (! Schema::hasIndex('users', self::INDEX)) {
             Schema::table('users', function (Blueprint $table): void {
                 $table->unique(['oauth_provider', 'oauth_subject'], self::INDEX);
             });
         }
+    }
 
-        if (! Schema::hasTable('api_identity_links')) {
-            return;
-        }
-
+    private function copyLinksBack(): void
+    {
         // Only fill users that have no binding of their own, so existing values are never overwritten.
+        // The restored columns use the default (often case-insensitive) collation, so a link that would
+        // collide with another user's value there cannot be represented; it is skipped rather than
+        // failing the whole rollback half-applied, and remains only in api_identity_links.
         DB::table('api_identity_links')->orderBy('id')->chunkById(500, function ($links): void {
             foreach ($links as $link) {
+                $taken = DB::table('users')
+                    ->where('oauth_provider', $link->provider)
+                    ->where('oauth_subject', $link->subject)
+                    ->exists();
+                if ($taken) {
+                    continue;
+                }
+
                 DB::table('users')
                     ->where('id', $link->user_id)
                     ->whereNull('oauth_provider')
