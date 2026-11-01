@@ -45,6 +45,7 @@ jobs:
               - 'tsconfig*.json'
               - 'vite.config.*'
               - 'jest.config.*'
+              - '.oxlintrc.json'
               - 'resources/**'
               - '.github/workflows/**'
             backend:

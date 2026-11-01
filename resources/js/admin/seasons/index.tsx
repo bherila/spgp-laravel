@@ -71,7 +71,7 @@ function AdminSeasons({ initialSeasons }: AdminSeasonsProps) {
 
       setArchiveModalOpen(false);
       setSelectedSeason(null);
-      fetchSeasons();
+      void fetchSeasons();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -87,7 +87,7 @@ function AdminSeasons({ initialSeasons }: AdminSeasonsProps) {
         errorMessage: 'Failed to restore season',
       });
 
-      fetchSeasons();
+      void fetchSeasons();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     }
