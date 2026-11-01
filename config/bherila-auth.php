@@ -17,6 +17,11 @@ return [
         'drop_tables_on_rollback' => false,
     ],
 
+    // API identity links do not change this application's local-account sign-in policy.
+    'local_credentials' => [
+        'provider_bound' => 'allow',
+    ],
+
     'audit' => [
         // 'null' discards events; 'database' persists them to the package audit table.
         'driver' => env('BHERILA_AUTH_AUDIT_DRIVER', 'database'),

@@ -217,7 +217,7 @@ class PassRequestApiTest extends TestCase
         $response = $this->getJson('/api/v1/admin/pass-requests?per_page=1', $this->bearer($admin, ['admin:pass-requests:read']))
             ->assertOk()->assertJsonPath('data.0.user.email', $owner->email)
             ->assertJsonMissingPath('data.0.user.password')->assertJsonMissingPath('data.0.user.remember_token')
-            ->assertJsonMissingPath('data.0.user.oauth_provider')->assertJsonMissingPath('data.0.user.oauth_subject');
+            ->assertJsonMissingPath('data.0.user.api_identity_issuer')->assertJsonMissingPath('data.0.user.api_identity_subject');
         $this->assertSame(['id', 'first_name', 'last_name', 'email'], array_keys($response->json('data.0.user')));
     }
 
@@ -275,7 +275,7 @@ class PassRequestApiTest extends TestCase
     private function boundUser(bool $admin = false): User
     {
         $user = User::factory()->create(['is_admin' => $admin]);
-        $user->forceFill(['oauth_provider' => self::ISSUER, 'oauth_subject' => 'subject-'.$user->id])->save();
+        $user->forceFill(['api_identity_issuer' => self::ISSUER, 'api_identity_subject' => 'subject-'.$user->id])->save();
 
         return $user;
     }
@@ -286,7 +286,7 @@ class PassRequestApiTest extends TestCase
         $this->tokens[$token] = new IntrospectedToken(
             active: true,
             issuer: self::ISSUER,
-            subject: $user->oauth_subject,
+            subject: $user->api_identity_subject,
             clientId: 'test-client',
             scopes: $scopes,
             audiences: [self::RESOURCE],

@@ -183,7 +183,7 @@ class PassRequestMcpTest extends TestCase
     {
         $user = User::factory()->create(['is_admin' => $admin]);
         $subject = 'subject-'.$user->id;
-        $user->forceFill(['oauth_provider' => self::ISSUER, 'oauth_subject' => $subject])->save();
+        $user->forceFill(['api_identity_issuer' => self::ISSUER, 'api_identity_subject' => $subject])->save();
         $token = new IntrospectedToken(
             active: true, issuer: self::ISSUER, subject: $subject, clientId: 'mcp-client',
             scopes: $scopes, audiences: [self::RESOURCE], resource: self::RESOURCE,

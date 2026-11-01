@@ -45,11 +45,11 @@ class AuthenticatePassRequestApi
         }
 
         $user = User::query()
-            ->where('oauth_provider', $configuration['issuer'])
-            ->where('oauth_subject', $token->subject)
+            ->where('api_identity_issuer', $configuration['issuer'])
+            ->where('api_identity_subject', $token->subject)
             ->first();
         // Compare exact opaque identifiers even if the production collation is case insensitive.
-        if ($user === null || $user->oauth_provider !== $configuration['issuer'] || $user->oauth_subject !== $token->subject) {
+        if ($user === null || $user->api_identity_issuer !== $configuration['issuer'] || $user->api_identity_subject !== $token->subject) {
             return ApiAccess::challengeResponse(error: 'invalid_token');
         }
 

@@ -11,10 +11,12 @@ use BWH\Auth\OAuth\Introspection\IntrospectedToken;
 use BWH\Auth\OAuth\Introspection\OAuthIntrospectionException;
 use BWH\Auth\OAuth\Introspection\OAuthTokenIntrospector;
 use BWH\Auth\OAuth\Introspection\OAuthTokenValidationException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -126,10 +128,25 @@ class PassRequestApiAuthenticationTest extends TestCase
         $this->withToken('valid-bearer')->getJson('/testing/pass-request-api')->assertUnauthorized();
     }
 
+    public function test_a_provider_sign_in_binding_alone_does_not_grant_api_access(): void
+    {
+        if (! Schema::hasColumn('users', 'oauth_provider')) {
+            Schema::table('users', function (Blueprint $table): void {
+                $table->string('oauth_provider')->nullable();
+                $table->string('oauth_subject')->nullable();
+            });
+        }
+        $user = User::factory()->create();
+        $user->forceFill(['oauth_provider' => 'https://identity.example.test', 'oauth_subject' => 'opaque-subject'])->save();
+        $this->fakeToken($this->token());
+
+        $this->withToken('valid-bearer')->getJson('/testing/pass-request-api')->assertUnauthorized();
+    }
+
     public function test_an_existing_binding_to_another_issuer_does_not_grant_access(): void
     {
         $user = $this->linkedUser();
-        $user->forceFill(['oauth_provider' => 'https://other.example.test'])->save();
+        $user->forceFill(['api_identity_issuer' => 'https://other.example.test'])->save();
         $this->fakeToken($this->token());
 
         $this->withToken('valid-bearer')->getJson('/testing/pass-request-api')->assertUnauthorized();
@@ -265,7 +282,7 @@ class PassRequestApiAuthenticationTest extends TestCase
     private function linkedUser(): User
     {
         $user = User::factory()->create();
-        $user->forceFill(['oauth_provider' => 'https://identity.example.test', 'oauth_subject' => 'opaque-subject'])->save();
+        $user->forceFill(['api_identity_issuer' => 'https://identity.example.test', 'api_identity_subject' => 'opaque-subject'])->save();
 
         return $user;
     }

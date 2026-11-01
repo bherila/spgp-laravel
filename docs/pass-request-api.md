@@ -16,6 +16,12 @@ The website, REST API, and MCP tools share `UserPassRequestService` and `AdminPa
 
 REST and MCP require an OAuth bearer access token from the configured external issuer. Browser cookies and query-string tokens cannot authenticate these interfaces. SPGP introspects the token on every request, validates its issuer, audience/resource, expiry and subject, and maps that exact issuer/subject pair to an explicitly linked local account. Token revocation takes effect on the next request.
 
+API links live in `users.api_identity_issuer` and `users.api_identity_subject`. They are independent
+of the auth package's `oauth_provider` / `oauth_subject` sign-in bindings: linking an API identity
+does not bind browser sign-in, and a sign-in binding alone never grants API access. Browser
+accounts remain local, with `local_credentials.provider_bound = allow` explicitly configured.
+Provider sign-in is not enabled by this change.
+
 | Scope | Access |
 | --- | --- |
 | `pass-requests:read` | Your requests, active seasons, and pass types |
@@ -44,7 +50,18 @@ Use one canonical resource URI for REST and both MCP servers: the application's 
 
 **Auth Manager prerequisite:** its current resource profile has a fixed scope catalog (`identity:read`, `mcp:use`, `offers:read`). Add the four SPGP scopes above to the provider's permitted and resource-bound scope catalog before enabling this application. Its current profile also pins a single resource; use an SPGP-specific resource-profile instance, or extend the provider to support the additional resource. Do not repurpose another application's configured resource. Ordinary sign-in grants alone are insufficient for these API tokens. Auth Manager's `docs/deployment-profiles.md` describes that profile.
 
-The new `2026_10_22_000000_add_api_identity_binding_to_users_table.php` migration adds nullable identity-binding columns and a uniqueness constraint. It must be included in the normal reviewed deployment before enabling API access. No migration is run as part of this change's implementation.
+`2026_10_22_000000_add_api_identity_binding_to_users_table.php` originally created the API link
+in the auth package's sign-in columns. `2026_11_01_000000_separate_api_identity_links_from_sign_in_bindings.php`
+renames those columns and their unique index to the dedicated API names. Existing issuer/subject
+values, account IDs, passwords and local permissions are preserved; no relinking or email matching
+is performed. The original migration remains unchanged for existing deployments.
+
+Keep `PASS_REQUEST_API_ENABLED=false` while coordinating this schema rename with the application
+release. Old and new API code require their matching column names: complete the reviewed migration
+and application deployment before restoring API access. Rollback likewise requires restoring both
+the old application and this migration's old column names before enabling API access. Do not roll
+this migration back after a future provider-sign-in rollout has created its own `oauth_*` columns;
+that rollout must have its own rollback plan. No production migration is run during implementation.
 
 An operator then links each existing local account to a verified OAuth subject:
 

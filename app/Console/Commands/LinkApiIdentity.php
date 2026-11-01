@@ -43,8 +43,8 @@ class LinkApiIdentity extends Command
                     return self::FAILURE;
                 }
 
-                if ($user->oauth_provider !== null || $user->oauth_subject !== null) {
-                    if ($user->oauth_provider === $configuration['issuer'] && $user->oauth_subject === $subject) {
+                if ($user->api_identity_issuer !== null || $user->api_identity_subject !== null) {
+                    if ($user->api_identity_issuer === $configuration['issuer'] && $user->api_identity_subject === $subject) {
                         $this->info('The local user already has this identity binding.');
 
                         return self::SUCCESS;
@@ -54,13 +54,13 @@ class LinkApiIdentity extends Command
                     return self::FAILURE;
                 }
 
-                if (User::query()->where('oauth_provider', $configuration['issuer'])->where('oauth_subject', $subject)->exists()) {
+                if (User::query()->where('api_identity_issuer', $configuration['issuer'])->where('api_identity_subject', $subject)->exists()) {
                     $this->error('This identity is already linked to another local user.');
 
                     return self::FAILURE;
                 }
 
-                $user->forceFill(['oauth_provider' => $configuration['issuer'], 'oauth_subject' => $subject])->save();
+                $user->forceFill(['api_identity_issuer' => $configuration['issuer'], 'api_identity_subject' => $subject])->save();
                 $this->info('The identity was linked to the existing local user.');
 
                 return self::SUCCESS;

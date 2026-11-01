@@ -17,7 +17,7 @@ class AdminPageDataTest extends TestCase
     public function test_user_page_embeds_the_same_data_as_its_refresh_endpoint_without_secrets(): void
     {
         $admin = User::factory()->admin()->create();
-        User::factory()->create(['oauth_provider' => 'https://identity.example.test', 'oauth_subject' => 'opaque-subject']);
+        User::factory()->create(['api_identity_issuer' => 'https://identity.example.test', 'api_identity_subject' => 'opaque-subject']);
         $this->actingAs($admin);
 
         $data = $this->pageData('/admin/users');
@@ -25,6 +25,8 @@ class AdminPageDataTest extends TestCase
         $this->assertSame($this->getJson('/api/admin/users/list')->assertOk()->json(), $data['users']);
         foreach ($data['users'] as $user) {
             $this->assertArrayNotHasKey('password', $user);
+            $this->assertArrayNotHasKey('api_identity_subject', $user);
+            $this->assertArrayNotHasKey('api_identity_issuer', $user);
             $this->assertArrayNotHasKey('oauth_subject', $user);
             $this->assertArrayNotHasKey('oauth_provider', $user);
         }
