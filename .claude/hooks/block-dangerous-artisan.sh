@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Claude Code PreToolUse hook: block unsafe Laravel database commands.
 #
-# Advisory rules live in AGENTS.md/CLAUDE.md; this hook is the enforcement layer
+# Advisory rules live in AGENTS.md; this hook is the enforcement layer
 # for the most dangerous local agent mistakes. It denies the individual Bash
 # tool call (PreToolUse permissionDecision=deny) rather than halting the session,
 # so the agent can retry with the only permitted form:

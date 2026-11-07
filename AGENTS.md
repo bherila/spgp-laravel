@@ -91,6 +91,13 @@ Use these functions for **all** date display. Do not create new local `formatDat
 7. **React/TypeScript**: prefer existing components/utilities, strict types, `interface` for props, and path imports via `@/` where configured.
 8. **PR/commit text**: strip `[codex]` or other tool prefixes from PR titles and commit subjects.
 
+## Agent session rules
+
+- Keep private workstation preferences out of committed files; use a local, gitignored override if needed.
+- PR CI runs changed-area checks; also run the relevant `TESTING.AGENTS.md` gate locally before pushing or merging.
+- The committed `.claude/` hook blocks unsafe migrate and schema-dump forms; see Critical rules.
+- Prefer the `gh` CLI for GitHub work and fully-qualified references such as `bherila/spgp-laravel#123`.
+
 ## Context budget
 
 Keep root guidance compact. Pull in only the specific component, route, controller, test, or doc needed for the touched behavior. Do not duplicate long framework-generated guidance in root instruction files.
