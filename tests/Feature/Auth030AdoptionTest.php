@@ -8,6 +8,7 @@ use BWH\Auth\Models\TwoFactorAttempt;
 use BWH\Auth\Services\TwoFactorService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -113,6 +114,45 @@ class Auth030AdoptionTest extends TestCase
         $this->actingAs($user)->withSession(['password_hash_web' => $oldHash])
             ->getJson('/api/admin/users/list')->assertUnauthorized();
         $this->assertGuest();
+    }
+
+    public function test_remembered_admin_can_change_own_password_without_losing_current_device(): void
+    {
+        $this->databaseSessions();
+        $admin = User::factory()->admin()->create([
+            'password' => Hash::make('current-password'), 'remember_token' => 'old-admin-token',
+        ]);
+        $other = User::factory()->create();
+        $this->device('old-admin-device', $admin->id);
+        $this->device('foreign-device', $other->id);
+        $guard = Auth::guard();
+        $recaller = $admin->id.'|old-admin-token|'.$guard->hashPasswordForCookie($admin->password);
+
+        $response = $this->withCredentials()->withCookie($guard->getRecallerName(), $recaller)
+            ->putJson('/api/admin/users/'.$admin->id, ['password' => 'replacement-password'])->assertOk();
+
+        $fresh = $admin->fresh();
+        $cookie = $response->getCookie($guard->getRecallerName());
+        $this->assertNotNull($cookie);
+        $this->assertSame($fresh->id.'|'.$fresh->remember_token.'|'.$guard->hashPasswordForCookie($fresh->password), $cookie->getValue());
+        $this->assertDatabaseMissing('sessions', ['id' => 'old-admin-device']);
+        $this->assertDatabaseHas('sessions', ['id' => 'foreign-device']);
+        $this->assertAuthenticatedAs($fresh);
+    }
+
+    public function test_session_only_admin_self_change_records_the_new_hash_without_minting_remember_token(): void
+    {
+        $admin = User::factory()->admin()->create([
+            'password' => Hash::make('current-password'), 'remember_token' => null,
+        ]);
+
+        $this->actingAs($admin)->putJson('/api/admin/users/'.$admin->id, ['password' => 'replacement-password'])->assertOk();
+
+        $fresh = $admin->fresh();
+        $this->assertNull($fresh->remember_token);
+        $this->assertSame(Auth::guard()->hashPasswordForCookie($fresh->password), session('password_hash_web'));
+        // Model identity matters: the next production request reloads this new hash.
+        $this->assertSame($fresh->password, Auth::guard()->user()->getAuthPassword());
     }
 
     private function databaseSessions(): void

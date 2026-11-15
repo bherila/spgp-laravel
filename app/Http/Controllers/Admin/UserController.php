@@ -74,7 +74,12 @@ class UserController extends Controller
      */
     public function update(Request $request, int $id)
     {
-        $user = User::findOrFail($id);
+        // Keep the guard's model current when an administrator edits their own
+        // password, without changing the acting identity when editing someone else.
+        $actor = $request->user();
+        $user = $actor instanceof User && $actor->getKey() === $id
+            ? $actor
+            : User::findOrFail($id);
 
         $validated = $request->validate([
             'first_name' => ['sometimes', 'string', 'max:255'],
