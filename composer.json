@@ -3,11 +3,14 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.5",
-        "bherila/auth-laravel": "^0.28.2",
+        "bherila/auth-laravel": "^0.30.0",
         "erusev/parsedown": "^1.7",
         "laravel/framework": "^13.0",
         "laravel/mcp": "^1.1",

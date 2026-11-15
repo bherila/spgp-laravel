@@ -10,6 +10,7 @@ return [
         'passkeys' => true,
         'password_resets' => true,
         'change_password' => true,
+        'confirm_password' => true,
         'two_factor' => true,
     ],
 

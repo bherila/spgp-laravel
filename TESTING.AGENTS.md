@@ -54,3 +54,7 @@ php artisan schema:dump --database=sqlite
 ```
 
 Never use `--prune`. Tests must use SQLite in-memory and must never run against MySQL.
+
+## Focused local validation
+
+Use CI for full test suites, builds, full Pint/PHPStan and mutation/coverage runs. Locally run only small relevant tests and targeted formatting/lint. Required CI on the exact candidate commit is the merge gate.

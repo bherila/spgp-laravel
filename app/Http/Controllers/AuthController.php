@@ -7,6 +7,7 @@ use App\Models\User;
 use BWH\Auth\Concerns\LogsAuthEvents;
 use BWH\Auth\Models\AuthAuditLog;
 use BWH\Auth\Support\ClientIp;
+use BWH\Auth\Support\PasswordChangeSessions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -74,18 +75,20 @@ class AuthController extends Controller
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            'password' => ['required', 'confirmed', PasswordRule::defaults()],
+            'password' => ['required', 'string', 'max:1024', 'confirmed', PasswordRule::defaults()],
         ]);
 
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user, $password) {
+            function ($user, $password) use ($request) {
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
 
+                PasswordChangeSessions::endOtherDatabaseSessions($request, $user);
                 Auth::login($user);
+                PasswordChangeSessions::reissueRememberCookie($request, $user, $password);
             }
         );
 
@@ -151,7 +154,7 @@ class AuthController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', PasswordRule::defaults()],
+            'password' => ['required', 'string', 'max:1024', 'confirmed', PasswordRule::defaults()],
             'invite_code' => ['required', 'string'],
             // user must agree to confidentially keep program details
             'agreement' => ['accepted'],
