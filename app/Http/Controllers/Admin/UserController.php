@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use BWH\Auth\Models\AuthAuditLog;
+use BWH\Auth\Support\PasswordChangeSessions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -80,14 +81,21 @@ class UserController extends Controller
             'last_name' => ['sometimes', 'string', 'max:255'],
             'email' => ['sometimes', 'string', 'email', 'max:255', 'unique:users,email,'.$id],
             'is_admin' => ['sometimes', 'boolean'],
-            'password' => ['sometimes', 'string', 'min:8'],
+            'password' => ['sometimes', 'string', 'min:8', 'max:1024'],
         ]);
 
-        if (isset($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
+        $newPassword = $validated['password'] ?? null;
+
+        if ($newPassword !== null) {
+            $validated['password'] = Hash::make($newPassword);
+            $validated = array_merge($validated, PasswordChangeSessions::rotatedRememberToken($user));
         }
 
-        $user->update($validated);
+        $user->forceFill($validated)->save();
+
+        if ($newPassword !== null) {
+            PasswordChangeSessions::endOthers($request, $user, $newPassword);
+        }
 
         return response()->json($user);
     }

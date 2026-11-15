@@ -54,7 +54,7 @@ class SharedAuthPackageTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->postJson('https://spgp.example.test/api/passkeys/register/options');
+        $response = $this->actingAs($user)->withSession(['auth.password_confirmed_at' => time()])->postJson('https://spgp.example.test/api/passkeys/register/options');
 
         $response->assertOk();
         $response->assertJsonPath('rp.id', 'spgp.example.test');

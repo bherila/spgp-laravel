@@ -26,6 +26,7 @@ class PassRequestMcpTest extends TestCase
         parent::setUp();
         config([
             'pass-request-api.enabled' => true,
+            'mcp.allowed_origins' => [self::RESOURCE],
             'bherila-auth.oauth_resource_server.issuer' => self::ISSUER,
             'bherila-auth.oauth_resource_server.resource' => self::RESOURCE,
         ]);
