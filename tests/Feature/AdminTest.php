@@ -10,6 +10,7 @@ use App\Models\Season;
 use App\Models\SeasonPassType;
 use App\Models\User;
 use BWH\Auth\Models\AuthAuditLog;
+use BWH\Auth\OAuth\Session\RememberedProviderLogins;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -214,11 +215,18 @@ class AdminTest extends TestCase
     public function test_admin_can_delete_user(): void
     {
         $userToDelete = User::factory()->create();
+        $logins = app(RememberedProviderLogins::class);
+        $hash = RememberedProviderLogins::tokenHash('synthetic-remember-token');
+        $logins->put('web', (string) $userToDelete->id, 'bherila', 'target-subject', 7, $hash, 2);
+        $logins->put('another-guard', (string) $userToDelete->id, 'bherila', 'target-subject', 7, $hash, 2);
+        $logins->put('web', (string) $this->regularUser->id, 'bherila', 'other-subject', 7, $hash, 2);
 
         $response = $this->actingAs($this->admin)->delete("/api/admin/users/{$userToDelete->id}");
 
         $response->assertStatus(200);
         $this->assertDatabaseMissing('users', ['id' => $userToDelete->id]);
+        $this->assertDatabaseMissing(RememberedProviderLogins::TABLE, ['user_id' => (string) $userToDelete->id]);
+        $this->assertDatabaseHas(RememberedProviderLogins::TABLE, ['user_id' => (string) $this->regularUser->id, 'epoch' => 2]);
     }
 
     public function test_admin_cannot_delete_themselves(): void

@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use BWH\Auth\Models\AuthAuditLog;
+use BWH\Auth\OAuth\Session\RememberedProviderLogins;
 use BWH\Auth\Support\PasswordChangeSessions;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -117,7 +119,10 @@ class UserController extends Controller
             return response()->json(['message' => 'Cannot delete yourself'], 403);
         }
 
-        $user->delete();
+        DB::transaction(function () use ($user): void {
+            $user->delete();
+            app(RememberedProviderLogins::class)->forgetUser((string) $user->getAuthIdentifier());
+        });
 
         return response()->json(['message' => 'User deleted successfully']);
     }
